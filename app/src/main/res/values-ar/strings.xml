@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nemory</string>
+    <string name="quick_capture_tile_label">مسح Nemory</string>
+    <string name="nav_home">الرئيسية</string>
+    <string name="nav_search">البحث</string>
+    <string name="nav_brain">دردشة الذكاء</string>
+    <string name="nav_settings">الإعدادات</string>
+    <string name="nav_today">اليوم</string>
+    <string name="nav_vault">الخزنة</string>
+    <string name="nav_capture">التقاط</string>
+</resources>

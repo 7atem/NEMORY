@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gemma_download_channel_name">تنزيل الذكاء الاصطناعي على الجهاز</string>
+    <string name="gemma_download_channel_description">تقدّم تنزيل نموذج الذكاء الاصطناعي الاختياري على الجهاز</string>
+    <string name="gemma_download_notification_title">جارٍ تنزيل نموذج الذكاء الاصطناعي على الجهاز…</string>
+</resources>

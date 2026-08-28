@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gemma_prompt_channel_name">Model download</string>
+    <string name="gemma_prompt_channel_description">One-time suggestion to download the optional on-device model</string>
+    <string name="gemma_prompt_title">Smarter document understanding available</string>
+    <string name="gemma_prompt_body">Get better private capture organization with a one-time ~530 MB on-device model download. Use Wi-Fi; it works fully offline afterwards.</string>
+    <string name="gemma_prompt_download">Download</string>
+</resources>

@@ -1,0 +1,3 @@
+plugins { id 'java' }
+repositories { google(); mavenCentral() }
+dependencies { implementation 'com.google.ai.edge.aicore:aicore:1.0.0-alpha01' }

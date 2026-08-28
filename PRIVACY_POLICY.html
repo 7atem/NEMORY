@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Nemory</title>
+  <style>
+    :root {
+      --bg: #f8f9fa;
+      --text: #202124;
+      --muted: #5f6368;
+      --link: #1a73e8;
+      --border: #dadce0;
+      --accent-bg: #e8f0fe;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1f1f1f;
+        --text: #e8eaed;
+        --muted: #9aa0a6;
+        --link: #8ab4f8;
+        --border: #3c4043;
+        --accent-bg: #3c4043;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      margin: 0;
+      padding: 2rem 1rem;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      background: var(--bg);
+      padding: 1rem;
+    }
+    h1 { font-size: 1.75rem; margin-bottom: 0.25rem; }
+    .effective { color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; }
+    h2 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.25rem; }
+    h3 { font-size: 1.05rem; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    p, li { font-size: 0.95rem; }
+    ul { padding-left: 1.25rem; }
+    li { margin-bottom: 0.35rem; }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .principle {
+      background: var(--accent-bg);
+      border-left: 4px solid var(--link);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1.5rem 0;
+    }
+    .contact { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Privacy Policy — Nemory</h1>
+    <p class="effective">
+      <strong>Effective date:</strong> [Insert launch date]<br />
+      <strong>Last updated:</strong> [Insert date]<br />
+      <strong>Contact:</strong> <a href="mailto:fedrev92@gmail.com">fedrev92@gmail.com</a>
+    </p>
+
+    <h2>1. Introduction</h2>
+    <p>
+      Nemory (“we”, “our”, or “us”) is a private personal vault that helps you save, organize, and find documents, receipts, media, notes, and anything else you want to remember. This Privacy Policy explains what information Nemory collects, how it is used, and what choices you have.
+    </p>
+    <div class="principle">
+      Our core principle is <strong>privacy by default</strong>: your saved content is stored on your device, protected by encryption, and is never sent anywhere unless you explicitly choose an optional cloud feature.
+    </div>
+
+    <h2>2. Information Nemory Stores</h2>
+
+    <h3>2.1 Content you save</h3>
+    <p>When you use Nemory, you may save:</p>
+    <ul>
+      <li>Photos and images</li>
+      <li>PDFs and documents</li>
+      <li>Voice transcripts</li>
+      <li>Typed or pasted text</li>
+      <li>Notes and reminders</li>
+    </ul>
+    <p>This content is stored <strong>locally on your device</strong> in an encrypted database. We do not upload, access, or process this content on our servers.</p>
+
+    <h3>2.2 Derived metadata</h3>
+    <p>Nemory extracts information from your saved content to help you organize and search it, such as:</p>
+    <ul>
+      <li>Recognized text (OCR)</li>
+      <li>Detected document category (e.g., receipt, prescription, ticket)</li>
+      <li>Dates, amounts, merchant names, and similar fields</li>
+      <li>Thumbnails and dominant colors</li>
+      <li>Text embeddings for semantic search</li>
+    </ul>
+    <p>All extraction runs <strong>on your device</strong> unless you explicitly enable an optional cloud AI feature.</p>
+
+    <h3>2.3 App settings and preferences</h3>
+    <p>Nemory stores local preferences such as:</p>
+    <ul>
+      <li>Theme and appearance settings</li>
+      <li>PIN / biometric authentication state</li>
+      <li>Reminder preferences</li>
+      <li>Category and lens filters</li>
+      <li>Consent choices for optional cloud AI</li>
+    </ul>
+
+    <h2>3. On-Device AI and Optional Cloud AI</h2>
+
+    <h3>3.1 On-device AI</h3>
+    <p>By default, all AI processing in Nemory happens on your device using:</p>
+    <ul>
+      <li>Google ML Kit (text recognition, barcode scanning, image labeling)</li>
+      <li>TensorFlow Lite document classification</li>
+      <li>MediaPipe text embeddings</li>
+      <li>On-device Gemini Nano via ML Kit Prompt API</li>
+    </ul>
+    <p>Your saved content does not leave your device for these features.</p>
+
+    <h3>3.2 Optional cloud AI</h3>
+    <p>
+      Nemory may offer an optional cloud AI assistant powered by Google Firebase AI Logic / Gemini. This feature is:
+    </p>
+    <ul>
+      <li><strong>Disabled by default</strong></li>
+      <li>Enabled only after you explicitly agree each time it is used</li>
+      <li>Bound by Google's data-processing terms</li>
+    </ul>
+    <p>
+      If you enable cloud AI, only the minimum necessary text context is sent to Google's services. Original images of sensitive documents (passports, IDs, prescriptions) are never sent to cloud AI.
+    </p>
+
+    <h2>4. Camera, Microphone, and Notifications</h2>
+
+    <h3>4.1 Camera and photos</h3>
+    <p>Nemory requests camera and photo access only when you choose to capture or import an item. You can use Nemory without granting camera access by typing or pasting text.</p>
+
+    <h3>4.2 Microphone</h3>
+    <p>Nemory may request microphone access for optional voice capture. Voice recognition uses your device's on-device speech recognizer when available. Your voice recordings are not uploaded unless you explicitly choose a cloud-enabled alternative.</p>
+
+    <h3>4.3 Notifications</h3>
+    <p>Nemory may send local reminders about expiring documents or items that need your attention. These notifications are generated on your device and do not use external servers.</p>
+
+    <h2>5. Advertising</h2>
+    <p>The public launch of Nemory is <strong>ad-free</strong>.</p>
+    <p>If advertising is added in a future version, it will:</p>
+    <ul>
+      <li>Be non-personalized by default</li>
+      <li>Never receive your saved content, titles, categories, search queries, or lens names</li>
+      <li>Be clearly disclosed before it is enabled</li>
+    </ul>
+    <p>You will be able to remove ads through a one-time or subscription purchase.</p>
+
+    <h2>6. Analytics and Crash Reporting</h2>
+    <p>
+      The first public release of Nemory does not include crash reporting or analytics SDKs. No crash logs or usage analytics are transmitted from the app.
+    </p>
+    <p>
+      If crash reporting is added in a future version, it will:
+    </p>
+    <ul>
+      <li>Collect only anonymous technical data, such as stack traces and device model information</li>
+      <li>Never include your saved content, photos, documents, or vault metadata</li>
+      <li>Be clearly disclosed and optional where possible</li>
+    </ul>
+
+    <h2>7. Billing and Purchases</h2>
+    <p>
+      The first public release of Nemory does not offer in-app purchases. All core features are free.
+    </p>
+    <p>
+      If optional purchases are added in a future version (for example, to remove advertising), they will be handled by Google Play Billing. We do not store or process your payment information. All transactions are handled by Google Play.
+    </p>
+
+    <h2>8. Data Sharing</h2>
+    <p>We do not sell, rent, or share your personal information with third parties, except:</p>
+    <ul>
+      <li>With service providers necessary to operate optional features you explicitly enable (e.g., Google cloud AI)</li>
+      <li>When required by law or to protect our legal rights</li>
+    </ul>
+
+    <h2>9. Data Retention and Deletion</h2>
+    <p>Because your content is stored locally on your device, retention is under your control.</p>
+    <ul>
+      <li>Deleting an item inside Nemory removes it from the app's database and file storage.</li>
+      <li>Uninstalling the app removes all locally stored data.</li>
+      <li>We do not retain copies of your content on our servers.</li>
+    </ul>
+
+    <h2>10. Security</h2>
+    <p>Nemory uses industry-standard protections:</p>
+    <ul>
+      <li>SQLCipher encrypted database</li>
+      <li>Android Keystore for key management</li>
+      <li>Optional PIN / biometric lock</li>
+      <li>Optional decoy vault</li>
+    </ul>
+    <p>No system is completely secure, but we designed Nemory so that your content stays on your device and is protected while it is there.</p>
+
+    <h2>11. Cookies and Web Technologies</h2>
+    <p>
+      Nemory does not use cookies or similar tracking technologies. The app is a native Android application; it does not operate a website or browser-based service that stores cookies on your device.
+    </p>
+
+    <h2>12. International Data Transfers</h2>
+    <p>By default, your saved content does not leave your device.</p>
+    <p>
+      If you enable optional cloud AI, the text context you approve is sent to Google's servers, which may be located outside your country. That transfer is governed by Google's data-processing terms and applicable data-protection laws. You can disable cloud AI at any time in Settings.
+    </p>
+
+    <h2>13. Legal Basis for Processing (EU/EEA and UK)</h2>
+    <p>Nemory processes any personal data on the following legal bases:</p>
+    <ul>
+      <li><strong>Performance of a contract / Legitimate interest:</strong> operating the app, organizing your content, and providing search and reminders.</li>
+      <li><strong>Consent:</strong> optional cloud AI, optional crash analytics, and any future advertising.</li>
+      <li><strong>Legitimate interest:</strong> preventing fraud and abuse, ensuring security, and improving stability.</li>
+    </ul>
+    <p>You can withdraw consent for optional processing at any time in Settings.</p>
+
+    <h2>14. California Privacy Rights (CCPA/CPRA)</h2>
+    <p>If you are a California resident, you have the right to:</p>
+    <ul>
+      <li>Know what personal information is collected, used, and shared</li>
+      <li>Request deletion of personal information</li>
+      <li>Opt out of the sale of personal information</li>
+      <li>Non-discrimination for exercising these rights</li>
+    </ul>
+    <p>Nemory does not sell personal information. Because your content is stored locally, you can delete it at any time within the app.</p>
+
+    <h2>15. Your Rights</h2>
+    <p>Depending on your location, you may have the right to access, correct, delete, restrict, or object to processing of your personal data, as well as the right to data portability.</p>
+    <p>Because Nemory stores data locally, most of these rights can be exercised directly in the app:</p>
+    <ul>
+      <li><strong>Access:</strong> view any item in your vault</li>
+      <li><strong>Correction:</strong> edit item details</li>
+      <li><strong>Deletion:</strong> delete individual items or uninstall the app</li>
+      <li><strong>Restriction:</strong> disable optional cloud AI or crash reporting in Settings</li>
+      <li><strong>Portability:</strong> export is not built into the current version; contact us if you need it</li>
+    </ul>
+    <p>
+      To exercise rights that cannot be handled in the app, contact us at: <a href="mailto:fedrev92@gmail.com" class="contact">fedrev92@gmail.com</a>
+    </p>
+    <p>We will respond within the time required by applicable law.</p>
+
+    <h2>16. Children's Privacy</h2>
+    <p>Nemory is not directed to children under 13. We do not knowingly collect personal information from children.</p>
+
+    <h2>17. Changes to This Policy</h2>
+    <p>We may update this Privacy Policy from time to time. We will notify you of material changes through the app or by updating the effective date above.</p>
+
+    <h2>18. Contact Us</h2>
+    <p>
+      If you have questions about this Privacy Policy, please contact us at:<br />
+      <a href="mailto:fedrev92@gmail.com" class="contact">fedrev92@gmail.com</a>
+    </p>
+  </main>
+</body>
+</html>

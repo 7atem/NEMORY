@@ -1,0 +1,59 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:4535603234877034045",
+      "lastPropertyId": "6:9034953451748207957",
+      "name": "VaultEmbedding",
+      "properties": [
+        {
+          "id": "1:7100873135023962347",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:1922034602344457379",
+          "name": "itemId",
+          "type": 9
+        },
+        {
+          "id": "3:394550768081204285",
+          "name": "embedding",
+          "indexId": "1:1659879404083092950",
+          "type": 28,
+          "flags": 8
+        },
+        {
+          "id": "4:9134009319244310767",
+          "name": "contentType",
+          "type": 9
+        },
+        {
+          "id": "5:794553881614811364",
+          "name": "chunkIndex",
+          "type": 5
+        },
+        {
+          "id": "6:9034953451748207957",
+          "name": "createdAt",
+          "type": 6
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "1:4535603234877034045",
+  "lastIndexId": "1:1659879404083092950",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}

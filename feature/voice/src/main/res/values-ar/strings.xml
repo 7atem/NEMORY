@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_title">التقاط صوتي خاص</string>
+    <string name="voice_checking">جارٍ التحقق من التعرف الخاص على الكلام…</string>
+    <string name="voice_permission">يلزم إذن الميكروفون فقط أثناء تحدثك.</string>
+    <string name="voice_listening">جارٍ الاستماع على هذا الجهاز…</string>
+    <string name="voice_processing">جارٍ تحويل كلامك إلى نص على هذا الجهاز…</string>
+    <string name="voice_unavailable">لا يوفر هذا الهاتف حاليًا تعرفًا على الكلام داخل الجهاز. لن يستبدله Nemory بخدمة تعرف عبر الشبكة.</string>
+    <string name="voice_privacy_receipt">يبقى الصوت داخل خدمة التعرف على الجهاز في Android. ستراجع النص الناتج قبل حفظه.</string>
+    <string name="voice_type_instead">اكتب بدلاً من ذلك</string>
+    <string name="voice_try_again">حاول مجددًا</string>
+    <string name="voice_cancel">إلغاء</string>
+    <string name="voice_error_no_speech">لم ألتقط كلامًا. حاول مجددًا أو اكتب العنصر.</string>
+    <string name="voice_error_permission">لم يُمنح إذن الميكروفون. يمكنك كتابة العنصر بدلاً من ذلك.</string>
+    <string name="voice_error_language">نموذج هذه اللغة غير مثبّت على الجهاز بعد. يمكنك أن تطلب من Android تجهيزه.</string>
+    <string name="voice_error_language_not_supported">لا يدعم هذا الجهاز التعرّف الخاص على الكلام باللغة المحددة.</string>
+    <string name="voice_error_busy">أداة التعرف الخاصة مشغولة. حاول مجددًا.</string>
+    <string name="voice_error_failed">تعذر بدء الالتقاط الصوتي الخاص. لم تُستخدم خدمة تعرف عبر الشبكة.</string>
+    <string name="voice_prepare_language">تجهيز اللغة</string>
+    <string name="voice_prepare_try_again">إعادة محاولة التجهيز</string>
+    <string name="voice_model_downloading">يجهّز Android نموذج اللغة على الجهاز. ستُعاد محاولة الالتقاط الصوتي عندما يصبح جاهزًا.</string>
+    <string name="voice_model_download_progress">تم تنزيل %1$d%%</string>
+    <string name="voice_model_scheduled">جدول Android تجهيز نموذج هذه اللغة. يمكنك إعادة محاولة الالتقاط الصوتي لاحقًا أو الكتابة الآن.</string>
+    <string name="voice_model_download_failed">تعذّر على Android تجهيز نموذج هذه اللغة. تحقّق من الاتصال أو إعدادات الجهاز ثم أعد المحاولة.</string>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="travel_stat_title">عدسة السفر</string>
+    <string name="travel_stat_total">عناصر السفر: %1$d</string>
+    <string name="travel_stat_places">الأماكن المسجلة: %1$d</string>
+    <string name="travel_stat_upcoming">الرحلات القادمة: %1$d</string>
+    <string name="travel_stat_flights">الرحلات الجوية: %1$d</string>
+    <string name="travel_stat_hotels">الفنادق: %1$d</string>
+    <string name="travel_quick_add_title">إضافة سريعة</string>
+    <string name="travel_quick_add_ticket">تذكرة</string>
+    <string name="travel_quick_add_passport">جواز سفر</string>
+    <string name="travel_quick_add_boarding">بطاقة صعود</string>
+    <string name="travel_quick_add_hotel">فندق</string>
+    <string name="travel_items_title">عناصر السفر</string>
+    <string name="travel_item_location">الموقع: %1$s</string>
+    <string name="travel_lens_view_subtitle">عرض لخزنتك — يمكن أن تظهر العناصر في أكثر من عدسة.</string>
+</resources>

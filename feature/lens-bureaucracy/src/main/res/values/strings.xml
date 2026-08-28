@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bureaucracy_stat_title">Documents &amp; Identity Lens</string>
+    <string name="bureaucracy_stat_total">Documents: %1$d</string>
+    <string name="bureaucracy_stat_expiring">Expiring soon: %1$d</string>
+    <string name="bureaucracy_stat_pinned">Pinned: %1$d</string>
+    <string name="bureaucracy_quick_add_title">Quick add</string>
+    <string name="bureaucracy_quick_add_id">ID document</string>
+    <string name="bureaucracy_quick_add_contract">Contract</string>
+    <string name="bureaucracy_quick_add_permit">Permit</string>
+    <string name="bureaucracy_quick_add_certificate">Certificate</string>
+    <string name="bureaucracy_items_title">Documents</string>
+    <string name="bureaucracy_item_expires">Expires: %1$s</string>
+    <string name="bureaucracy_lens_view_subtitle">View over your vault — items can appear in multiple lenses.</string>
+</resources>

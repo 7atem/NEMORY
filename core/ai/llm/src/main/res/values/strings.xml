@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gemma_download_channel_name">On-device AI download</string>
+    <string name="gemma_download_channel_description">Progress for the optional on-device AI model download</string>
+    <string name="gemma_download_notification_title">Downloading on-device AI model…</string>
+</resources>

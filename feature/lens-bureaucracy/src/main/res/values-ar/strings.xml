@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="bureaucracy_stat_title">عدسة المعاملات الحكومية</string>
+    <string name="bureaucracy_stat_total">المستندات: %1$d</string>
+    <string name="bureaucracy_stat_expiring">تنتهي قريبًا: %1$d</string>
+    <string name="bureaucracy_stat_pinned">المثبتة: %1$d</string>
+    <string name="bureaucracy_quick_add_title">إضافة سريعة</string>
+    <string name="bureaucracy_quick_add_id">بطاقة هوية</string>
+    <string name="bureaucracy_quick_add_contract">عقد</string>
+    <string name="bureaucracy_quick_add_permit">تصريح</string>
+    <string name="bureaucracy_quick_add_certificate">شهادة</string>
+    <string name="bureaucracy_items_title">المستندات</string>
+    <string name="bureaucracy_item_expires">ينتهي: %1$s</string>
+    <string name="bureaucracy_lens_view_subtitle">عرض لخزنتك — يمكن أن تظهر العناصر في أكثر من عدسة.</string>
+</resources>

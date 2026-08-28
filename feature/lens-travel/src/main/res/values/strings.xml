@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="travel_stat_title">Travel &amp; Vehicles Lens</string>
+    <string name="travel_stat_total">Travel &amp; Vehicles items: %1$d</string>
+    <string name="travel_stat_places">Places recorded: %1$d</string>
+    <string name="travel_stat_upcoming">Upcoming trips: %1$d</string>
+    <string name="travel_stat_flights">Flights: %1$d</string>
+    <string name="travel_stat_hotels">Hotels: %1$d</string>
+    <string name="travel_quick_add_title">Quick add</string>
+    <string name="travel_quick_add_ticket">Ticket</string>
+    <string name="travel_quick_add_passport">Passport</string>
+    <string name="travel_quick_add_boarding">Boarding pass</string>
+    <string name="travel_quick_add_hotel">Hotel</string>
+    <string name="travel_items_title">Travel &amp; Vehicles items</string>
+    <string name="travel_item_location">Location: %1$s</string>
+    <string name="travel_lens_view_subtitle">View over your vault — items can appear in multiple lenses.</string>
+</resources>

@@ -1,0 +1,524 @@
+package com.vaultbrain.feature.brain
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.vaultbrain.core.ai.llm.CloudConsentDisclosure
+import com.vaultbrain.core.ai.llm.CloudConsentStore
+import com.vaultbrain.core.ai.llm.AiCapabilityManager
+import com.vaultbrain.core.ai.rag.RagEngine
+import com.vaultbrain.core.ai.rag.RagEvidence
+import com.vaultbrain.core.ai.rag.RagEvidenceKind
+import com.vaultbrain.core.ai.rag.RagCloudFailure
+import com.vaultbrain.core.ai.rag.RagResponse
+import com.vaultbrain.core.ai.rag.SearchFilters
+import com.vaultbrain.core.database.repository.BrainConversationRepository
+import com.vaultbrain.core.database.repository.StoredBrainMessage
+import com.vaultbrain.core.database.repository.VaultRepository
+import com.vaultbrain.feature.brain.model.ChatMessage
+import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
+import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+
+data class BrainCloudConsent(
+    val disclosure: CloudConsentDisclosure,
+    internal val query: String,
+    internal val conversationContext: String?,
+    internal val assistantMessageId: String
+)
+
+enum class BrainCloudMessage {
+    NOT_CONFIGURED,
+    GENERATION_FAILED
+}
+
+data class BrainPendingWrite(
+    val preview: BrainWritePreview,
+    internal val assistantMessageId: String
+)
+
+/** Local, persistent Brain conversation orchestrator for single-turn RAG requests. */
+@HiltViewModel
+class BrainChatViewModel @Inject constructor(
+    private val ragEngine: RagEngine,
+    private val conversationRepository: BrainConversationRepository,
+    private val memoryBuilder: ConversationMemoryBuilder,
+    private val vaultRepository: VaultRepository,
+    private val suggestionProvider: BrainSuggestionProvider,
+    private val cloudConsentStore: CloudConsentStore,
+    private val writeActionPlanner: BrainWriteActionPlanner,
+    private val capabilityManager: AiCapabilityManager
+) : ViewModel() {
+
+    private val _isAiCoreEnabled = MutableStateFlow(false)
+    val isAiCoreEnabled: StateFlow<Boolean> = _isAiCoreEnabled.asStateFlow()
+
+    private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
+    val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
+    private val _isStreaming = MutableStateFlow(false)
+    val isStreaming: StateFlow<Boolean> = _isStreaming.asStateFlow()
+
+    private val _input = MutableStateFlow("")
+    val input: StateFlow<String> = _input.asStateFlow()
+
+    private val _suggestions = MutableStateFlow<List<BrainSuggestion>>(emptyList())
+    val suggestions: StateFlow<List<BrainSuggestion>> = _suggestions.asStateFlow()
+
+    private val _cloudConsent = MutableStateFlow<BrainCloudConsent?>(null)
+    val cloudConsent: StateFlow<BrainCloudConsent?> = _cloudConsent.asStateFlow()
+
+    private val _cloudMessage = MutableStateFlow<BrainCloudMessage?>(null)
+    val cloudMessage: StateFlow<BrainCloudMessage?> = _cloudMessage.asStateFlow()
+
+    private val _pendingWrite = MutableStateFlow<BrainPendingWrite?>(null)
+    val pendingWrite: StateFlow<BrainPendingWrite?> = _pendingWrite.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            conversationRepository.observeAll().collect { stored ->
+                // A streaming turn is committed once complete, so database refreshes cannot
+                // replace its in-memory placeholder or partial answer.
+                if (!_isLoading.value) _messages.value = stored.mapNotNull(::toUiMessage)
+            }
+        }
+        viewModelScope.launch {
+            vaultRepository.observeActive().collect { items ->
+                _suggestions.value = suggestionProvider.forItems(items)
+            }
+        }
+        viewModelScope.launch {
+            capabilityManager.capabilities.collect {
+                _isAiCoreEnabled.value = it.localPromptAvailable
+            }
+        }
+    }
+
+    fun onInputChanged(text: String) {
+        _input.value = text
+    }
+
+    fun clearConversation() {
+        if (_isLoading.value) return
+        _messages.value = emptyList()
+        _input.value = ""
+        _cloudConsent.value = null
+        _cloudMessage.value = null
+        _pendingWrite.value = null
+        viewModelScope.launch { conversationRepository.clear() }
+    }
+
+    fun retryQuery(query: String) {
+        if (_isLoading.value || _pendingWrite.value != null) return
+        val current = _messages.value
+        val removeIds = buildList {
+            val last = current.lastOrNull()
+            if (last is ChatMessage.Assistant && last.isError) add(last.id)
+            val beforeError = if (isNotEmpty()) current.dropLast(1) else current
+            val user = beforeError.lastOrNull()
+            if (user is ChatMessage.User && user.text == query) add(user.id)
+        }
+        _messages.update { messages -> messages.filterNot { it.id in removeIds } }
+        viewModelScope.launch {
+            conversationRepository.deleteByIds(removeIds)
+            sendQuery(query)
+        }
+    }
+
+    fun sendQuery(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty() || _isLoading.value || _pendingWrite.value != null) return
+
+        val priorContext = memoryBuilder.build(_messages.value)
+        val userMessage = ChatMessage.User(
+            id = generateId(),
+            text = trimmed,
+            createdAt = System.currentTimeMillis()
+        )
+        _messages.update { it + userMessage }
+        _input.value = ""
+        _isLoading.value = true
+        _cloudConsent.value = null
+        _cloudMessage.value = null
+
+        viewModelScope.launch {
+            conversationRepository.upsert(userMessage.toStored())
+            when (val writePlan = writeActionPlanner.plan(trimmed)) {
+                is BrainWritePlanResult.Ready -> {
+                    val assistant = ChatMessage.Assistant(
+                        id = generateId(),
+                        text = writePreviewMessage(writePlan.preview),
+                        sources = listOf(writePlan.preview.item),
+                        confidence = 1f,
+                        originalQuery = trimmed,
+                        createdAt = maxOf(System.currentTimeMillis(), userMessage.createdAt + 1)
+                    )
+                    _messages.update { it + assistant }
+                    conversationRepository.upsert(assistant.toStored())
+                    _pendingWrite.value = BrainPendingWrite(writePlan.preview, assistant.id)
+                    _isLoading.value = false
+                    return@launch
+                }
+                is BrainWritePlanResult.Rejected -> {
+                    val assistant = ChatMessage.Assistant(
+                        id = generateId(),
+                        text = writeIssueMessage(writePlan.issue, trimmed),
+                        originalQuery = trimmed,
+                        createdAt = maxOf(System.currentTimeMillis(), userMessage.createdAt + 1)
+                    )
+                    _messages.update { it + assistant }
+                    conversationRepository.upsert(assistant.toStored())
+                    _isLoading.value = false
+                    return@launch
+                }
+                BrainWritePlanResult.NotWriteAction -> Unit
+            }
+            val assistantMessageId = generateId()
+            val assistantCreatedAt = maxOf(System.currentTimeMillis(), userMessage.createdAt + 1)
+            _messages.update {
+                it + ChatMessage.Assistant(
+                    id = assistantMessageId,
+                    text = "",
+                    originalQuery = trimmed,
+                    createdAt = assistantCreatedAt
+                )
+            }
+            var receivedResponse = false
+
+            try {
+                _isStreaming.value = true
+                ragEngine.queryStream(trimmed, SearchFilters(), priorContext).collect { response ->
+                    receivedResponse = true
+                    applyResponse(assistantMessageId, trimmed, priorContext, response)
+                }
+                if (!receivedResponse) {
+                    updateAssistantError(assistantMessageId, trimmed, NO_RESULTS_MESSAGE)
+                }
+            } catch (error: Exception) {
+                updateAssistantError(
+                    assistantMessageId,
+                    trimmed,
+                    error.localizedMessage ?: ERROR_MESSAGE
+                )
+            } finally {
+                _isStreaming.value = false
+                val completed = _messages.value
+                    .firstOrNull { it.id == assistantMessageId } as? ChatMessage.Assistant
+                completed?.let { conversationRepository.upsert(it.toStored()) }
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun confirmWriteAction() {
+        val pending = _pendingWrite.value ?: return
+        if (_isLoading.value) return
+        _pendingWrite.value = null
+        _isLoading.value = true
+        viewModelScope.launch {
+            try {
+                when (val result = writeActionPlanner.execute(pending.preview)) {
+                    is BrainWriteExecutionResult.Success -> updateWriteAssistant(
+                        pending.assistantMessageId,
+                        writeSuccessMessage(pending.preview, result.updatedItem),
+                        result.updatedItem
+                    )
+                    is BrainWriteExecutionResult.Failed -> updateWriteAssistant(
+                        pending.assistantMessageId,
+                        writeIssueMessage(result.issue, pending.preview.originalQuery),
+                        pending.preview.item
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                updateWriteAssistant(
+                    pending.assistantMessageId,
+                    writeIssueMessage(BrainWriteIssue.EXECUTION_FAILED, pending.preview.originalQuery),
+                    pending.preview.item
+                )
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun dismissWriteAction(issue: BrainWriteIssue? = null) {
+        val pending = _pendingWrite.value ?: return
+        _pendingWrite.value = null
+        val text = issue?.let { writeIssueMessage(it, pending.preview.originalQuery) }
+            ?: if (containsArabic(pending.preview.originalQuery)) "لم يتم إجراء أي تغييرات."
+            else "No changes were made."
+        updateWriteAssistant(pending.assistantMessageId, text, pending.preview.item)
+    }
+
+    private fun updateWriteAssistant(messageId: String, text: String, item: com.vaultbrain.core.common.model.VaultItem) {
+        var updatedMessage: ChatMessage.Assistant? = null
+        _messages.update { current ->
+            current.map { message ->
+                if (message.id == messageId && message is ChatMessage.Assistant) {
+                    message.copy(text = text, sources = listOf(item), confidence = 1f)
+                        .also { updatedMessage = it }
+                } else {
+                    message
+                }
+            }
+        }
+        updatedMessage?.let { message ->
+            viewModelScope.launch { conversationRepository.upsert(message.toStored()) }
+        }
+    }
+
+    private fun writePreviewMessage(preview: BrainWritePreview): String =
+        if (containsArabic(preview.originalQuery)) {
+            when (val action = preview.action) {
+                BrainWriteAction.Pin -> "جاهز لتثبيت «${preview.item.title}». راجع التغيير وأكّده."
+                BrainWriteAction.Unpin -> "جاهز لإلغاء تثبيت «${preview.item.title}». راجع التغيير وأكّده."
+                BrainWriteAction.Archive -> "جاهز لأرشفة «${preview.item.title}». راجع التغيير وأكّده."
+                BrainWriteAction.Restore -> "جاهز لاسترجاع «${preview.item.title}» من الأرشيف. راجع التغيير وأكّده."
+                is BrainWriteAction.SetReminder ->
+                    "جاهز لتعيين تذكير لـ «${preview.item.title}» في ${formatWriteDate(action.triggerAt)}. راجع التغيير وأكّده."
+                BrainWriteAction.ClearReminder ->
+                    "جاهز لإلغاء تذكير «${preview.item.title}». راجع التغيير وأكّده."
+                is BrainWriteAction.MarkMediaCompleted -> when (action.kind) {
+                    MediaCompletionKind.WATCHED -> "جاهز لوضع علامة «تمت المشاهدة» على «${preview.item.title}». راجع التغيير وأكّده."
+                    MediaCompletionKind.FINISHED -> "جاهز لوضع علامة «تمت القراءة» على «${preview.item.title}». راجع التغيير وأكّده."
+                }
+            }
+        } else {
+            when (val action = preview.action) {
+                BrainWriteAction.Pin -> "Ready to pin “${preview.item.title}”. Review and confirm the change."
+                BrainWriteAction.Unpin -> "Ready to unpin “${preview.item.title}”. Review and confirm the change."
+                BrainWriteAction.Archive -> "Ready to archive “${preview.item.title}”. Review and confirm the change."
+                BrainWriteAction.Restore -> "Ready to restore “${preview.item.title}” from the archive. Review and confirm the change."
+                is BrainWriteAction.SetReminder ->
+                    "Ready to remind you about “${preview.item.title}” at ${formatWriteDate(action.triggerAt)}. Review and confirm the change."
+                BrainWriteAction.ClearReminder ->
+                    "Ready to clear the reminder for “${preview.item.title}”. Review and confirm the change."
+                is BrainWriteAction.MarkMediaCompleted -> when (action.kind) {
+                    MediaCompletionKind.WATCHED -> "Ready to mark “${preview.item.title}” as watched. Review and confirm the change."
+                    MediaCompletionKind.FINISHED -> "Ready to mark “${preview.item.title}” as read. Review and confirm the change."
+                }
+            }
+        }
+
+    private fun writeSuccessMessage(
+        preview: BrainWritePreview,
+        item: com.vaultbrain.core.common.model.VaultItem
+    ): String = if (containsArabic(preview.originalQuery)) {
+        when (val action = preview.action) {
+            BrainWriteAction.Pin -> "تم تثبيت «${item.title}»."
+            BrainWriteAction.Unpin -> "تم إلغاء تثبيت «${item.title}»."
+            BrainWriteAction.Archive -> "تمت أرشفة «${item.title}»."
+            BrainWriteAction.Restore -> "تم استرجاع «${item.title}» من الأرشيف."
+            is BrainWriteAction.SetReminder ->
+                "تم تعيين تذكير لـ «${item.title}» في ${formatWriteDate(action.triggerAt)}."
+            BrainWriteAction.ClearReminder -> "تم إلغاء تذكير «${item.title}»."
+            is BrainWriteAction.MarkMediaCompleted -> when (action.kind) {
+                MediaCompletionKind.WATCHED -> "تم وضع علامة «تمت المشاهدة» على «${item.title}»."
+                MediaCompletionKind.FINISHED -> "تم وضع علامة «تمت القراءة» على «${item.title}»."
+            }
+        }
+    } else {
+        when (val action = preview.action) {
+            BrainWriteAction.Pin -> "Pinned “${item.title}”."
+            BrainWriteAction.Unpin -> "Unpinned “${item.title}”."
+            BrainWriteAction.Archive -> "Archived “${item.title}”."
+            BrainWriteAction.Restore -> "Restored “${item.title}” from the archive."
+            is BrainWriteAction.SetReminder ->
+                "Reminder set for “${item.title}” at ${formatWriteDate(action.triggerAt)}."
+            BrainWriteAction.ClearReminder -> "Cleared the reminder for “${item.title}”."
+            is BrainWriteAction.MarkMediaCompleted -> when (action.kind) {
+                MediaCompletionKind.WATCHED -> "Marked “${item.title}” as watched."
+                MediaCompletionKind.FINISHED -> "Marked “${item.title}” as read."
+            }
+        }
+    }
+
+    private fun writeIssueMessage(issue: BrainWriteIssue, query: String): String {
+        val arabic = containsArabic(query)
+        return when (issue) {
+            BrainWriteIssue.INVALID_COMMAND -> if (arabic) "لم يتم إجراء أي تغيير. استخدم عنوانًا وتاريخًا واضحين." else "No change was made. Use an exact title and an explicit date."
+            BrainWriteIssue.INVALID_DATE -> if (arabic) "لم يتم إجراء أي تغيير. استخدم «غدًا» أو تاريخًا بصيغة YYYY-MM-DD." else "No change was made. Use “tomorrow” or a YYYY-MM-DD date."
+            BrainWriteIssue.DATE_TOO_SOON -> if (arabic) "لم يتم إجراء أي تغيير. يجب أن يكون التذكير بعد خمس دقائق على الأقل." else "No change was made. The reminder must be at least five minutes from now."
+            BrainWriteIssue.DATE_TOO_FAR -> if (arabic) "لم يتم إجراء أي تغيير. لا يمكن أن يتجاوز التذكير سنة واحدة." else "No change was made. Reminders cannot be more than one year away."
+            BrainWriteIssue.NO_MATCH -> if (arabic) "لم يتم إجراء أي تغيير. لم أجد عنصرًا نشطًا بهذا العنوان." else "No change was made. I couldn't find an active item with that title."
+            BrainWriteIssue.AMBIGUOUS_MATCH -> if (arabic) "لم يتم إجراء أي تغيير. يطابق العنوان أكثر من عنصر؛ استخدم العنوان الكامل." else "No change was made. More than one item matches; use the full title."
+            BrainWriteIssue.CATEGORY_MISMATCH -> if (arabic) "لم يتم إجراء أي تغيير. استخدم «شاهدت» لفيلم أو مسلسل، و«قرأت» لكتاب." else "No change was made. Use watched for a movie or series, and read for a book."
+            BrainWriteIssue.ALREADY_APPLIED -> if (arabic) "لا يلزم تغيير؛ هذا الإجراء مطبّق بالفعل." else "No change is needed; that action is already applied."
+            BrainWriteIssue.ITEM_CHANGED -> if (arabic) "لم يتم إجراء أي تغيير لأن العنصر تغيّر. حاول الطلب مرة أخرى." else "No change was made because the item changed. Try the request again."
+            BrainWriteIssue.EXECUTION_FAILED -> if (arabic) "تعذّر إكمال التغيير بأمان. راجع العنصر قبل المحاولة مرة أخرى." else "The change could not be completed safely. Check the item before trying again."
+            BrainWriteIssue.NOTIFICATION_PERMISSION_DENIED -> if (arabic) "لم يتم تعيين التذكير لأن إذن الإشعارات لم يُمنح." else "The reminder was not set because notification permission was not granted."
+        }
+    }
+
+    private fun formatWriteDate(timestamp: Long): String = java.time.format.DateTimeFormatter
+        .ofPattern("yyyy-MM-dd HH:mm")
+        .format(java.time.Instant.ofEpochMilli(timestamp).atZone(java.time.ZoneId.systemDefault()))
+
+    private fun containsArabic(text: String): Boolean = Regex("[\\u0600-\\u06FF]").containsMatchIn(text)
+
+    fun confirmCloudAssist(rememberForCategories: Boolean = false) {
+        val pending = _cloudConsent.value ?: return
+        if (_isLoading.value) return
+        if (rememberForCategories && pending.disclosure.canRememberForCategory) {
+            cloudConsentStore.remember(pending.disclosure.rememberableCategories)
+        }
+        _cloudConsent.value = null
+        _cloudMessage.value = null
+        _isLoading.value = true
+
+        viewModelScope.launch {
+            try {
+                _isStreaming.value = true
+                ragEngine.queryStream(
+                    pending.query,
+                    SearchFilters(),
+                    pending.conversationContext,
+                    explicitCloudConsent = true
+                ).collect { response ->
+                    applyResponse(
+                        pending.assistantMessageId,
+                        pending.query,
+                        pending.conversationContext,
+                        response
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _cloudMessage.value = BrainCloudMessage.GENERATION_FAILED
+            } finally {
+                _isStreaming.value = false
+                val completed = _messages.value
+                    .firstOrNull { it.id == pending.assistantMessageId } as? ChatMessage.Assistant
+                completed?.let { conversationRepository.upsert(it.toStored()) }
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun dismissCloudConsent() {
+        _cloudConsent.value = null
+    }
+
+    fun dismissCloudMessage() {
+        _cloudMessage.value = null
+    }
+
+    private fun applyResponse(
+        assistantMessageId: String,
+        query: String,
+        conversationContext: String?,
+        response: RagResponse
+    ) {
+        response.cloudConsent?.let { disclosure ->
+            _cloudConsent.value = BrainCloudConsent(
+                disclosure = disclosure,
+                query = query,
+                conversationContext = conversationContext,
+                assistantMessageId = assistantMessageId
+            )
+        }
+        _cloudMessage.value = when (response.cloudFailure) {
+            RagCloudFailure.NOT_CONFIGURED -> BrainCloudMessage.NOT_CONFIGURED
+            RagCloudFailure.GENERATION_FAILED -> BrainCloudMessage.GENERATION_FAILED
+            null -> _cloudMessage.value
+        }
+        _messages.update { currentMessages ->
+            currentMessages.map { message ->
+                if (message.id == assistantMessageId && message is ChatMessage.Assistant) {
+                    message.copy(
+                        text = response.answer.orEmpty().ifBlank {
+                            if (response.sources.isEmpty()) NO_RESULTS_MESSAGE else message.text
+                        },
+                        sources = response.sources,
+                        confidence = response.confidence,
+                        evidence = response.evidence,
+                        responseOrigin = response.responseOrigin ?: message.responseOrigin,
+                        isError = false
+                    )
+                } else {
+                    message
+                }
+            }
+        }
+    }
+
+    private fun updateAssistantError(messageId: String, query: String, message: String) {
+        _messages.update { currentMessages ->
+            currentMessages.map { current ->
+                if (current.id == messageId && current is ChatMessage.Assistant) {
+                    current.copy(text = message, isError = true, originalQuery = query)
+                } else {
+                    current
+                }
+            }
+        }
+    }
+
+    private fun toUiMessage(message: StoredBrainMessage): ChatMessage? = when (message.role) {
+        BrainConversationRepository.ROLE_USER -> ChatMessage.User(
+            id = message.id,
+            text = message.text,
+            createdAt = message.createdAt
+        )
+        BrainConversationRepository.ROLE_ASSISTANT -> ChatMessage.Assistant(
+            id = message.id,
+            text = message.text,
+            sources = message.sources,
+            confidence = message.confidence,
+            evidence = message.evidenceHeadline?.let { headline ->
+                message.evidenceKind
+                    ?.let { kind -> RagEvidenceKind.entries.firstOrNull { it.name == kind } }
+                    ?.let { kind -> RagEvidence(kind, headline, message.evidenceFacts) }
+            },
+            responseOrigin = message.responseOrigin?.let { storedOrigin ->
+                com.vaultbrain.core.ai.llm.AiResponseOrigin.entries
+                    .firstOrNull { it.name == storedOrigin }
+            },
+            isError = message.isError,
+            originalQuery = message.originalQuery,
+            createdAt = message.createdAt
+        )
+        else -> null
+    }
+
+    private fun ChatMessage.toStored(): StoredBrainMessage = when (this) {
+        is ChatMessage.User -> StoredBrainMessage(
+            id = id,
+            role = BrainConversationRepository.ROLE_USER,
+            text = text,
+            createdAt = createdAt
+        )
+        is ChatMessage.Assistant -> StoredBrainMessage(
+            id = id,
+            role = BrainConversationRepository.ROLE_ASSISTANT,
+            text = text,
+            sources = sources,
+            confidence = confidence,
+            evidenceKind = evidence?.kind?.name,
+            evidenceHeadline = evidence?.headline,
+            evidenceFacts = evidence?.supportingFacts.orEmpty(),
+            responseOrigin = responseOrigin?.name,
+            isError = isError,
+            originalQuery = originalQuery,
+            createdAt = createdAt
+        )
+    }
+
+    private fun generateId(): String = UUID.randomUUID().toString()
+
+    private companion object {
+        const val NO_RESULTS_MESSAGE = "I couldn't find a confident match in your vault. Try using a title, date, amount, or category."
+        const val ERROR_MESSAGE = "Something went wrong while searching your vault. Please try again."
+    }
+}
