@@ -152,6 +152,32 @@ class VaultDatabaseMigrationsTest {
     }
 
     @Test
+    fun `migration 12 to 13 adds external context tables`() {
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        VaultDatabaseMigrations.MIGRATION_12_13.migrate(database)
+
+        verify(exactly = 1) {
+            database.execSQL(match {
+                it.contains("CREATE TABLE IF NOT EXISTS `external_records`") &&
+                    it.contains("PRIMARY KEY(`connector_id`, `account_id`, `external_id`)")
+            })
+        }
+        verify(exactly = 1) {
+            database.execSQL(match {
+                it.contains("CREATE TABLE IF NOT EXISTS `external_connections`") &&
+                    it.contains("PRIMARY KEY(`connector_id`, `account_id`)")
+            })
+        }
+        verify(atLeast = 1) {
+            database.execSQL(match { it.contains("index_external_records") })
+        }
+        verify(atLeast = 1) {
+            database.execSQL(match { it.contains("index_external_connections") })
+        }
+    }
+
+    @Test
     fun `migration 11 to 12 adds collection suggestions and extends item FTS`() {
         val database = mockk<SupportSQLiteDatabase>(relaxed = true)
 

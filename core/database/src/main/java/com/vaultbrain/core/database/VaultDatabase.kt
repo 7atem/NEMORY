@@ -8,12 +8,16 @@ import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.vaultbrain.core.database.dao.AuditLogDao
 import com.vaultbrain.core.database.dao.BrainMessageDao
+import com.vaultbrain.core.database.dao.ExternalConnectionDao
+import com.vaultbrain.core.database.dao.ExternalRecordDao
 import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.dao.PersonalCollectionDao
 import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
 import com.vaultbrain.core.database.dao.VaultItemDao
 import com.vaultbrain.core.database.entity.AuditLogEntity
 import com.vaultbrain.core.database.entity.BrainMessageEntity
+import com.vaultbrain.core.database.entity.ExternalConnectionEntity
+import com.vaultbrain.core.database.entity.ExternalRecordEntity
 import com.vaultbrain.core.database.entity.NotificationQueueEntity
 import com.vaultbrain.core.database.entity.PersonalCollectionEntity
 import com.vaultbrain.core.database.entity.PersonalCollectionMembershipEntity
@@ -42,9 +46,11 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         BrainMessageEntity::class,
         PersonalCollectionEntity::class,
         PersonalCollectionMembershipEntity::class,
-        PersonalCollectionSuggestionEntity::class
+        PersonalCollectionSuggestionEntity::class,
+        ExternalRecordEntity::class,
+        ExternalConnectionEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -61,6 +67,10 @@ abstract class VaultDatabase : RoomDatabase() {
     abstract fun personalCollectionDao(): PersonalCollectionDao
 
     abstract fun personalCollectionSuggestionDao(): PersonalCollectionSuggestionDao
+
+    abstract fun externalRecordDao(): ExternalRecordDao
+
+    abstract fun externalConnectionDao(): ExternalConnectionDao
 
     companion object {
         private const val DATABASE_NAME = "vaultbrain.db"

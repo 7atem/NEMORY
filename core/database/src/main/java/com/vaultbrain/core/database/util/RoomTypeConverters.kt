@@ -6,6 +6,12 @@ import com.vaultbrain.core.common.model.EnrichmentState
 import com.vaultbrain.core.common.model.ProcessingState
 import com.vaultbrain.core.common.model.SourceType
 import com.vaultbrain.core.common.model.Tier
+import com.vaultbrain.core.common.model.external.ConnectionState
+import com.vaultbrain.core.common.model.external.ConnectorCapability
+import com.vaultbrain.core.common.model.external.ExternalRecordType
+import com.vaultbrain.core.common.model.external.ExternalRetention
+import com.vaultbrain.core.common.model.external.ExternalSource
+import com.vaultbrain.core.common.model.external.SensitivityLevel
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -50,6 +56,48 @@ class RoomTypeConverters {
     @TypeConverter
     fun stringToTier(value: String?): Tier? =
         value?.let { enumValueOf<Tier>(it) }
+
+    @TypeConverter
+    fun externalSourceToString(value: ExternalSource?): String? = value?.name
+
+    @TypeConverter
+    fun stringToExternalSource(value: String?): ExternalSource? =
+        value?.let { enumValueOf<ExternalSource>(it) }
+
+    @TypeConverter
+    fun externalRecordTypeToString(value: ExternalRecordType?): String? = value?.name
+
+    @TypeConverter
+    fun stringToExternalRecordType(value: String?): ExternalRecordType? =
+        value?.let { enumValueOf<ExternalRecordType>(it) }
+
+    @TypeConverter
+    fun sensitivityLevelToString(value: SensitivityLevel?): String? = value?.name
+
+    @TypeConverter
+    fun stringToSensitivityLevel(value: String?): SensitivityLevel? =
+        value?.let { enumValueOf<SensitivityLevel>(it) }
+
+    @TypeConverter
+    fun externalRetentionToString(value: ExternalRetention?): String? = value?.name
+
+    @TypeConverter
+    fun stringToExternalRetention(value: String?): ExternalRetention? =
+        value?.let { enumValueOf<ExternalRetention>(it) }
+
+    @TypeConverter
+    fun connectorCapabilityToString(value: ConnectorCapability?): String? = value?.name
+
+    @TypeConverter
+    fun stringToConnectorCapability(value: String?): ConnectorCapability? =
+        value?.let { enumValueOf<ConnectorCapability>(it) }
+
+    @TypeConverter
+    fun connectionStateToString(value: ConnectionState?): String? = value?.name
+
+    @TypeConverter
+    fun stringToConnectionState(value: String?): ConnectionState? =
+        value?.let { enumValueOf<ConnectionState>(it) }
 
     @TypeConverter
     fun stringMapToJson(value: Map<String, String>?): String? =

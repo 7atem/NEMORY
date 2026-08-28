@@ -154,7 +154,15 @@ fun VaultBrainNavGraph(
                 }
             }
             composable(Screen.Settings.route) {
-                com.vaultbrain.feature.settings.SettingsScreen(onBack = { navController.popBackStack() })
+                com.vaultbrain.feature.settings.SettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onConnectionsClick = { navController.navigate(Screen.Connections.route) }
+                )
+            }
+            composable(Screen.Connections.route) {
+                com.vaultbrain.feature.settings.ConnectionsScreen(
+                    onBack = { navController.popBackStack() }
+                )
             }
             composable(Screen.Review.route) {
                 com.vaultbrain.feature.vault.review.ReviewInboxScreen(
@@ -413,6 +421,7 @@ sealed class Screen(val route: String) {
     data object Capture : Screen("capture")
     data object Brain : Screen("brain")
     data object Settings : Screen("settings")
+    data object Connections : Screen("connections")
     data object Review : Screen("review")
     data object Collections : Screen("collections")
 }

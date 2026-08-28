@@ -61,4 +61,8 @@
     <string name="settings_remove_ads_play_note">يأتي السعر وحالة الشراء مباشرة من Google Play.</string>
     <string name="settings_remove_ads_unavailable">تعذر على Google Play تحميل عملية الشراء. تحقق من اتصالك وحاول مجددًا.</string>
     <string name="settings_remove_ads_already_owned">جارٍ استعادة عملية الشراء الحالية.</string>
+    <string name="settings_connections">الارتباطات</string>
+    <string name="settings_connections_body">أدر التقويمات والمهام وGmail والمصادر الأخرى التي يمكن أن تضيف سياقًا لخزنتك.</string>
+    <string name="settings_connections_empty">لا توجد حسابات مرتبطة بعد.</string>
+    <string name="settings_connections_manage">إدارة الارتباطات</string>
 </resources>

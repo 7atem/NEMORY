@@ -34,6 +34,7 @@ rootProject.name = "Nemory"
 include(":app")
 include(":core:common")
 include(":core:database")
+include(":core:integrations")
 include(":core:vectorstore")
 include(":core:security")
 include(":core:notifications")

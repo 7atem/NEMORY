@@ -39,6 +39,7 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:security"))
     implementation(project(":core:database"))
+    implementation(project(":core:integrations"))
     implementation(project(":core:ai:heuristics"))
     implementation(project(":core:ai:llm"))
     implementation(project(":core:billing"))

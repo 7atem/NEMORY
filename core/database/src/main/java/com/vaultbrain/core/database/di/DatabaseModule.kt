@@ -4,6 +4,8 @@ import android.content.Context
 import com.vaultbrain.core.database.VaultDatabase
 import com.vaultbrain.core.database.dao.AuditLogDao
 import com.vaultbrain.core.database.dao.BrainMessageDao
+import com.vaultbrain.core.database.dao.ExternalConnectionDao
+import com.vaultbrain.core.database.dao.ExternalRecordDao
 import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.dao.PersonalCollectionDao
 import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
@@ -59,4 +61,14 @@ object DatabaseModule {
     @Singleton
     fun providePersonalCollectionSuggestionDao(database: VaultDatabase): PersonalCollectionSuggestionDao =
         database.personalCollectionSuggestionDao()
+
+    @Provides
+    @Singleton
+    fun provideExternalRecordDao(database: VaultDatabase): ExternalRecordDao =
+        database.externalRecordDao()
+
+    @Provides
+    @Singleton
+    fun provideExternalConnectionDao(database: VaultDatabase): ExternalConnectionDao =
+        database.externalConnectionDao()
 }

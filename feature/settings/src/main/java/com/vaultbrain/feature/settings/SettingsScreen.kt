@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Sync
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -71,6 +72,7 @@ import androidx.compose.ui.res.stringResource
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    onConnectionsClick: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -187,6 +189,8 @@ fun SettingsScreen(
                 onDriveToggle = viewModel::setDriveBackupEnabled,
                 onGmailToggle = viewModel::setGmailIntegrationEnabled
             )
+
+            ConnectionsSection(onManageClick = onConnectionsClick)
         }
     }
 }
@@ -593,6 +597,26 @@ private fun DataManagementSection(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+private fun ConnectionsSection(onManageClick: () -> Unit) {
+    SettingsCard(
+        title = stringResource(R.string.settings_connections),
+        icon = Icons.Default.Sync
+    ) {
+        Text(
+            stringResource(R.string.settings_connections_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        TextButton(
+            onClick = onManageClick,
+            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+        ) {
+            Text(stringResource(R.string.settings_connections_manage))
+        }
     }
 }
 

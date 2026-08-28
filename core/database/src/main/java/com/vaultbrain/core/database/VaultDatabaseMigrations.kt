@@ -119,6 +119,78 @@ object VaultDatabaseMigrations {
         }
     }
 
+    val MIGRATION_12_13: Migration = object : Migration(12, 13) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `external_records` " +
+                    "(`connector_id` TEXT NOT NULL, " +
+                    "`account_id` TEXT NOT NULL, " +
+                    "`external_id` TEXT NOT NULL, " +
+                    "`source` TEXT NOT NULL, " +
+                    "`record_type` TEXT NOT NULL, " +
+                    "`retention` TEXT NOT NULL, " +
+                    "`title` TEXT, " +
+                    "`description` TEXT, " +
+                    "`start_at` INTEGER, " +
+                    "`end_at` INTEGER, " +
+                    "`due_at` INTEGER, " +
+                    "`sensitivity` TEXT NOT NULL, " +
+                    "`payload` TEXT, " +
+                    "`deep_link_uri` TEXT, " +
+                    "`hash` TEXT, " +
+                    "`created_at` INTEGER NOT NULL, " +
+                    "`updated_at` INTEGER NOT NULL, " +
+                    "`expires_at` INTEGER, " +
+                    "`seen_at` INTEGER, " +
+                    "`is_resolved` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`connector_id`, `account_id`, `external_id`))"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_external_records_source` ON `external_records` (`source`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_external_records_record_type` ON `external_records` (`record_type`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_external_records_connector_id` ON `external_records` (`connector_id`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_external_records_start_at` ON `external_records` (`start_at`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_external_records_due_at` ON `external_records` (`due_at`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_external_records_expires_at` ON `external_records` (`expires_at`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_external_records_created_at` ON `external_records` (`created_at`)"
+            )
+
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `external_connections` " +
+                    "(`connector_id` TEXT NOT NULL, " +
+                    "`account_id` TEXT NOT NULL, " +
+                    "`state` TEXT NOT NULL, " +
+                    "`account_name` TEXT, " +
+                    "`account_icon_uri` TEXT, " +
+                    "`capabilities` TEXT, " +
+                    "`metadata_json` TEXT, " +
+                    "`last_sync_at` INTEGER, " +
+                    "`last_error` TEXT, " +
+                    "`created_at` INTEGER NOT NULL, " +
+                    "`updated_at` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`connector_id`, `account_id`))"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_external_connections_state` ON `external_connections` (`state`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_external_connections_updated_at` ON `external_connections` (`updated_at`)"
+            )
+        }
+    }
+
     val MIGRATION_11_12: Migration = object : Migration(11, 12) {
         override fun migrate(db: SupportSQLiteDatabase) {
             // Clean up orphan memberships written while FK enforcement was off.
@@ -174,6 +246,7 @@ object VaultDatabaseMigrations {
         MIGRATION_8_9,
         MIGRATION_9_10,
         MIGRATION_10_11,
-        MIGRATION_11_12
+        MIGRATION_11_12,
+        MIGRATION_12_13
     )
 }

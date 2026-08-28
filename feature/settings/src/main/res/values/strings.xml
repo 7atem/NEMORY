@@ -61,4 +61,8 @@
     <string name="settings_remove_ads_play_note">Price and purchase status come directly from Google Play.</string>
     <string name="settings_remove_ads_unavailable">Google Play could not load this purchase. Check your connection and try again.</string>
     <string name="settings_remove_ads_already_owned">Your existing purchase is being restored.</string>
+    <string name="settings_connections">Connections</string>
+    <string name="settings_connections_body">Manage calendars, tasks, Gmail, and other sources that can add context to your vault.</string>
+    <string name="settings_connections_empty">No connected accounts yet.</string>
+    <string name="settings_connections_manage">Manage connections</string>
 </resources>
