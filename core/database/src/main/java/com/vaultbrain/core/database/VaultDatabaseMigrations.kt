@@ -174,7 +174,7 @@ object VaultDatabaseMigrations {
                     "`state` TEXT NOT NULL, " +
                     "`account_name` TEXT, " +
                     "`account_icon_uri` TEXT, " +
-                    "`capabilities` TEXT, " +
+                    "`capabilities` TEXT NOT NULL, " +
                     "`metadata_json` TEXT, " +
                     "`last_sync_at` INTEGER, " +
                     "`last_error` TEXT, " +
