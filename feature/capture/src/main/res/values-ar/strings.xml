@@ -32,6 +32,13 @@
     <string name="feature_capture_pdf_doc">مستند PDF</string>
     <string name="feature_capture_pdf_desc">تم استخراج النص من أول 5 صفحات</string>
     <string name="feature_capture_share_saved">تم الحفظ — سيُحلَّل قريبًا</string>
+    <string name="feature_capture_share_review_title">مراجعة المحتوى المشارك</string>
+    <string name="feature_capture_share_save">حفظ</string>
+    <string name="feature_capture_share_save_without_ai">حفظ بدون ذكاء اصطناعي</string>
+    <string name="feature_capture_share_collection_label">إضافة إلى مجموعة</string>
+    <string name="feature_capture_share_no_collection">بدون مجموعة</string>
+    <string name="feature_capture_share_source">من: %1$s</string>
+    <string name="feature_capture_share_attachments">مرفقات</string>
 
     <!-- New/changed experience strings -->
     <string name="experience_insurance_policy">وثيقة تأمين</string>

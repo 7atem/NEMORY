@@ -74,6 +74,7 @@ class CaptureViewModel @Inject constructor(
     val uiState: StateFlow<CaptureUiState> = _uiState.asStateFlow()
 
     private val batchDrafts = mutableListOf<VaultItem>()
+    private val batchTargetCollectionIds = mutableListOf<String?>()
     private var batchIndex = 0
 
     /**
@@ -85,7 +86,7 @@ class CaptureViewModel @Inject constructor(
             _uiState.value = CaptureUiState.Processing()
             llmUnavailableAtAnalysis = !llmClient.isAvailable()
             try {
-                val items = withContext(Dispatchers.IO) {
+                val (items, targetIds) = withContext(Dispatchers.IO) {
                     val inputs = if (input.initialUris.isNotEmpty()) {
                         input.initialUris.mapIndexed { index, uri ->
                             val ownedUri = mediaVaultStorage.import(uri)
@@ -97,11 +98,13 @@ class CaptureViewModel @Inject constructor(
                     } else {
                         listOf(input)
                     }
-                    inputs.map { analyze(it) }
+                    inputs.map { analyze(it) } to inputs.map { it.targetCollectionId }
                 }
                 check(items.isNotEmpty()) { "No supported input was selected" }
                 batchDrafts.clear()
+                batchTargetCollectionIds.clear()
                 batchDrafts.addAll(items)
+                batchTargetCollectionIds.addAll(targetIds)
                 batchIndex = 0
 
                 // Compute scored suggestions using quickScore with frequency bonus
@@ -222,6 +225,7 @@ class CaptureViewModel @Inject constructor(
      */
     fun discard() {
         batchDrafts.clear()
+        batchTargetCollectionIds.clear()
         batchIndex = 0
         _uiState.value = CaptureUiState.Camera
     }
@@ -244,6 +248,9 @@ class CaptureViewModel @Inject constructor(
             try {
                 withContext(Dispatchers.IO) {
                     repository.save(item)
+                    batchTargetCollectionIds.getOrNull(batchIndex)?.let { collectionId ->
+                        repository.addItemToCollection(item.id, collectionId)
+                    }
                 }
                 // Drain indexing/deferred analysis for the saved item in the background.
                 DeferredAnalysisWorker.enqueue(context)
@@ -282,6 +289,7 @@ class CaptureViewModel @Inject constructor(
                         )
                     } else {
                         batchDrafts.clear()
+        batchTargetCollectionIds.clear()
                         onComplete()
                     }
                 }
@@ -294,6 +302,7 @@ class CaptureViewModel @Inject constructor(
     /** Dismiss post-save suggestions and complete the flow. */
     fun dismissFollowUp(onComplete: () -> Unit) {
         batchDrafts.clear()
+        batchTargetCollectionIds.clear()
         batchIndex = 0
         onComplete()
     }
@@ -301,6 +310,7 @@ class CaptureViewModel @Inject constructor(
     /** Start a new capture for a follow-up suggestion. */
     fun startFollowUpCapture(experienceId: String) {
         batchDrafts.clear()
+        batchTargetCollectionIds.clear()
         batchIndex = 0
         _uiState.value = CaptureUiState.Camera
     }
@@ -392,8 +402,17 @@ class CaptureViewModel @Inject constructor(
                 visionObjects,
                 barcodes,
                 primaryUri?.let(mediaVaultStorage::mimeType)
+            ).let {
+                if (input.provenanceMetadata.isEmpty()) it
+                else it.copy(parsedMetadata = it.parsedMetadata + input.provenanceMetadata)
+            }
+            return if (input.skipLlmEnrichment) item else enrichWithLlm(
+                item,
+                ocrText,
+                visionObjects,
+                barcodes,
+                previewBitmap
             )
-            return enrichWithLlm(item, ocrText, visionObjects, barcodes, previewBitmap)
         } finally {
             pdfPages.forEach(Bitmap::recycle)
             imageBitmap?.recycle()

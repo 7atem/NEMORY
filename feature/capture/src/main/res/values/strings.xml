@@ -33,6 +33,13 @@
     <string name="feature_capture_pdf_doc">PDF document</string>
     <string name="feature_capture_pdf_desc">Text was extracted from the first 5 pages</string>
     <string name="feature_capture_share_saved">Saved — will be analyzed shortly</string>
+    <string name="feature_capture_share_review_title">Review shared content</string>
+    <string name="feature_capture_share_save">Save</string>
+    <string name="feature_capture_share_save_without_ai">Save without AI</string>
+    <string name="feature_capture_share_collection_label">Add to collection</string>
+    <string name="feature_capture_share_no_collection">No collection</string>
+    <string name="feature_capture_share_source">From: %1$s</string>
+    <string name="feature_capture_share_attachments">Attachments</string>
 
     <!-- Experience picker -->
     <string name="feature_capture_experience_picker_title">What is this?</string>

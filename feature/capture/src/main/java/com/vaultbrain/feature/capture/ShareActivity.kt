@@ -1,33 +1,38 @@
 package com.vaultbrain.feature.capture
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
-import androidx.core.content.IntentCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import com.vaultbrain.core.common.model.SourceType
+import com.vaultbrain.feature.capture.share.IncomingShare
+import com.vaultbrain.feature.capture.share.IncomingShareParser
+import com.vaultbrain.feature.capture.share.ShareReviewScreen
+import com.vaultbrain.feature.capture.share.ShareValidationResult
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Entry point for external shares.
  *
- * Handles:
- * - [Intent.ACTION_SEND] / [Intent.ACTION_SEND_MULTIPLE] for image and PDF types
- * - [Intent.ACTION_SEND] for text/plain
- *
- * Incoming URIs/text are routed into the capture/review flow so the user can pick an
- * experience and review the extracted details before saving.
+ * Supports [Intent.ACTION_SEND] / [Intent.ACTION_SEND_MULTIPLE] for the MIME types
+ * registered in the manifest. The share is parsed, validated, and shown on a review
+ * screen before being handed to the existing capture pipeline. This ensures the user
+ * always has a chance to cancel or route the item to a collection before saving.
  */
 @AndroidEntryPoint
 class ShareActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var parser: IncomingShareParser
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,110 +40,73 @@ class ShareActivity : ComponentActivity() {
             android.view.WindowManager.LayoutParams.FLAG_SECURE,
             android.view.WindowManager.LayoutParams.FLAG_SECURE
         )
-        val input = parseIntent(intent)
+
+        val result = runCatching { parser.parse(this, intent) }
+            .map { parser.validate(it) }
+            .getOrElse { ShareValidationResult.Invalid(it.message ?: "Could not parse share") }
 
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    if (input.initialUris.isEmpty() && input.initialText.isNullOrBlank()) {
-                        android.widget.Toast.makeText(
-                            this@ShareActivity,
-                            "Unsupported content type or missing data.",
-                            android.widget.Toast.LENGTH_LONG
-                        ).show()
-                        finish()
-                    } else {
-                        FastShareIngestionScreen(
-                            input = input,
-                            onComplete = { finish() }
-                        )
+                    when (result) {
+                        is ShareValidationResult.Invalid -> {
+                            android.widget.Toast.makeText(
+                                this@ShareActivity,
+                                result.reason,
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                            finish()
+                        }
+
+                        is ShareValidationResult.Valid -> {
+                            ShareRouter(share = result.share)
+                        }
                     }
                 }
             }
         }
     }
-    private fun parseIntent(intent: Intent): CaptureInput {
-        val action = intent.action
-        val type = intent.type ?: ""
 
-        val uris = mutableListOf<Uri>()
-        if (action == Intent.ACTION_SEND) {
-            (intent.getParcelableExtra<android.os.Parcelable>(Intent.EXTRA_STREAM) as? Uri)?.let { uris.add(it) }
-        } else if (action == Intent.ACTION_SEND_MULTIPLE) {
-            intent.getParcelableArrayListExtra<android.os.Parcelable>(Intent.EXTRA_STREAM)?.forEach {
-                if (it is Uri) uris.add(it)
-            }
-        }
-        
-        if (uris.isEmpty()) {
-            uris.addAll(clipDataUris(intent))
-        }
+    @Composable
+    private fun ShareRouter(share: IncomingShare) {
+        var pendingInput by remember { mutableStateOf<CaptureInput?>(null) }
 
-        return when {
-            (action == Intent.ACTION_SEND || action == Intent.ACTION_SEND_MULTIPLE) && uris.isNotEmpty() -> {
-                CaptureInput(
-                    initialUris = uris.toList(),
-                    sourceType = SourceType.APP_SHARE
-                )
-            }
-
-            Intent.ACTION_SEND == action && type == "text/plain" -> {
-                val sharedText = listOfNotNull(
-                    intent.getStringExtra(Intent.EXTRA_SUBJECT)?.takeIf(String::isNotBlank),
-                    intent.getStringExtra(Intent.EXTRA_TEXT)?.takeIf(String::isNotBlank)
-                ).distinct().joinToString("\n")
-                CaptureInput(
-                    initialText = sharedText.takeIf(String::isNotBlank),
-                    sourceType = SourceType.APP_SHARE
-                )
-            }
-
-            else -> CaptureInput()
+        val captureInput = pendingInput
+        if (captureInput != null) {
+            CaptureFlowScreen(
+                initialInput = captureInput,
+                onComplete = { finish() }
+            )
+        } else {
+            ShareReviewScreen(
+                share = share,
+                onCancel = { finish() },
+                onSave = { collectionId, skipLlm ->
+                    pendingInput = share.toCaptureInput(
+                        targetCollectionId = collectionId,
+                        skipLlmEnrichment = skipLlm
+                    )
+                }
+            )
         }
     }
 
-    private fun clipDataUris(intent: Intent): List<Uri> {
-        val clipData = intent.clipData ?: return emptyList()
-        return (0 until clipData.itemCount).mapNotNull { clipData.getItemAt(it).uri }
+    private fun IncomingShare.toCaptureInput(
+        targetCollectionId: String?,
+        skipLlmEnrichment: Boolean
+    ): CaptureInput = CaptureInput(
+        initialUris = uris,
+        initialText = text?.takeIf { it.isNotBlank() },
+        sourceType = SourceType.APP_SHARE,
+        provenanceMetadata = buildProvenance(),
+        skipLlmEnrichment = skipLlmEnrichment,
+        targetCollectionId = targetCollectionId
+    )
+
+    private fun IncomingShare.buildProvenance(): Map<String, String> = buildMap {
+        put("share_source", "ANDROID_SHARE")
+        sourcePackage?.let { put("share_source_package", it) }
+        url?.let { put("share_url", it) }
+        put("share_received_at", receivedAt.toString())
     }
-}
-
-@Composable
-private fun FastShareIngestionScreen(
-    input: CaptureInput,
-    onComplete: () -> Unit,
-    viewModel: ShareIngestionViewModel = androidx.hilt.navigation.compose.hiltViewModel()
-) {
-    val state by viewModel.state.collectAsState()
-    val context = androidx.compose.ui.platform.LocalContext.current
-
-    androidx.compose.runtime.LaunchedEffect(input) {
-        viewModel.ingest(input)
-    }
-
-    androidx.compose.runtime.LaunchedEffect(state) {
-        when (state) {
-            is ShareIngestionState.Saved -> {
-                android.widget.Toast.makeText(
-                    context,
-                    context.getString(R.string.feature_capture_share_saved),
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
-                onComplete()
-            }
-            is ShareIngestionState.Error -> {
-                android.widget.Toast.makeText(context, (state as ShareIngestionState.Error).message, android.widget.Toast.LENGTH_LONG).show()
-                onComplete()
-            }
-            else -> {}
-        }
-    }
-
-    androidx.compose.foundation.layout.Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = androidx.compose.ui.Alignment.Center
-    ) {
-        androidx.compose.material3.CircularProgressIndicator()
-    }
-
 }
