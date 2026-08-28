@@ -172,6 +172,12 @@ open class VaultRepository @Inject constructor(
         }
     }
 
+    /** Existing collection ids including archived. Empty in decoy mode. */
+    suspend fun getAllCollectionIds(): List<String> {
+        if (DecoySessionState.isDecoy.value) return emptyList()
+        return personalCollectionDao.getAllCollectionIds()
+    }
+
     /** One-shot member items for collection semantic text / RAG context. */
     suspend fun getItemsForCollection(collectionId: String): List<VaultItem> {
         if (DecoySessionState.isDecoy.value) return emptyList()
@@ -467,6 +473,8 @@ open class VaultRepository @Inject constructor(
         collectionId: String? = null
     ): List<String> {
         if (itemIds.isEmpty()) return emptyList()
+        val membershipCollectionId =
+            if (DecoySessionState.isDecoy.value) null else collectionId
 
         val bindArgs = mutableListOf<Any>()
         val inPlaceholders = itemIds.joinToString(",") { "?" }
@@ -478,7 +486,7 @@ open class VaultRepository @Inject constructor(
             conditions += "lens_tags LIKE ?"
             bindArgs += "%$it%"
         }
-        collectionId?.let {
+        membershipCollectionId?.let {
             conditions += "EXISTS (SELECT 1 FROM personal_collection_memberships m WHERE m.item_id = vault_items.id AND m.collection_id = ?)"
             bindArgs += it
         }
@@ -550,6 +558,7 @@ open class VaultRepository @Inject constructor(
         itemId = row.itemId,
         collectionId = row.collectionId,
         collectionName = row.collectionName,
+        itemTitle = row.itemTitle,
         confidence = row.confidence,
         status = row.status,
         createdAt = row.createdAt,

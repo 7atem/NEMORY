@@ -22,6 +22,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.flow.toList
 import io.mockk.verify
+import org.junit.Before
 import org.junit.Test
 
 class RagEngineTest {
@@ -31,6 +32,11 @@ class RagEngineTest {
     private val vaultRepository = mockk<VaultRepository>()
     private val llmClient = mockk<LlmClient>()
     private val hybridAiCoordinator = mockk<HybridAiCoordinator>()
+
+    @Before
+    fun setUp() {
+        coEvery { vaultRepository.getActiveCollections() } returns emptyList()
+    }
 
     private val engine = RagEngine(
         textEmbeddingModel = textEmbeddingModel,

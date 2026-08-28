@@ -37,7 +37,8 @@ data class ItemDetailUiState(
     val translationTargetLanguage: String? = null,
     val translationMessage: TranslationMessage? = null,
     val activeCollections: List<PersonalCollection> = emptyList(),
-    val itemCollections: List<PersonalCollection> = emptyList()
+    val itemCollections: List<PersonalCollection> = emptyList(),
+    val suggestedCollections: List<com.vaultbrain.core.common.model.PersonalCollectionSuggestion> = emptyList()
 )
 
 enum class TranslationMessage {
@@ -76,14 +77,17 @@ class ItemDetailViewModel @Inject constructor(
                 collectionsJob = viewModelScope.launch {
                     combine(
                         repository.observeActiveCollections(),
-                        repository.observeCollectionsForItem(itemId)
-                    ) { active, memberships -> active to memberships }
-                        .collect { (active, memberships) ->
-                            _uiState.value = _uiState.value.copy(
-                                activeCollections = active,
-                                itemCollections = memberships
-                            )
-                        }
+                        repository.observeCollectionsForItem(itemId),
+                        repository.observeSuggestionsForItem(itemId)
+                    ) { active, memberships, suggestions -> 
+                        Triple(active, memberships, suggestions)
+                    }.collect { (active, memberships, suggestions) ->
+                        _uiState.value = _uiState.value.copy(
+                            activeCollections = active,
+                            itemCollections = memberships,
+                            suggestedCollections = suggestions
+                        )
+                    }
                 }
             }
         }
@@ -97,6 +101,20 @@ class ItemDetailViewModel @Inject constructor(
             } else {
                 repository.removeItemFromCollection(itemId, collectionId)
             }
+        }
+    }
+
+    fun acceptSuggestion(collectionId: String) {
+        val itemId = _uiState.value.item?.id ?: return
+        viewModelScope.launch {
+            repository.acceptSuggestion(itemId, collectionId)
+        }
+    }
+
+    fun rejectSuggestion(collectionId: String) {
+        val itemId = _uiState.value.item?.id ?: return
+        viewModelScope.launch {
+            repository.rejectSuggestion(itemId, collectionId)
         }
     }
 

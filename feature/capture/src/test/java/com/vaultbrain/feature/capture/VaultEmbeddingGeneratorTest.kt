@@ -7,8 +7,10 @@ import com.vaultbrain.core.ai.embeddings.VisionEmbeddingModel
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.vectorstore.VectorStore
 import com.vaultbrain.core.vectorstore.entity.VaultEmbedding
+import com.vaultbrain.feature.capture.collections.CollectionSuggestionMatcher
 import io.mockk.Runs
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -25,13 +27,15 @@ class VaultEmbeddingGeneratorTest {
     private val visionEmbeddingModel = mockk<VisionEmbeddingModel>()
     private val vectorStore = mockk<VectorStore>()
     private val mediaVaultStorage = mockk<MediaVaultStorage>()
+    private val collectionSuggestionMatcher = mockk<CollectionSuggestionMatcher>(relaxed = true)
 
     private val generator = VaultEmbeddingGenerator(
         context = context,
         textEmbeddingModel = textEmbeddingModel,
         visionEmbeddingModel = visionEmbeddingModel,
         vectorStore = vectorStore,
-        mediaVaultStorage = mediaVaultStorage
+        mediaVaultStorage = mediaVaultStorage,
+        collectionSuggestionMatcher = collectionSuggestionMatcher
     )
 
     @Test
@@ -57,6 +61,19 @@ class VaultEmbeddingGeneratorTest {
         assertThat(stored.captured.mapNotNull { it.embedding?.size }.distinct()).containsExactly(100)
         // No image uri and vision model disabled: no image embedding.
         assertThat(stored.captured.map { it.contentType }).doesNotContain("image")
+    }
+
+    @Test
+    fun `indexItem runs collection suggestion matcher after storing embeddings`() = runTest {
+        every { textEmbeddingModel.isAvailable() } returns true
+        coEvery { textEmbeddingModel.encode(any()) } returns FloatArray(100) { 0.1f }
+        every { visionEmbeddingModel.isAvailable() } returns false
+        every { vectorStore.putEmbeddingsForItem(any(), any()) } just Runs
+
+        val item = VaultItem(id = "item-1", title = "Receipt", rawOcrText = "Total 10")
+        generator.indexItem(item)
+
+        coVerify { collectionSuggestionMatcher.match(item) }
     }
 
     @Test

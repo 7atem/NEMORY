@@ -11,6 +11,7 @@ data class PersonalCollectionSuggestion(
     val itemId: String,
     val collectionId: String,
     val collectionName: String = "",
+    val itemTitle: String = "",
     val confidence: Float,
     val status: CollectionSuggestionStatus = CollectionSuggestionStatus.SUGGESTED,
     val createdAt: Long,

@@ -240,4 +240,7 @@
     <string name="detail_add_to_collection">إضافة إلى مجموعة</string>
     <string name="detail_no_collections">هذا العنصر غير موجود في أي مجموعة بعد.</string>
     <string name="detail_manage_collections">إدارة المجموعات</string>
+    <string name="suggested_collections">المجموعات المقترحة</string>
+    <string name="add_suggestion">إضافة</string>
+    <string name="reject_suggestion">ليس هذا</string>
 </resources>

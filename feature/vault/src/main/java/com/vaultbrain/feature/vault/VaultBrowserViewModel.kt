@@ -73,7 +73,12 @@ class VaultBrowserViewModel @Inject constructor(
         val itemsFlow = when {
             collectionId != null -> repository.observeItemsForCollection(collectionId)
             intent != null || query.isBlank() -> repository.observeActive()
-            else -> repository.observeSearch(query)
+            else -> kotlinx.coroutines.flow.combine(
+                repository.observeSearch(query),
+                repository.observeItemsInCollectionsNamed(query)
+            ) { searchItems, collectionItems ->
+                (searchItems + collectionItems).distinctBy { it.id }
+            }
         }
 
         combine(

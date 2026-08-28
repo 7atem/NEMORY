@@ -35,6 +35,7 @@ class ItemDetailViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
+        every { repository.observeSuggestionsForItem(any()) } returns flowOf(emptyList())
     }
 
     @After

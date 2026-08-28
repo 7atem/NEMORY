@@ -100,6 +100,7 @@ import com.vaultbrain.core.common.model.LensId
 import com.vaultbrain.core.common.model.SourceType
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.common.model.PersonalCollection
+import com.vaultbrain.core.common.model.PersonalCollectionSuggestion
 import com.vaultbrain.core.common.model.ItemProcessingStatus
 import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.feature.vault.components.DynamicActionRow
@@ -132,6 +133,8 @@ fun ItemDetailScreen(
         onOpenCollection = onOpenCollection,
         onManageCollections = onManageCollections,
         onCollectionToggle = viewModel::setCollectionMembership,
+        onAcceptSuggestion = viewModel::acceptSuggestion,
+        onRejectSuggestion = viewModel::rejectSuggestion,
         onUpdate = viewModel::updateItem,
         onTranslate = viewModel::translate,
         onConfirmCloudTranslation = { rememberForCategory ->
@@ -237,6 +240,8 @@ internal fun ItemDetailContent(
     onOpenCollection: (String) -> Unit,
     onManageCollections: () -> Unit,
     onCollectionToggle: (String, Boolean) -> Unit,
+    onAcceptSuggestion: (String) -> Unit,
+    onRejectSuggestion: (String) -> Unit,
     onUpdate: (VaultItem) -> Unit,
     onTranslate: (String) -> Unit,
     onConfirmCloudTranslation: (Boolean) -> Unit,
@@ -418,6 +423,14 @@ internal fun ItemDetailContent(
                         onOpenCollection = onOpenCollection,
                         onAdd = { showCollectionPicker = true }
                     )
+
+                    if (state.suggestedCollections.isNotEmpty()) {
+                        SuggestedCollectionsCard(
+                            suggestions = state.suggestedCollections,
+                            onAccept = onAcceptSuggestion,
+                            onReject = onRejectSuggestion
+                        )
+                    }
 
                     item.customFields["ai_highlights"]
                         ?.takeIf(String::isNotBlank)
@@ -843,6 +856,46 @@ private fun PersonalCollectionsCard(
             TextButton(onClick = onAdd) {
                 Icon(Icons.Default.Add, contentDescription = null)
                 Text(stringResource(R.string.detail_add_to_collection))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SuggestedCollectionsCard(
+    suggestions: List<PersonalCollectionSuggestion>,
+    onAccept: (String) -> Unit,
+    onReject: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(stringResource(R.string.suggested_collections), style = MaterialTheme.typography.titleSmall)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                suggestions.forEach { suggestion ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = suggestion.collectionName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(onClick = { onAccept(suggestion.collectionId) }) {
+                            Text(stringResource(R.string.add_suggestion))
+                        }
+                        TextButton(onClick = { onReject(suggestion.collectionId) }) {
+                            Text(stringResource(R.string.reject_suggestion))
+                        }
+                    }
+                }
             }
         }
     }
@@ -1283,6 +1336,8 @@ private fun ItemDetailContentPreview() {
             onOpenCollection = {},
             onManageCollections = {},
             onCollectionToggle = { _, _ -> },
+            onAcceptSuggestion = {},
+            onRejectSuggestion = {},
             onUpdate = { _ -> },
             onTranslate = {},
             onConfirmCloudTranslation = { _ -> },

@@ -231,4 +231,7 @@
     <string name="detail_add_to_collection">Add to collection</string>
     <string name="detail_no_collections">This item is not in a collection yet.</string>
     <string name="detail_manage_collections">Manage collections</string>
+    <string name="suggested_collections">Suggested collections</string>
+    <string name="add_suggestion">Add</string>
+    <string name="reject_suggestion">Not this</string>
 </resources>

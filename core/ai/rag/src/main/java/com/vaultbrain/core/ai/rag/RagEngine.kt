@@ -54,11 +54,29 @@ class RagEngine @Inject constructor(
         }
 
         val queryVector = textEmbeddingModel.encode(query)
+        
+        val activeCollections = vaultRepository.getActiveCollections()
+        val matchedCollections = activeCollections.filter { query.contains(it.name, ignoreCase = true) }
+        val collectionMembers = matchedCollections.flatMap { vaultRepository.getItemsForCollection(it.id) }
+            .distinctBy { it.id }
 
-        val candidates = vectorStore.nearestNeighbors(
+        val vectorCandidates = vectorStore.nearestNeighbors(
             queryVector = queryVector,
             topK = TOP_K_VECTOR_SEARCH
         )
+
+        // Inject collection members as candidates even if vector search missed them
+        val syntheticCandidates = collectionMembers.map { item ->
+            VaultEmbedding(
+                itemId = item.id,
+                embedding = queryVector, // artificial perfect vector score
+                contentType = "collection_boost",
+                chunkIndex = 0,
+                createdAt = System.currentTimeMillis()
+            )
+        }.filter { synth -> vectorCandidates.none { it.itemId == synth.itemId } }
+
+        val candidates = vectorCandidates + syntheticCandidates
 
         if (candidates.isEmpty()) {
             return RagResponse(answer = null, sources = emptyList(), confidence = 0f)
@@ -181,7 +199,25 @@ class RagEngine @Inject constructor(
         }
 
         val queryVector = textEmbeddingModel.encode(query)
-        val candidates = vectorStore.nearestNeighbors(queryVector, TOP_K_VECTOR_SEARCH)
+        
+        val activeCollections = vaultRepository.getActiveCollections()
+        val matchedCollections = activeCollections.filter { query.contains(it.name, ignoreCase = true) }
+        val collectionMembers = matchedCollections.flatMap { vaultRepository.getItemsForCollection(it.id) }
+            .distinctBy { it.id }
+
+        val vectorCandidates = vectorStore.nearestNeighbors(queryVector, TOP_K_VECTOR_SEARCH)
+
+        val syntheticCandidates = collectionMembers.map { item ->
+            VaultEmbedding(
+                itemId = item.id,
+                embedding = queryVector,
+                contentType = "collection_boost",
+                chunkIndex = 0,
+                createdAt = System.currentTimeMillis()
+            )
+        }.filter { synth -> vectorCandidates.none { it.itemId == synth.itemId } }
+
+        val candidates = vectorCandidates + syntheticCandidates
 
         if (candidates.isEmpty()) {
             emit(RagResponse(answer = null, sources = emptyList(), confidence = 0f))

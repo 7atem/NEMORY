@@ -16,6 +16,7 @@ data class SuggestionWithNameRow(
     @ColumnInfo(name = "collection_id") val collectionId: String,
     @ColumnInfo(name = "item_id") val itemId: String,
     @ColumnInfo(name = "collection_name") val collectionName: String,
+    @ColumnInfo(name = "item_title") val itemTitle: String,
     @ColumnInfo(name = "confidence") val confidence: Float,
     @ColumnInfo(name = "status") val status: CollectionSuggestionStatus,
     @ColumnInfo(name = "created_at") val createdAt: Long,
@@ -60,16 +61,17 @@ interface PersonalCollectionSuggestionDao {
     suspend fun get(collectionId: String, itemId: String): PersonalCollectionSuggestionEntity?
 
     @Query("""
-        SELECT s.*, c.name AS collection_name
+        SELECT s.*, c.name AS collection_name, v.title AS item_title
         FROM personal_collection_suggestions s
         INNER JOIN personal_collections c ON c.id = s.collection_id
+        INNER JOIN vault_items v ON v.id = s.item_id
         WHERE s.item_id = :itemId AND s.status = 'SUGGESTED' AND c.archived_at IS NULL
         ORDER BY s.confidence DESC, c.name COLLATE NOCASE ASC
     """)
     fun observePendingForItem(itemId: String): Flow<List<SuggestionWithNameRow>>
 
     @Query("""
-        SELECT s.*, c.name AS collection_name
+        SELECT s.*, c.name AS collection_name, v.title AS item_title
         FROM personal_collection_suggestions s
         INNER JOIN personal_collections c ON c.id = s.collection_id
         INNER JOIN vault_items v ON v.id = s.item_id

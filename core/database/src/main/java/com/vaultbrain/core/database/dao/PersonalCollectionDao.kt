@@ -63,6 +63,10 @@ interface PersonalCollectionDao {
     @Query("SELECT * FROM personal_collections WHERE archived_at IS NULL")
     suspend fun getActiveEntities(): List<PersonalCollectionEntity>
 
+    /** All collection ids, including archived — used to reconcile ObjectBox embeddings. */
+    @Query("SELECT id FROM personal_collections")
+    suspend fun getAllCollectionIds(): List<String>
+
     /** One-shot member items of a collection (semantic representation / RAG context). */
     @Query("""
         SELECT v.* FROM vault_items v

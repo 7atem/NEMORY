@@ -38,7 +38,8 @@ class VaultEmbeddingGenerator @Inject constructor(
     private val textEmbeddingModel: TextEmbeddingModel,
     private val visionEmbeddingModel: VisionEmbeddingModel,
     private val vectorStore: VectorStore,
-    private val mediaVaultStorage: MediaVaultStorage
+    private val mediaVaultStorage: MediaVaultStorage,
+    private val collectionSuggestionMatcher: com.vaultbrain.feature.capture.collections.CollectionSuggestionMatcher
 ) {
 
     /** Generates and stores embeddings for [item]. Items with no embeddable content are cleared. */
@@ -90,6 +91,9 @@ class VaultEmbeddingGenerator @Inject constructor(
         } else {
             vectorStore.putEmbeddingsForItem(item.id, embeddings)
         }
+
+        // Run collection semantic matching
+        collectionSuggestionMatcher.match(item)
     }
 
     private fun summaryTextOf(item: VaultItem): String = buildString {
