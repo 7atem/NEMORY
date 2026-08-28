@@ -299,7 +299,7 @@ interface VaultItemDao {
      */
     @Query("""
         SELECT vault_items.* FROM vault_items 
-        INNER JOIN vault_items_fts ON vault_items.id = vault_items_fts.rowid 
+        INNER JOIN vault_items_fts ON vault_items.rowid = vault_items_fts.docid 
         WHERE vault_items_fts MATCH :query 
         ORDER BY vault_items.created_at DESC
     """)
@@ -307,7 +307,7 @@ interface VaultItemDao {
 
     @Query("""
         SELECT vault_items.* FROM vault_items 
-        INNER JOIN vault_items_fts ON vault_items.id = vault_items_fts.rowid 
+        INNER JOIN vault_items_fts ON vault_items.rowid = vault_items_fts.docid 
         WHERE vault_items_fts MATCH :query 
         ORDER BY vault_items.created_at DESC
     """)

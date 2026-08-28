@@ -4,6 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.database.dao.AuditLogDao
 import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.dao.PersonalCollectionDao
+import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
 import com.vaultbrain.core.database.dao.VaultItemDao
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -17,7 +18,8 @@ class VaultRepositoryDuplicateTest {
         vaultItemDao = itemDao,
         auditLogDao = mockk<AuditLogDao>(),
         notificationQueueDao = mockk<NotificationQueueDao>(),
-        personalCollectionDao = mockk<PersonalCollectionDao>()
+        personalCollectionDao = mockk<PersonalCollectionDao>(),
+        personalCollectionSuggestionDao = mockk<PersonalCollectionSuggestionDao>(relaxed = true)
     )
 
     @Test

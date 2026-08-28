@@ -22,5 +22,7 @@ out.txt
 models/
 *.task
 # ObjectBox model files MUST be committed (they hold stable entity/property IDs).
+# but their backup artifacts must not.
+objectbox-models/*.bak
 # Room schemas are intentionally NOT ignored; they should be committed to version control.
 # /schemas/

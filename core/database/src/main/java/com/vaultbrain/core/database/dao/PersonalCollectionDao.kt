@@ -59,6 +59,29 @@ interface PersonalCollectionDao {
     @Query("SELECT * FROM personal_collections WHERE id = :id")
     suspend fun getEntity(id: String): PersonalCollectionEntity?
 
+    /** One-shot list of active (non-archived) collections for the matcher. */
+    @Query("SELECT * FROM personal_collections WHERE archived_at IS NULL")
+    suspend fun getActiveEntities(): List<PersonalCollectionEntity>
+
+    /** One-shot member items of a collection (semantic representation / RAG context). */
+    @Query("""
+        SELECT v.* FROM vault_items v
+        INNER JOIN personal_collection_memberships m ON m.item_id = v.id
+        WHERE m.collection_id = :collectionId AND v.is_archived = 0 AND v.is_stealth = 0
+        ORDER BY v.is_pinned DESC, v.created_at DESC
+    """)
+    suspend fun getItemsOnce(collectionId: String): List<VaultItemEntity>
+
+    /** Items in active collections whose name matches [query] (collection-aware search). */
+    @Query("""
+        SELECT DISTINCT v.* FROM vault_items v
+        INNER JOIN personal_collection_memberships m ON m.item_id = v.id
+        INNER JOIN personal_collections c ON c.id = m.collection_id
+        WHERE c.archived_at IS NULL AND c.name LIKE '%' || :query || '%' COLLATE NOCASE
+            AND v.is_archived = 0 AND v.is_stealth = 0
+    """)
+    fun observeItemsForCollectionNameLike(query: String): Flow<List<VaultItemEntity>>
+
     @Query("SELECT COUNT(*) FROM personal_collection_memberships WHERE collection_id = :collectionId")
     suspend fun countItems(collectionId: String): Int
 

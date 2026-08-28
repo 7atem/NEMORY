@@ -119,6 +119,50 @@ object VaultDatabaseMigrations {
         }
     }
 
+    val MIGRATION_11_12: Migration = object : Migration(11, 12) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // Clean up orphan memberships written while FK enforcement was off.
+            db.execSQL(
+                "DELETE FROM personal_collection_memberships WHERE item_id NOT IN (SELECT id FROM vault_items) OR collection_id NOT IN (SELECT id FROM personal_collections)"
+            )
+
+            // Machine-proposed item<->collection associations (see PersonalCollectionSuggestion).
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `personal_collection_suggestions` (`collection_id` TEXT NOT NULL, `item_id` TEXT NOT NULL, `confidence` REAL NOT NULL, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`collection_id`, `item_id`), FOREIGN KEY(`collection_id`) REFERENCES `personal_collections`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, FOREIGN KEY(`item_id`) REFERENCES `vault_items`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_personal_collection_suggestions_item_id` ON `personal_collection_suggestions` (`item_id`)"
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_personal_collection_suggestions_status` ON `personal_collection_suggestions` (`status`)"
+            )
+
+            // Extend item FTS with semantic enrichment fields. External-content FTS4
+            // tables cannot be altered: drop + recreate + rebuild from vault_items.
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_vault_items_fts_BEFORE_UPDATE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_vault_items_fts_BEFORE_DELETE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_vault_items_fts_AFTER_UPDATE")
+            db.execSQL("DROP TRIGGER IF EXISTS room_fts_content_sync_vault_items_fts_AFTER_INSERT")
+            db.execSQL("DROP TABLE IF EXISTS `vault_items_fts`")
+            db.execSQL(
+                "CREATE VIRTUAL TABLE IF NOT EXISTS `vault_items_fts` USING FTS4(`title` TEXT NOT NULL, `summary` TEXT, `raw_ocr_text` TEXT, `subtype` TEXT, `topics` TEXT, `entities` TEXT, `tags` TEXT, content=`vault_items`)"
+            )
+            db.execSQL("INSERT INTO `vault_items_fts`(`vault_items_fts`) VALUES('rebuild')")
+            db.execSQL(
+                "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_vault_items_fts_BEFORE_UPDATE BEFORE UPDATE ON `vault_items` BEGIN DELETE FROM `vault_items_fts` WHERE `docid`=OLD.`rowid`; END"
+            )
+            db.execSQL(
+                "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_vault_items_fts_BEFORE_DELETE BEFORE DELETE ON `vault_items` BEGIN DELETE FROM `vault_items_fts` WHERE `docid`=OLD.`rowid`; END"
+            )
+            db.execSQL(
+                "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_vault_items_fts_AFTER_UPDATE AFTER UPDATE ON `vault_items` BEGIN INSERT INTO `vault_items_fts`(`docid`, `title`, `summary`, `raw_ocr_text`, `subtype`, `topics`, `entities`, `tags`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`summary`, NEW.`raw_ocr_text`, NEW.`subtype`, NEW.`topics`, NEW.`entities`, NEW.`tags`); END"
+            )
+            db.execSQL(
+                "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_vault_items_fts_AFTER_INSERT AFTER INSERT ON `vault_items` BEGIN INSERT INTO `vault_items_fts`(`docid`, `title`, `summary`, `raw_ocr_text`, `subtype`, `topics`, `entities`, `tags`) VALUES (NEW.`rowid`, NEW.`title`, NEW.`summary`, NEW.`raw_ocr_text`, NEW.`subtype`, NEW.`topics`, NEW.`entities`, NEW.`tags`); END"
+            )
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
@@ -129,6 +173,7 @@ object VaultDatabaseMigrations {
         MIGRATION_7_8,
         MIGRATION_8_9,
         MIGRATION_9_10,
-        MIGRATION_10_11
+        MIGRATION_10_11,
+        MIGRATION_11_12
     )
 }

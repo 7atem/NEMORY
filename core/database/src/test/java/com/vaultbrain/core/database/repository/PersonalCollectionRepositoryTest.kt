@@ -5,6 +5,7 @@ import com.vaultbrain.core.common.model.PersonalCollectionSource
 import com.vaultbrain.core.database.dao.AuditLogDao
 import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.dao.PersonalCollectionDao
+import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
 import com.vaultbrain.core.database.dao.VaultItemDao
 import com.vaultbrain.core.database.entity.PersonalCollectionEntity
 import com.vaultbrain.core.database.entity.PersonalCollectionMembershipEntity
@@ -21,7 +22,8 @@ class PersonalCollectionRepositoryTest {
         vaultItemDao = mockk<VaultItemDao>(),
         auditLogDao = mockk<AuditLogDao>(),
         notificationQueueDao = mockk<NotificationQueueDao>(),
-        personalCollectionDao = collectionDao
+        personalCollectionDao = collectionDao,
+        personalCollectionSuggestionDao = mockk<PersonalCollectionSuggestionDao>(relaxed = true)
     )
 
     @Test

@@ -20,5 +20,18 @@ data class VaultItemFts(
     val summary: String? = null,
 
     @ColumnInfo(name = "raw_ocr_text")
-    val rawOcrText: String? = null
+    val rawOcrText: String? = null,
+
+    // Semantic fields produced by enrichment (JSON arrays tokenize into their terms).
+    @ColumnInfo(name = "subtype")
+    val subtype: String? = null,
+
+    @ColumnInfo(name = "topics")
+    val topics: String? = null,
+
+    @ColumnInfo(name = "entities")
+    val entities: String? = null,
+
+    @ColumnInfo(name = "tags")
+    val tags: String? = null
 )

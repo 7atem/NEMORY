@@ -2,18 +2,23 @@ package com.vaultbrain.core.database.repository
 
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.core.common.model.CollectionSuggestionStatus
 import com.vaultbrain.core.common.model.PersonalCollection
 import com.vaultbrain.core.common.model.PersonalCollectionSource
+import com.vaultbrain.core.common.model.PersonalCollectionSuggestion
 import com.vaultbrain.core.common.model.EnrichmentState
 import com.vaultbrain.core.common.model.ProcessingState
 import com.vaultbrain.core.database.dao.AuditLogDao
 import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.dao.PersonalCollectionDao
 import com.vaultbrain.core.database.dao.PersonalCollectionRow
+import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
+import com.vaultbrain.core.database.dao.SuggestionWithNameRow
 import com.vaultbrain.core.database.dao.VaultItemDao
 import com.vaultbrain.core.database.entity.AuditLogEntity
 import com.vaultbrain.core.database.entity.PersonalCollectionEntity
 import com.vaultbrain.core.database.entity.PersonalCollectionMembershipEntity
+import com.vaultbrain.core.database.entity.PersonalCollectionSuggestionEntity
 import com.vaultbrain.core.database.mapper.VaultItemMapper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -31,7 +36,8 @@ open class VaultRepository @Inject constructor(
     private val vaultItemDao: VaultItemDao,
     private val auditLogDao: AuditLogDao,
     private val notificationQueueDao: NotificationQueueDao,
-    private val personalCollectionDao: PersonalCollectionDao
+    private val personalCollectionDao: PersonalCollectionDao,
+    private val personalCollectionSuggestionDao: PersonalCollectionSuggestionDao
 ) {
 
     fun observeActiveCollections(): Flow<List<PersonalCollection>> =
@@ -127,6 +133,110 @@ open class VaultRepository @Inject constructor(
     suspend fun removeItemFromCollection(itemId: String, collectionId: String): Boolean {
         if (DecoySessionState.isDecoy.value) return false
         return personalCollectionDao.removeMembership(collectionId, itemId) == 1
+    }
+
+    // ---- Collection suggestions (machine-proposed; never user-authoritative) ----
+
+    fun observeSuggestionsForItem(itemId: String): Flow<List<PersonalCollectionSuggestion>> =
+        kotlinx.coroutines.flow.combine(
+            personalCollectionSuggestionDao.observePendingForItem(itemId),
+            DecoySessionState.isDecoy
+        ) { rows, isDecoy -> if (isDecoy) emptyList() else rows.map(::suggestionOf) }
+
+    fun observeSuggestionsForCollection(collectionId: String): Flow<List<PersonalCollectionSuggestion>> =
+        kotlinx.coroutines.flow.combine(
+            personalCollectionSuggestionDao.observePendingForCollection(collectionId),
+            DecoySessionState.isDecoy
+        ) { rows, isDecoy -> if (isDecoy) emptyList() else rows.map(::suggestionOf) }
+
+    /** All suggestion rows (any status) for an item — matcher suppression input. */
+    suspend fun getAllSuggestionsForItem(itemId: String): List<PersonalCollectionSuggestion> {
+        if (DecoySessionState.isDecoy.value) return emptyList()
+        return personalCollectionSuggestionDao.getAllForItem(itemId).map {
+            PersonalCollectionSuggestion(
+                itemId = it.itemId,
+                collectionId = it.collectionId,
+                confidence = it.confidence,
+                status = it.status,
+                createdAt = it.createdAt,
+                updatedAt = it.updatedAt
+            )
+        }
+    }
+
+    /** One-shot active collections for the matcher / RAG context. */
+    suspend fun getActiveCollections(): List<PersonalCollection> {
+        if (DecoySessionState.isDecoy.value) return emptyList()
+        return personalCollectionDao.getActiveEntities().map { entity ->
+            entity.toDomain(personalCollectionDao.countItems(entity.id))
+        }
+    }
+
+    /** One-shot member items for collection semantic text / RAG context. */
+    suspend fun getItemsForCollection(collectionId: String): List<VaultItem> {
+        if (DecoySessionState.isDecoy.value) return emptyList()
+        return personalCollectionDao.getItemsOnce(collectionId).map(VaultItemMapper::toDomain)
+    }
+
+    /** Items in active collections whose name matches [query] (collection-aware search). */
+    fun observeItemsInCollectionsNamed(query: String): Flow<List<VaultItem>> =
+        kotlinx.coroutines.flow.combine(
+            personalCollectionDao.observeItemsForCollectionNameLike(query.trim()),
+            DecoySessionState.isDecoy
+        ) { rows, isDecoy -> if (isDecoy) emptyList() else rows.map(VaultItemMapper::toDomain) }
+
+    /**
+     * Inserts or refreshes a SUGGESTED row. Existing ACCEPTED/REJECTED rows are
+     * untouched (rejection is suppression evidence; acceptance is user-authoritative).
+     */
+    suspend fun upsertSuggestion(itemId: String, collectionId: String, confidence: Float): Boolean {
+        if (DecoySessionState.isDecoy.value) return false
+        val now = System.currentTimeMillis()
+        val existing = personalCollectionSuggestionDao.get(collectionId, itemId)
+        return when {
+            existing == null -> personalCollectionSuggestionDao.insert(
+                PersonalCollectionSuggestionEntity(
+                    collectionId = collectionId,
+                    itemId = itemId,
+                    confidence = confidence,
+                    status = CollectionSuggestionStatus.SUGGESTED,
+                    createdAt = now,
+                    updatedAt = now
+                )
+            ) != -1L
+            existing.status == CollectionSuggestionStatus.SUGGESTED ->
+                personalCollectionSuggestionDao.update(
+                    collectionId, itemId, confidence, CollectionSuggestionStatus.SUGGESTED, now
+                ) == 1
+            else -> false
+        }
+    }
+
+    /** Accepts a suggestion: creates membership + marks ACCEPTED atomically. */
+    suspend fun acceptSuggestion(itemId: String, collectionId: String): Boolean {
+        if (DecoySessionState.isDecoy.value) return false
+        val now = System.currentTimeMillis()
+        val suggestion = personalCollectionSuggestionDao.get(collectionId, itemId) ?: return false
+        personalCollectionSuggestionDao.accept(
+            collectionId = collectionId,
+            itemId = itemId,
+            membership = PersonalCollectionMembershipEntity(
+                collectionId = collectionId,
+                itemId = itemId,
+                createdAt = now
+            ),
+            now = now
+        )
+        return suggestion.status == CollectionSuggestionStatus.SUGGESTED
+    }
+
+    /** Rejects a suggestion; the REJECTED row persists as suppression evidence. */
+    suspend fun rejectSuggestion(itemId: String, collectionId: String): Boolean {
+        if (DecoySessionState.isDecoy.value) return false
+        val now = System.currentTimeMillis()
+        return personalCollectionSuggestionDao.setStatus(
+            collectionId, itemId, CollectionSuggestionStatus.REJECTED, now
+        ) == 1
     }
 
     fun observeAll(): Flow<List<VaultItem>> =
@@ -353,7 +463,8 @@ open class VaultRepository @Inject constructor(
         lensTag: String? = null,
         dateFrom: Long? = null,
         dateTo: Long? = null,
-        hasImage: Boolean? = null
+        hasImage: Boolean? = null,
+        collectionId: String? = null
     ): List<String> {
         if (itemIds.isEmpty()) return emptyList()
 
@@ -366,6 +477,10 @@ open class VaultRepository @Inject constructor(
         lensTag?.let {
             conditions += "lens_tags LIKE ?"
             bindArgs += "%$it%"
+        }
+        collectionId?.let {
+            conditions += "EXISTS (SELECT 1 FROM personal_collection_memberships m WHERE m.item_id = vault_items.id AND m.collection_id = ?)"
+            bindArgs += it
         }
         dateFrom?.let {
             conditions += "created_at >= ?"
@@ -429,6 +544,16 @@ open class VaultRepository @Inject constructor(
         isPinned = row.isPinned,
         source = row.source,
         itemCount = row.itemCount
+    )
+
+    private fun suggestionOf(row: SuggestionWithNameRow) = PersonalCollectionSuggestion(
+        itemId = row.itemId,
+        collectionId = row.collectionId,
+        collectionName = row.collectionName,
+        confidence = row.confidence,
+        status = row.status,
+        createdAt = row.createdAt,
+        updatedAt = row.updatedAt
     )
 
     private fun PersonalCollection.toEntity() = PersonalCollectionEntity(

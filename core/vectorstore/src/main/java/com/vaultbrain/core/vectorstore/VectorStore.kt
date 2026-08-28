@@ -1,6 +1,8 @@
 package com.vaultbrain.core.vectorstore
 
 import android.content.Context
+import com.vaultbrain.core.vectorstore.entity.CollectionEmbedding
+import com.vaultbrain.core.vectorstore.entity.CollectionEmbedding_
 import com.vaultbrain.core.vectorstore.entity.VaultEmbedding
 import io.objectbox.Box
 import io.objectbox.BoxStore
@@ -20,7 +22,7 @@ import com.vaultbrain.core.vectorstore.entity.VaultEmbedding_
 @Singleton
 class VectorStore @Inject constructor(
     private val context: Context
-) {
+) : CollectionVectorStore {
 
     private val boxStore: BoxStore? by lazy {
         runCatching {
@@ -31,6 +33,8 @@ class VectorStore @Inject constructor(
     }
 
     private val embeddingBox: Box<VaultEmbedding>? by lazy { boxStore?.boxFor() }
+
+    private val collectionEmbeddingBox: Box<CollectionEmbedding>? by lazy { boxStore?.boxFor() }
 
     /**
      * Inserts or updates all embeddings for an item. Existing embeddings for the item are
@@ -95,7 +99,7 @@ class VectorStore @Inject constructor(
     /**
      * Computes cosine similarity between two vectors.
      */
-    fun cosineSimilarity(a: FloatArray, b: FloatArray): Float {
+    override fun cosineSimilarity(a: FloatArray, b: FloatArray): Float {
         if (a.size != b.size) return 0f
         var dot = 0.0
         var normA = 0.0
@@ -108,6 +112,49 @@ class VectorStore @Inject constructor(
         return if (normA == 0.0 || normB == 0.0) 0f
         else (dot / (sqrt(normA) * sqrt(normB))).toFloat()
     }
+
+    // ---- Collection embeddings (CollectionVectorStore) ----
+
+    override fun putCollectionEmbedding(embedding: CollectionEmbedding) {
+        runCatching {
+            val store = boxStore ?: return
+            val box = collectionEmbeddingBox ?: return
+            store.runInTx {
+                val existing = box.query(CollectionEmbedding_.collectionId.equal(embedding.collectionId))
+                    .build()
+                    .find()
+                box.remove(existing)
+                box.put(embedding)
+            }
+        }
+    }
+
+    override fun deleteCollectionEmbedding(collectionId: String) {
+        runCatching {
+            val box = collectionEmbeddingBox ?: return
+            val existing = box.query(CollectionEmbedding_.collectionId.equal(collectionId))
+                .build()
+                .find()
+            box.remove(existing)
+        }
+    }
+
+    override fun getCollectionEmbedding(collectionId: String): CollectionEmbedding? = runCatching {
+        val box = collectionEmbeddingBox ?: return null
+        box.query(CollectionEmbedding_.collectionId.equal(collectionId)).build().findFirst()
+    }.getOrNull()
+
+    override fun getAllCollectionEmbeddings(): List<CollectionEmbedding> = runCatching {
+        collectionEmbeddingBox?.all ?: emptyList()
+    }.getOrDefault(emptyList())
+
+    override fun nearestCollectionNeighbors(queryVector: FloatArray, topK: Int): List<CollectionEmbedding> =
+        runCatching {
+            val box = collectionEmbeddingBox ?: return emptyList()
+            box.query(CollectionEmbedding_.embedding.nearestNeighbors(queryVector, topK))
+                .build()
+                .find()
+        }.getOrDefault(emptyList())
 
     /**
      * Number of embeddings currently stored.

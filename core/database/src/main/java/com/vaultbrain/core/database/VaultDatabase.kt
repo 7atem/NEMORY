@@ -10,12 +10,14 @@ import com.vaultbrain.core.database.dao.AuditLogDao
 import com.vaultbrain.core.database.dao.BrainMessageDao
 import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.dao.PersonalCollectionDao
+import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
 import com.vaultbrain.core.database.dao.VaultItemDao
 import com.vaultbrain.core.database.entity.AuditLogEntity
 import com.vaultbrain.core.database.entity.BrainMessageEntity
 import com.vaultbrain.core.database.entity.NotificationQueueEntity
 import com.vaultbrain.core.database.entity.PersonalCollectionEntity
 import com.vaultbrain.core.database.entity.PersonalCollectionMembershipEntity
+import com.vaultbrain.core.database.entity.PersonalCollectionSuggestionEntity
 import com.vaultbrain.core.database.entity.VaultItemEntity
 import com.vaultbrain.core.database.entity.VaultItemFts
 import com.vaultbrain.core.database.util.RoomTypeConverters
@@ -39,9 +41,10 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         NotificationQueueEntity::class,
         BrainMessageEntity::class,
         PersonalCollectionEntity::class,
-        PersonalCollectionMembershipEntity::class
+        PersonalCollectionMembershipEntity::class,
+        PersonalCollectionSuggestionEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -56,6 +59,8 @@ abstract class VaultDatabase : RoomDatabase() {
     abstract fun brainMessageDao(): BrainMessageDao
 
     abstract fun personalCollectionDao(): PersonalCollectionDao
+
+    abstract fun personalCollectionSuggestionDao(): PersonalCollectionSuggestionDao
 
     companion object {
         private const val DATABASE_NAME = "vaultbrain.db"
@@ -74,6 +79,13 @@ abstract class VaultDatabase : RoomDatabase() {
                 .openHelperFactory(factory)
                 .addMigrations(*VaultDatabaseMigrations.ALL)
                 .addCallback(object : Callback() {
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        super.onOpen(db)
+                        // SQLite FK enforcement is per-connection and OFF by default.
+                        // Membership/suggestion cascades rely on it.
+                        db.execSQL("PRAGMA foreign_keys=ON;")
+                    }
+
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         super.onCreate(db)
                         // Room automatically creates FTS triggers for Fts4 contentEntity.

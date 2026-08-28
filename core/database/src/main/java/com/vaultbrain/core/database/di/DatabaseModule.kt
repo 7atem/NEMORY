@@ -6,6 +6,7 @@ import com.vaultbrain.core.database.dao.AuditLogDao
 import com.vaultbrain.core.database.dao.BrainMessageDao
 import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.dao.PersonalCollectionDao
+import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
 import com.vaultbrain.core.database.dao.VaultItemDao
 import com.vaultbrain.core.security.KeystoreManager
 import dagger.Module
@@ -53,4 +54,9 @@ object DatabaseModule {
     @Singleton
     fun providePersonalCollectionDao(database: VaultDatabase): PersonalCollectionDao =
         database.personalCollectionDao()
+
+    @Provides
+    @Singleton
+    fun providePersonalCollectionSuggestionDao(database: VaultDatabase): PersonalCollectionSuggestionDao =
+        database.personalCollectionSuggestionDao()
 }

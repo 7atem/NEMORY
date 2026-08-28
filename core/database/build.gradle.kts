@@ -16,6 +16,11 @@ android {
         consumerProguardFiles("consumer-rules.pro")
     }
 
+    sourceSets {
+        // Room's MigrationTestHelper loads exported schema JSONs from androidTest assets.
+        get("androidTest").assets.srcDir("schemas")
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false

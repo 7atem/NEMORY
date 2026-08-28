@@ -150,4 +150,41 @@ class VaultDatabaseMigrationsTest {
         }
         verify(exactly = 0) { database.execSQL(match { it.startsWith("UPDATE vault_items") }) }
     }
+
+    @Test
+    fun `migration 11 to 12 adds collection suggestions and extends item FTS`() {
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        VaultDatabaseMigrations.MIGRATION_11_12.migrate(database)
+
+        verify(exactly = 1) {
+            database.execSQL(match {
+                it.contains("CREATE TABLE IF NOT EXISTS `personal_collection_suggestions`") &&
+                    it.contains("ON DELETE CASCADE") &&
+                    it.contains("REFERENCES `vault_items`(`id`)") &&
+                    it.contains("REFERENCES `personal_collections`(`id`)")
+            })
+        }
+        verify(exactly = 1) {
+            database.execSQL(match { it.contains("index_personal_collection_suggestions_item_id") })
+        }
+        // FTS rebuild: old table dropped, recreated with semantic columns, rebuilt.
+        verify(exactly = 1) { database.execSQL("DROP TABLE IF EXISTS `vault_items_fts`") }
+        verify(exactly = 1) {
+            database.execSQL(match {
+                it.contains("USING FTS4") && it.contains("`subtype` TEXT") &&
+                    it.contains("`topics` TEXT") && it.contains("`entities` TEXT") &&
+                    it.contains("`tags` TEXT")
+            })
+        }
+        verify(exactly = 1) {
+            database.execSQL("INSERT INTO `vault_items_fts`(`vault_items_fts`) VALUES('rebuild')")
+        }
+        // Sync triggers recreated (2 deletes + 2 inserts).
+        verify(exactly = 4) {
+            database.execSQL(match { it.startsWith("CREATE TRIGGER IF NOT EXISTS room_fts_content_sync") })
+        }
+        // Item rows are never rewritten.
+        verify(exactly = 0) { database.execSQL(match { it.startsWith("UPDATE vault_items") }) }
+    }
 }
