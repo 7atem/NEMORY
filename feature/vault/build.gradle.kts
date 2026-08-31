@@ -42,6 +42,7 @@ dependencies {
     implementation(project(":core:ai:rag"))
     implementation(project(":core:database"))
     implementation(project(":core:notifications"))
+    implementation(project(":core:integrations"))
     implementation(project(":core:security"))
     implementation(project(":feature:briefing"))
     implementation(project(":feature:voice"))

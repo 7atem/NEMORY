@@ -31,6 +31,22 @@ interface ExternalRecordDao {
         externalId: String
     ): ExternalRecordEntity?
 
+    @Query(
+        "SELECT * FROM external_records WHERE connector_id = :connectorId AND account_id = :accountId"
+    )
+    suspend fun getByConnection(connectorId: String, accountId: String): List<ExternalRecordEntity>
+
+    @Query(
+        "UPDATE external_records SET is_resolved = 1, updated_at = :updatedAt " +
+            "WHERE connector_id = :connectorId AND account_id = :accountId AND external_id = :externalId"
+    )
+    suspend fun markResolved(
+        connectorId: String,
+        accountId: String,
+        externalId: String,
+        updatedAt: Long
+    ): Int
+
     @Query("SELECT * FROM external_records ORDER BY created_at DESC")
     fun observeAll(): Flow<List<ExternalRecordEntity>>
 

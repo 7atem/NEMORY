@@ -178,6 +178,25 @@ class VaultDatabaseMigrationsTest {
     }
 
     @Test
+    fun `migration 13 to 14 adds linked vault reminders`() {
+        val database = mockk<SupportSQLiteDatabase>(relaxed = true)
+
+        VaultDatabaseMigrations.MIGRATION_13_14.migrate(database)
+
+        verify(exactly = 1) {
+            database.execSQL(match {
+                it.contains("CREATE TABLE IF NOT EXISTS `vault_reminders`") &&
+                    it.contains("REFERENCES `vault_items`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL") &&
+                    it.contains("REFERENCES `personal_collections`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL") &&
+                    it.contains("REFERENCES `external_records`(`connector_id`, `account_id`, `external_id`)")
+            })
+        }
+        verify(atLeast = 1) {
+            database.execSQL(match { it.contains("index_vault_reminders") })
+        }
+    }
+
+    @Test
     fun `migration 11 to 12 adds collection suggestions and extends item FTS`() {
         val database = mockk<SupportSQLiteDatabase>(relaxed = true)
 

@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="home_today">اليوم</string>
+    <string name="home_upcoming">القادم</string>
+    <string name="home_today_empty">لا توجد مواعيد اليوم.</string>
+    <string name="home_upcoming_empty">لا توجد أحداث أو تذكيرات قادمة.</string>
+    <string name="home_add_reminder">إضافة تذكير</string>
+    <string name="home_edit_reminder">تعديل وقت التذكير</string>
+    <string name="home_snooze_reminder">تأجيل التذكير</string>
+    <string name="home_complete_reminder">إكمال التذكير</string>
+    <string name="home_add_calendar_event">إضافة حدث إلى التقويم</string>
+    <string name="home_new_calendar_event">حدث Nemory جديد</string>
+    <string name="home_calendar_event">حدث في التقويم</string>
+    <string name="home_reminder_title">عنوان التذكير</string>
+    <string name="home_in_one_hour">ساعة</string>
+    <string name="home_tomorrow">غدًا</string>
+    <string name="home_next_week">الأسبوع القادم</string>
+    <string name="home_save_reminder">حفظ</string>
     <string name="vault_home_title">Nemory</string>
     <string name="vault_search_placeholder">البحث في الإيصالات، الهويات، الملاحظات…</string>
     <string name="vault_recent_items">العناصر الأخيرة</string>

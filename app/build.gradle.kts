@@ -98,6 +98,7 @@ dependencies {
     implementation(project(":core:vectorstore"))
     implementation(project(":core:security"))
     implementation(project(":core:notifications"))
+    implementation(project(":core:integrations"))
     implementation(project(":core:billing"))
     implementation(project(":core:ai:embeddings"))
     implementation(project(":core:ai:rag"))

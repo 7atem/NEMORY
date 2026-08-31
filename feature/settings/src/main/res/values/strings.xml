@@ -62,6 +62,14 @@
     <string name="settings_remove_ads_unavailable">Google Play could not load this purchase. Check your connection and try again.</string>
     <string name="settings_remove_ads_already_owned">Your existing purchase is being restored.</string>
     <string name="settings_connections">Connections</string>
+    <string name="settings_calendar_title">Calendar</string>
+    <string name="settings_calendar_unavailable">No calendar provider is available on this device.</string>
+    <string name="settings_calendar_permission_body">Allow read-only calendar access to show today and upcoming events in Nemory.</string>
+    <string name="settings_calendar_choose_body">Choose which calendars Nemory may read. Events stay on this device.</string>
+    <string name="settings_calendar_allow">Allow calendar access</string>
+    <string name="settings_calendar_sync">Sync selected calendars</string>
+    <string name="settings_calendar_syncing">Syncing…</string>
+    <string name="settings_calendar_disconnect">Disconnect calendar</string>
     <string name="settings_connections_body">Manage calendars, tasks, Gmail, and other sources that can add context to your vault.</string>
     <string name="settings_connections_empty">No connected accounts yet.</string>
     <string name="settings_connections_manage">Manage connections</string>

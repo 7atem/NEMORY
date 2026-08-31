@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="vault_reminder_channel">Vault reminders</string>
+    <string name="vault_reminder_due">Due now</string>
+    <string name="vault_reminder_snooze">Snooze 15 min</string>
+    <string name="vault_reminder_complete">Complete</string>
     <string name="gemma_prompt_channel_name">Model download</string>
     <string name="gemma_prompt_channel_description">One-time suggestion to download the optional on-device model</string>
     <string name="gemma_prompt_title">Smarter document understanding available</string>

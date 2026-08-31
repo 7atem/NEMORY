@@ -10,6 +10,8 @@ import com.vaultbrain.core.common.model.PersonalCollection
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.notifications.GemmaBannerStore
+import com.vaultbrain.core.notifications.VaultReminderManager
+import com.vaultbrain.core.integrations.repository.ExternalContextRepository
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -36,6 +38,8 @@ class HomeViewModelTest {
     private val gemmaDownloadEligibility = mockk<GemmaDownloadEligibility>()
     private val gemmaModelManager = mockk<GemmaModelManager>()
     private val gemmaBannerStore = mockk<GemmaBannerStore>(relaxed = true)
+    private val externalContextRepository = mockk<ExternalContextRepository>()
+    private val vaultReminderManager = mockk<VaultReminderManager>()
 
     @Before
     fun setUp() {
@@ -45,6 +49,8 @@ class HomeViewModelTest {
         every { featureGate.entitlement } returns MutableStateFlow(AdEntitlement.AD_SUPPORTED)
         coEvery { gemmaDownloadEligibility.isPromptEligible() } returns false
         every { gemmaModelManager.status } returns MutableStateFlow(GemmaModelStatus.NOT_DOWNLOADED)
+        every { externalContextRepository.observeRecordsBySource(any()) } returns flowOf(emptyList())
+        every { vaultReminderManager.observeActive() } returns flowOf(emptyList())
     }
 
     @After
@@ -61,7 +67,8 @@ class HomeViewModelTest {
         every { repository.observeActiveCollections() } returns flowOf(emptyList())
         val viewModel = HomeViewModel(
             repository, featureGate, patternDetector,
-            gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore
+            gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
+            externalContextRepository, vaultReminderManager
         )
         val states = mutableListOf<HomeUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }
@@ -85,7 +92,8 @@ class HomeViewModelTest {
         )
         val viewModel = HomeViewModel(
             repository, featureGate, patternDetector,
-            gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore
+            gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
+            externalContextRepository, vaultReminderManager
         )
         val states = mutableListOf<HomeUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }

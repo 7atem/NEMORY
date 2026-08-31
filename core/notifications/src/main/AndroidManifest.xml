@@ -6,5 +6,8 @@
         <receiver
             android:name=".GemmaDownloadPromptDismissReceiver"
             android:exported="false" />
+        <receiver
+            android:name=".VaultReminderActionReceiver"
+            android:exported="false" />
     </application>
 </manifest>

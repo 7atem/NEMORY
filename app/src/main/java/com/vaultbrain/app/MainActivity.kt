@@ -183,6 +183,10 @@ class MainActivity : FragmentActivity() {
                     ?.let { "lens/${android.net.Uri.encode(it)}" }
                     ?: com.vaultbrain.app.navigation.Screen.Home.route
                 "brain" -> com.vaultbrain.app.navigation.Screen.Brain.route
+                "collection" -> deepLink.pathSegments.firstOrNull()
+                    ?.takeIf(String::isNotBlank)
+                    ?.let { "collection/${android.net.Uri.encode(it)}" }
+                    ?: com.vaultbrain.app.navigation.Screen.Home.route
                 else -> com.vaultbrain.app.navigation.Screen.Home.route
             }
         }

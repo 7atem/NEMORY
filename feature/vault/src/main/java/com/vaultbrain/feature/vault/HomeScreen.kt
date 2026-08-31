@@ -36,6 +36,10 @@ import com.vaultbrain.feature.vault.components.VaultItemCard
 import com.vaultbrain.feature.voice.OnDeviceVoiceCaptureDialog
 
 import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.core.common.model.VaultReminder
+import com.vaultbrain.core.integrations.calendar.CalendarEventDraft
+import com.vaultbrain.core.integrations.calendar.CalendarIntentFactory
+import com.vaultbrain.core.integrations.model.ExternalRecord
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,6 +64,8 @@ fun HomeScreen(
     val context = androidx.compose.ui.platform.LocalContext.current
     var showPasteDialog by rememberSaveable { mutableStateOf(false) }
     var showVoiceDialog by rememberSaveable { mutableStateOf(false) }
+    var reminderToEdit by remember { mutableStateOf<VaultReminder?>(null) }
+    var showReminderDialog by rememberSaveable { mutableStateOf(false) }
     val archivedMessage = stringResource(R.string.home_item_archived)
     val undoLabel = stringResource(R.string.home_undo)
 
@@ -107,7 +113,33 @@ fun HomeScreen(
         briefingCard = { MorningBriefingCard(onInsightClick = onItemClick) },
         gemmaBanner = gemmaBanner,
         onGemmaDownloadClick = viewModel::downloadGemmaModel,
-        onGemmaBannerDismiss = viewModel::dismissGemmaBanner
+        onGemmaBannerDismiss = viewModel::dismissGemmaBanner,
+        onOpenEvent = { record ->
+            record.deepLinkUri?.let { uri ->
+                runCatching {
+                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri)))
+                }
+            }
+        },
+        onAddCalendarEvent = {
+            runCatching {
+                context.startActivity(
+                    CalendarIntentFactory.createInsertIntent(
+                        CalendarEventDraft(title = context.getString(R.string.home_new_calendar_event))
+                    )
+                )
+            }
+        },
+        onAddReminder = {
+            reminderToEdit = null
+            showReminderDialog = true
+        },
+        onEditReminder = {
+            reminderToEdit = it
+            showReminderDialog = true
+        },
+        onSnoozeReminder = { viewModel.snoozeReminder(it.id) },
+        onCompleteReminder = { viewModel.completeReminder(it.id) }
     )
 
     if (showPasteDialog) {
@@ -133,6 +165,18 @@ fun HomeScreen(
             }
         )
     }
+
+    if (showReminderDialog) {
+        ReminderEditorDialog(
+            reminder = reminderToEdit,
+            onDismiss = { showReminderDialog = false },
+            onSave = { title, dueAt ->
+                reminderToEdit?.let { viewModel.editReminderDue(it.id, dueAt) }
+                    ?: viewModel.createReminder(title, dueAt)
+                showReminderDialog = false
+            }
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -154,7 +198,13 @@ internal fun HomeContent(
     briefingCard: @Composable () -> Unit = { MorningBriefingCard() },
     gemmaBanner: GemmaBanner? = null,
     onGemmaDownloadClick: () -> Unit = {},
-    onGemmaBannerDismiss: () -> Unit = {}
+    onGemmaBannerDismiss: () -> Unit = {},
+    onOpenEvent: (ExternalRecord) -> Unit = {},
+    onAddCalendarEvent: () -> Unit = {},
+    onAddReminder: () -> Unit = {},
+    onEditReminder: (VaultReminder) -> Unit = {},
+    onSnoozeReminder: (VaultReminder) -> Unit = {},
+    onCompleteReminder: (VaultReminder) -> Unit = {}
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var searchActive by rememberSaveable { mutableStateOf(false) }
@@ -429,6 +479,18 @@ internal fun HomeContent(
                         }
                     }
                 }
+
+                item {
+                    TemporalContextCard(
+                        state = state,
+                        onOpenEvent = onOpenEvent,
+                        onAddCalendarEvent = onAddCalendarEvent,
+                        onAddReminder = onAddReminder,
+                        onEditReminder = onEditReminder,
+                        onSnoozeReminder = onSnoozeReminder,
+                        onCompleteReminder = onCompleteReminder
+                    )
+                }
             }
             
         }
@@ -693,6 +755,155 @@ private fun SectionHeader(title: String, actionLabel: String?, onAction: () -> U
         if (actionLabel != null) TextButton(onClick = onAction) { Text(actionLabel) }
     }
 }
+
+@Composable
+private fun TemporalContextCard(
+    state: HomeUiState,
+    onOpenEvent: (ExternalRecord) -> Unit,
+    onAddCalendarEvent: () -> Unit,
+    onAddReminder: () -> Unit,
+    onEditReminder: (VaultReminder) -> Unit,
+    onSnoozeReminder: (VaultReminder) -> Unit,
+    onCompleteReminder: (VaultReminder) -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Today, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.home_today), style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.weight(1f))
+                IconButton(onClick = onAddReminder) {
+                    Icon(Icons.Default.AlarmAdd, contentDescription = stringResource(R.string.home_add_reminder))
+                }
+                IconButton(onClick = onAddCalendarEvent) {
+                    Icon(Icons.Default.EventAvailable, contentDescription = stringResource(R.string.home_add_calendar_event))
+                }
+            }
+            if (state.todayEvents.isEmpty() && state.todayReminders.isEmpty()) {
+                Text(
+                    stringResource(R.string.home_today_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                state.todayEvents.forEach { CalendarContextRow(it, onOpenEvent) }
+                state.todayReminders.forEach {
+                    ReminderContextRow(it, onEditReminder, onSnoozeReminder, onCompleteReminder)
+                }
+            }
+            HorizontalDivider()
+            Text(stringResource(R.string.home_upcoming), style = MaterialTheme.typography.titleSmall)
+            if (state.upcomingEvents.isEmpty() && state.upcomingReminders.isEmpty()) {
+                Text(
+                    stringResource(R.string.home_upcoming_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                state.upcomingEvents.take(5).forEach { CalendarContextRow(it, onOpenEvent) }
+                state.upcomingReminders.take(5).forEach {
+                    ReminderContextRow(it, onEditReminder, onSnoozeReminder, onCompleteReminder)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CalendarContextRow(record: ExternalRecord, onOpen: (ExternalRecord) -> Unit) {
+    ListItem(
+        headlineContent = { Text(record.title ?: stringResource(R.string.home_calendar_event)) },
+        supportingContent = { Text(formatContextTime(record.startAt)) },
+        leadingContent = { Icon(Icons.Default.Event, contentDescription = null) },
+        modifier = Modifier.clickable { onOpen(record) }
+    )
+}
+
+@Composable
+private fun ReminderContextRow(
+    reminder: VaultReminder,
+    onEdit: (VaultReminder) -> Unit,
+    onSnooze: (VaultReminder) -> Unit,
+    onComplete: (VaultReminder) -> Unit
+) {
+    ListItem(
+        headlineContent = { Text(reminder.title) },
+        supportingContent = { Text(formatContextTime(reminder.dueAt)) },
+        leadingContent = { Icon(Icons.Default.NotificationsActive, contentDescription = null) },
+        trailingContent = {
+            Row {
+                IconButton(onClick = { onEdit(reminder) }) {
+                    Icon(Icons.Default.EditCalendar, contentDescription = stringResource(R.string.home_edit_reminder))
+                }
+                IconButton(onClick = { onSnooze(reminder) }) {
+                    Icon(Icons.Default.Snooze, contentDescription = stringResource(R.string.home_snooze_reminder))
+                }
+                IconButton(onClick = { onComplete(reminder) }) {
+                    Icon(Icons.Default.Check, contentDescription = stringResource(R.string.home_complete_reminder))
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun ReminderEditorDialog(
+    reminder: VaultReminder?,
+    onDismiss: () -> Unit,
+    onSave: (String, Long) -> Unit
+) {
+    var title by rememberSaveable(reminder?.id) { mutableStateOf(reminder?.title.orEmpty()) }
+    var delayHours by rememberSaveable(reminder?.id) { mutableIntStateOf(24) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                stringResource(
+                    if (reminder == null) R.string.home_add_reminder else R.string.home_edit_reminder
+                )
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    enabled = reminder == null,
+                    label = { Text(stringResource(R.string.home_reminder_title)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    listOf(1 to R.string.home_in_one_hour, 24 to R.string.home_tomorrow, 168 to R.string.home_next_week)
+                        .forEachIndexed { index, choice ->
+                            SegmentedButton(
+                                selected = delayHours == choice.first,
+                                onClick = { delayHours = choice.first },
+                                shape = SegmentedButtonDefaults.itemShape(index, 3)
+                            ) { Text(stringResource(choice.second)) }
+                        }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSave(title.trim(), System.currentTimeMillis() + delayHours * 60L * 60 * 1000)
+                },
+                enabled = title.isNotBlank()
+            ) { Text(stringResource(R.string.home_save_reminder)) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.home_cancel)) } }
+    )
+}
+
+private fun formatContextTime(value: Long?): String = value?.let {
+    java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
+        .format(java.util.Date(it))
+}.orEmpty()
 
 @Preview(showBackground = true)
 @Composable

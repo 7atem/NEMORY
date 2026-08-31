@@ -11,6 +11,9 @@ import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
 import com.vaultbrain.core.ai.llm.LlmClient
 import com.vaultbrain.core.ai.llm.di.Gemma
 import com.vaultbrain.core.notifications.GemmaDownloadPromptManager
+import com.vaultbrain.core.integrations.calendar.CalendarConnector
+import com.vaultbrain.core.integrations.calendar.CalendarSyncWorker
+import com.vaultbrain.core.integrations.connector.ConnectorRegistry
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.feature.capture.LocalAiAdoptionManager
 import com.vaultbrain.feature.capture.worker.DeferredAnalysisWorker
@@ -62,6 +65,12 @@ class VaultBrainApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var gemmaDownloadPromptManager: GemmaDownloadPromptManager
 
+    @Inject
+    lateinit var connectorRegistry: ConnectorRegistry
+
+    @Inject
+    lateinit var calendarConnector: CalendarConnector
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val gemmaRuntimeActivated = MutableStateFlow(false)
 
@@ -87,6 +96,8 @@ class VaultBrainApplication : Application(), Configuration.Provider {
             androidx.work.WorkManager.initialize(this, getWorkManagerConfiguration())
         }
         runCatching { persistentCaptureNotificationManager.showPersistentNotification() }
+        connectorRegistry.register(calendarConnector)
+        runCatching { CalendarSyncWorker.enqueuePeriodic(this) }
         // Precompile the ~944 keyword regexes off the main thread so the first
         // capture doesn't pay the compilation cost.
         applicationScope.launch {

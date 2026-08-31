@@ -62,6 +62,14 @@
     <string name="settings_remove_ads_unavailable">تعذر على Google Play تحميل عملية الشراء. تحقق من اتصالك وحاول مجددًا.</string>
     <string name="settings_remove_ads_already_owned">جارٍ استعادة عملية الشراء الحالية.</string>
     <string name="settings_connections">الارتباطات</string>
+    <string name="settings_calendar_title">التقويم</string>
+    <string name="settings_calendar_unavailable">لا يتوفر تطبيق تقويم على هذا الجهاز.</string>
+    <string name="settings_calendar_permission_body">اسمح بقراءة التقويم فقط لعرض أحداث اليوم والقادمة في Nemory.</string>
+    <string name="settings_calendar_choose_body">اختر التقويمات التي يمكن لـ Nemory قراءتها. تبقى الأحداث على هذا الجهاز.</string>
+    <string name="settings_calendar_allow">السماح بالوصول إلى التقويم</string>
+    <string name="settings_calendar_sync">مزامنة التقويمات المحددة</string>
+    <string name="settings_calendar_syncing">جارٍ المزامنة…</string>
+    <string name="settings_calendar_disconnect">قطع اتصال التقويم</string>
     <string name="settings_connections_body">أدر التقويمات والمهام وGmail والمصادر الأخرى التي يمكن أن تضيف سياقًا لخزنتك.</string>
     <string name="settings_connections_empty">لا توجد حسابات مرتبطة بعد.</string>
     <string name="settings_connections_manage">إدارة الارتباطات</string>

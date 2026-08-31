@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="vault_reminder_channel">تذكيرات الخزنة</string>
+    <string name="vault_reminder_due">حان الموعد</string>
+    <string name="vault_reminder_snooze">تأجيل 15 دقيقة</string>
+    <string name="vault_reminder_complete">إكمال</string>
     <string name="gemma_prompt_channel_name">تنزيل النموذج</string>
     <string name="gemma_prompt_channel_description">اقتراح لمرة واحدة لتنزيل النموذج الاختياري على الجهاز</string>
     <string name="gemma_prompt_title">فهم أذكى للمستندات متاح</string>

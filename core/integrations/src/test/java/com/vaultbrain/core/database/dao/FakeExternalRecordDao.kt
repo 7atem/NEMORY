@@ -59,6 +59,28 @@ class FakeExternalRecordDao : ExternalRecordDao {
         it.connectorId == connectorId && it.accountId == accountId && it.externalId == externalId
     }
 
+    override suspend fun getByConnection(
+        connectorId: String,
+        accountId: String
+    ): List<ExternalRecordEntity> = records.filter {
+        it.connectorId == connectorId && it.accountId == accountId
+    }
+
+    override suspend fun markResolved(
+        connectorId: String,
+        accountId: String,
+        externalId: String,
+        updatedAt: Long
+    ): Int {
+        val index = records.indexOfFirst {
+            it.connectorId == connectorId && it.accountId == accountId && it.externalId == externalId
+        }
+        if (index < 0) return 0
+        records[index] = records[index].copy(isResolved = true, updatedAt = updatedAt)
+        emit()
+        return 1
+    }
+
     override suspend fun delete(
         connectorId: String,
         accountId: String,

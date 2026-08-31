@@ -1,5 +1,8 @@
 package com.vaultbrain.core.integrations.di
 
+import com.vaultbrain.core.integrations.calendar.AndroidCalendarDataSource
+import com.vaultbrain.core.integrations.calendar.CalendarDataSource
+import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -13,4 +16,7 @@ import dagger.hilt.components.SingletonComponent
  */
 @Module
 @InstallIn(SingletonComponent::class)
-object IntegrationsModule
+abstract class IntegrationsModule {
+    @Binds
+    abstract fun bindCalendarDataSource(implementation: AndroidCalendarDataSource): CalendarDataSource
+}

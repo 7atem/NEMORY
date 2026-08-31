@@ -14,6 +14,7 @@ import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.dao.PersonalCollectionDao
 import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
 import com.vaultbrain.core.database.dao.VaultItemDao
+import com.vaultbrain.core.database.dao.VaultReminderDao
 import com.vaultbrain.core.database.entity.AuditLogEntity
 import com.vaultbrain.core.database.entity.BrainMessageEntity
 import com.vaultbrain.core.database.entity.ExternalConnectionEntity
@@ -24,6 +25,7 @@ import com.vaultbrain.core.database.entity.PersonalCollectionMembershipEntity
 import com.vaultbrain.core.database.entity.PersonalCollectionSuggestionEntity
 import com.vaultbrain.core.database.entity.VaultItemEntity
 import com.vaultbrain.core.database.entity.VaultItemFts
+import com.vaultbrain.core.database.entity.VaultReminderEntity
 import com.vaultbrain.core.database.util.RoomTypeConverters
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
@@ -48,9 +50,10 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         PersonalCollectionMembershipEntity::class,
         PersonalCollectionSuggestionEntity::class,
         ExternalRecordEntity::class,
-        ExternalConnectionEntity::class
+        ExternalConnectionEntity::class,
+        VaultReminderEntity::class
     ],
-    version = 13,
+    version = 14,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
@@ -71,6 +74,8 @@ abstract class VaultDatabase : RoomDatabase() {
     abstract fun externalRecordDao(): ExternalRecordDao
 
     abstract fun externalConnectionDao(): ExternalConnectionDao
+
+    abstract fun vaultReminderDao(): VaultReminderDao
 
     companion object {
         private const val DATABASE_NAME = "vaultbrain.db"

@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="home_today">Today</string>
+    <string name="home_upcoming">Upcoming</string>
+    <string name="home_today_empty">Nothing scheduled for today.</string>
+    <string name="home_upcoming_empty">No upcoming events or reminders.</string>
+    <string name="home_add_reminder">Add reminder</string>
+    <string name="home_edit_reminder">Edit reminder time</string>
+    <string name="home_snooze_reminder">Snooze reminder</string>
+    <string name="home_complete_reminder">Complete reminder</string>
+    <string name="home_add_calendar_event">Add calendar event</string>
+    <string name="home_new_calendar_event">New Nemory event</string>
+    <string name="home_calendar_event">Calendar event</string>
+    <string name="home_reminder_title">Reminder title</string>
+    <string name="home_in_one_hour">1 hour</string>
+    <string name="home_tomorrow">Tomorrow</string>
+    <string name="home_next_week">Next week</string>
+    <string name="home_save_reminder">Save</string>
     <string name="vault_home_title">Nemory</string>
     <string name="vault_search_placeholder">Search receipts, IDs, notes…</string>
     <string name="vault_recent_items">Recent Items</string>

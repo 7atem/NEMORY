@@ -11,6 +11,33 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 object VaultDatabaseMigrations {
 
+    val MIGRATION_13_14: Migration = object : Migration(13, 14) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `vault_reminders` " +
+                    "(`id` TEXT NOT NULL, `title` TEXT NOT NULL, `due_at` INTEGER NOT NULL, " +
+                    "`status` TEXT NOT NULL, `vault_item_id` TEXT, " +
+                    "`external_connector_id` TEXT, `external_account_id` TEXT, " +
+                    "`external_record_id` TEXT, `personal_collection_id` TEXT, " +
+                    "`created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`id`), " +
+                    "FOREIGN KEY(`vault_item_id`) REFERENCES `vault_items`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL, " +
+                    "FOREIGN KEY(`personal_collection_id`) REFERENCES `personal_collections`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL, " +
+                    "FOREIGN KEY(`external_connector_id`, `external_account_id`, `external_record_id`) " +
+                    "REFERENCES `external_records`(`connector_id`, `account_id`, `external_id`) " +
+                    "ON UPDATE NO ACTION ON DELETE SET NULL)"
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_reminders_due_at` ON `vault_reminders` (`due_at`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_reminders_status` ON `vault_reminders` (`status`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_reminders_vault_item_id` ON `vault_reminders` (`vault_item_id`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_reminders_personal_collection_id` ON `vault_reminders` (`personal_collection_id`)")
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_vault_reminders_external_connector_id_external_account_id_external_record_id` " +
+                    "ON `vault_reminders` (`external_connector_id`, `external_account_id`, `external_record_id`)"
+            )
+        }
+    }
+
     val MIGRATION_1_2: Migration = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL(
@@ -247,6 +274,7 @@ object VaultDatabaseMigrations {
         MIGRATION_9_10,
         MIGRATION_10_11,
         MIGRATION_11_12,
-        MIGRATION_12_13
+        MIGRATION_12_13,
+        MIGRATION_13_14
     )
 }

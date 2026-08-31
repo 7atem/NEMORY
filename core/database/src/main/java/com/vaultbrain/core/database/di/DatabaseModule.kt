@@ -10,6 +10,7 @@ import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.dao.PersonalCollectionDao
 import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
 import com.vaultbrain.core.database.dao.VaultItemDao
+import com.vaultbrain.core.database.dao.VaultReminderDao
 import com.vaultbrain.core.security.KeystoreManager
 import dagger.Module
 import dagger.Provides
@@ -71,4 +72,9 @@ object DatabaseModule {
     @Singleton
     fun provideExternalConnectionDao(database: VaultDatabase): ExternalConnectionDao =
         database.externalConnectionDao()
+
+    @Provides
+    @Singleton
+    fun provideVaultReminderDao(database: VaultDatabase): VaultReminderDao =
+        database.vaultReminderDao()
 }

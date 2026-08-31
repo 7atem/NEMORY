@@ -11,6 +11,7 @@ import com.vaultbrain.core.common.model.external.ConnectorCapability
 import com.vaultbrain.core.common.model.external.ExternalRecordType
 import com.vaultbrain.core.common.model.external.ExternalRetention
 import com.vaultbrain.core.common.model.external.ExternalSource
+import com.vaultbrain.core.common.model.VaultReminderStatus
 import com.vaultbrain.core.common.model.external.SensitivityLevel
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -19,6 +20,13 @@ import kotlinx.serialization.json.Json
  * Room type converters for enums and JSON-backed collections.
  */
 class RoomTypeConverters {
+    @TypeConverter
+    fun vaultReminderStatusToString(value: VaultReminderStatus?): String? = value?.name
+
+    @TypeConverter
+    fun stringToVaultReminderStatus(value: String?): VaultReminderStatus? =
+        value?.let { enumValueOf<VaultReminderStatus>(it) }
+
 
     private val json = Json { ignoreUnknownKeys = true }
 
