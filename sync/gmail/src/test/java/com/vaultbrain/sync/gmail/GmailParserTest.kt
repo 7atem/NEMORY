@@ -39,4 +39,16 @@ class GmailParserTest {
         assertThat(receipt.totalAmount).isEqualTo(350.00)
         assertThat(receipt.currency).isEqualTo("SAR")
     }
+
+    @Test
+    fun `sanitizer removes executable html and limits retained email text`() {
+        val sanitized = GmailTextSanitizer.sanitize(
+            "<style>secret-css</style><script>steal()</script><p>Order <b>ready</b> &amp; shipped</p>"
+        )
+
+        assertThat(sanitized).contains("Order ready & shipped")
+        assertThat(sanitized).doesNotContain("steal")
+        assertThat(sanitized).doesNotContain("secret-css")
+        assertThat(sanitized).doesNotContain("<")
+    }
 }

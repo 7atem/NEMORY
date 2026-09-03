@@ -69,10 +69,4 @@ class GmailParser @Inject constructor() {
         )
     }
 
-    /**
-     * Parses multiple confirmation emails and returns structured [EmailReceipt]s.
-     */
-    suspend fun parseConfirmationEmails(): List<String> {
-        return emptyList()
-    }
 }

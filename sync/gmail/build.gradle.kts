@@ -33,13 +33,17 @@ android {
 
 dependencies {
     implementation(project(":core:common"))
+    implementation(project(":core:integrations"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.workmanager.runtime.ktx)
 
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.compiler.work)
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
