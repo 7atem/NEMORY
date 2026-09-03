@@ -56,6 +56,8 @@ fun MorningBriefingCard(
         insights = state.insights,
         weekAhead = state.weekAhead,
         explanations = state.explanations,
+        dailySummary = state.dailySummary,
+        isSummaryLoading = state.isSummaryLoading,
         onInsightClick = onInsightClick,
         modifier = modifier
     )
@@ -67,6 +69,8 @@ internal fun MorningBriefingContent(
     insights: List<TodayInsight>,
     weekAhead: List<com.vaultbrain.feature.briefing.model.WeekAheadEvent> = emptyList(),
     explanations: Map<String, String> = emptyMap(),
+    dailySummary: String? = null,
+    isSummaryLoading: Boolean = false,
     onInsightClick: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -103,6 +107,45 @@ internal fun MorningBriefingContent(
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(26.dp)
                 )
+            }
+
+            if (isSummaryLoading || dailySummary != null) {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                    shape = MaterialTheme.shapes.medium,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        if (isSummaryLoading) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                androidx.compose.material3.CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = stringResource(R.string.today_summary_loading),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else if (dailySummary != null) {
+                            Text(
+                                text = dailySummary,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
             }
 
             if (insights.isEmpty()) {
@@ -191,23 +234,29 @@ private fun TodayInsightRow(
                 )
             }
 
-            explanation?.let { note ->
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(9.dp)) {
-                        Text(
-                            text = stringResource(R.string.today_on_device_note),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                        Text(
-                            text = note,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                    }
+            val deterministicNote = when (insight) {
+                is TodayInsight.Expiring -> stringResource(R.string.today_note_expiring)
+                is TodayInsight.PossibleDuplicates -> stringResource(R.string.today_note_duplicates)
+                is TodayInsight.SpendingIncrease -> stringResource(R.string.today_note_spending)
+                is TodayInsight.UpcomingTravel -> stringResource(R.string.today_note_travel)
+                is TodayInsight.MediaBacklog -> stringResource(R.string.today_note_media)
+            }
+
+            Surface(
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                shape = MaterialTheme.shapes.small
+            ) {
+                Column(modifier = Modifier.fillMaxWidth().padding(9.dp)) {
+                    Text(
+                        text = stringResource(R.string.today_why_seeing_this),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                    Text(
+                        text = explanation ?: deterministicNote,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
                 }
             }
 

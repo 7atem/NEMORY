@@ -9,6 +9,13 @@
     <string name="today_priority_radar">Worth a look</string>
     <string name="today_review">Review</string>
     <string name="today_on_device_note">On-device AI note</string>
+    <string name="today_summary_loading">Generating your daily summary…</string>
+    <string name="today_why_seeing_this">Why am I seeing this?</string>
+    <string name="today_note_expiring">This document is approaching its expiration date.</string>
+    <string name="today_note_duplicates">The on-device duplicate detector found exact text matches across these captures.</string>
+    <string name="today_note_spending">Your latest capture showed a price increase compared to previous records.</string>
+    <string name="today_note_travel">You have upcoming travel based on your captured bookings and tickets.</string>
+    <string name="today_note_media">You have unreviewed media items waiting in your backlog.</string>
     <string name="today_expires_today">%1$s expires today</string>
     <string name="today_travel_today">%1$s is today</string>
     <string name="today_charge_increased">%1$s recurring charge increased</string>

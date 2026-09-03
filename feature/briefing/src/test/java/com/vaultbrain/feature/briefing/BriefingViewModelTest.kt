@@ -5,6 +5,8 @@ import com.vaultbrain.core.common.model.Classification
 import com.vaultbrain.core.common.model.SourceType
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
+import com.vaultbrain.core.integrations.repository.ExternalContextRepository
+import com.vaultbrain.core.notifications.VaultReminderManager
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -24,6 +26,8 @@ import org.junit.Test
 class BriefingViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val repository = mockk<VaultRepository>()
+    private val externalContextRepository = mockk<ExternalContextRepository>()
+    private val vaultReminderManager = mockk<VaultReminderManager>()
     private val explanationGenerator = mockk<BriefingExplanationGenerator>()
 
     @Before
@@ -50,10 +54,15 @@ class BriefingViewModelTest {
                 )
             )
         )
+        every { externalContextRepository.observeRecords() } returns flowOf(emptyList())
+        every { vaultReminderManager.observeActive() } returns flowOf(emptyList())
         coEvery { explanationGenerator.explain(any(), any()) } returns null
+        coEvery { explanationGenerator.generateDailySummary(any(), any(), any(), any()) } returns null
 
         val viewModel = BriefingViewModel(
             repository = repository,
+            externalContextRepository = externalContextRepository,
+            vaultReminderManager = vaultReminderManager,
             insightEngine = DeterministicInsightEngine(),
             explanationGenerator = explanationGenerator
         )

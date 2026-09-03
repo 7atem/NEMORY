@@ -3,6 +3,10 @@ package com.vaultbrain.feature.briefing
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vaultbrain.core.database.repository.VaultRepository
+import com.vaultbrain.core.integrations.model.ExternalRecord
+import com.vaultbrain.core.integrations.repository.ExternalContextRepository
+import com.vaultbrain.core.notifications.VaultReminderManager
+import com.vaultbrain.core.common.model.VaultReminder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.ZoneId
@@ -12,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 enum class BriefingGreeting { MORNING, AFTERNOON, EVENING, NIGHT }
@@ -20,13 +25,17 @@ data class BriefingUiState(
     val greeting: BriefingGreeting = BriefingGreeting.MORNING,
     val insights: List<TodayInsight> = emptyList(),
     val weekAhead: List<com.vaultbrain.feature.briefing.model.WeekAheadEvent> = emptyList(),
-    val explanations: Map<String, String> = emptyMap()
+    val explanations: Map<String, String> = emptyMap(),
+    val dailySummary: String? = null,
+    val isSummaryLoading: Boolean = false
 )
 
 /** Reactive Today briefing. Deterministic insights are published before optional Nano prose. */
 @HiltViewModel
 class BriefingViewModel @Inject constructor(
     private val repository: VaultRepository,
+    private val externalContextRepository: ExternalContextRepository,
+    private val vaultReminderManager: VaultReminderManager,
     private val insightEngine: DeterministicInsightEngine,
     private val explanationGenerator: BriefingExplanationGenerator
 ) : ViewModel() {
@@ -34,28 +43,70 @@ class BriefingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(BriefingUiState(greeting = greetingFor()))
     val uiState: StateFlow<BriefingUiState> = _uiState.asStateFlow()
 
+    // Set after the first summary generation attempt so a null LLM result
+    // doesn't re-show the spinner on every subsequent DB emission.
+    private var summaryAttempted = false
+
     init {
         viewModelScope.launch {
-            repository.observeActive().collectLatest { items ->
+            kotlinx.coroutines.flow.combine(
+                repository.observeActive(),
+                externalContextRepository.observeRecords(),
+                vaultReminderManager.observeActive()
+            ) { items, externalRecords, reminders ->
+                // Deterministic computation only — LLM calls run downstream in collectLatest,
+                // so new emissions cancel in-flight generation instead of queuing behind it.
                 val now = System.currentTimeMillis()
                 val insights = insightEngine.generate(items, now)
                 val weekAhead = insightEngine.generateWeekAhead(items, now)
-                _uiState.value = BriefingUiState(
-                    greeting = greetingFor(now),
-                    insights = insights,
-                    weekAhead = weekAhead
-                )
-
-                // One bounded foreground request at most. All cards remain useful without it.
-                val leading = insights.firstOrNull() ?: return@collectLatest
-                val explanation = explanationGenerator.explain(leading, Locale.getDefault().language)
-                    ?: return@collectLatest
-                if (_uiState.value.insights.firstOrNull()?.id == leading.id) {
-                    _uiState.value = _uiState.value.copy(explanations = mapOf(leading.id to explanation))
+                val today = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).toLocalDate()
+                val startOfDay = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val endOfDay = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                val todayRecords = externalRecords.filter { record ->
+                    val anchor = record.startAt ?: record.createdAt
+                    anchor in startOfDay..endOfDay
                 }
+                val todayReminders = reminders.filter { reminder ->
+                    reminder.dueAt in startOfDay..endOfDay
+                }
+                BriefingInputs(insights, weekAhead, todayRecords, todayReminders)
             }
+                .distinctUntilChanged()
+                .collectLatest { inputs ->
+                    _uiState.value = BriefingUiState(
+                        greeting = greetingFor(),
+                        insights = inputs.insights,
+                        weekAhead = inputs.weekAhead,
+                        dailySummary = _uiState.value.dailySummary,
+                        isSummaryLoading = !summaryAttempted
+                    )
+
+                    val language = Locale.getDefault().language
+                    val leading = inputs.insights.firstOrNull()
+                    val explanation = leading?.let { explanationGenerator.explain(it, language) }
+                    val dailySummary = explanationGenerator.generateDailySummary(
+                        insights = inputs.insights,
+                        externalRecords = inputs.todayRecords,
+                        reminders = inputs.todayReminders,
+                        languageCode = language
+                    )
+                    summaryAttempted = true
+
+                    _uiState.value = _uiState.value.copy(
+                        explanations = if (leading != null && explanation != null) mapOf(leading.id to explanation) else emptyMap(),
+                        dailySummary = dailySummary,
+                        isSummaryLoading = false
+                    )
+                }
         }
     }
+
+    private data class BriefingInputs(
+        val insights: List<TodayInsight>,
+        val weekAhead: List<com.vaultbrain.feature.briefing.model.WeekAheadEvent>,
+        val todayRecords: List<ExternalRecord>,
+        val todayReminders: List<VaultReminder>
+    )
 
     internal fun greetingFor(
         now: Long = System.currentTimeMillis(),
