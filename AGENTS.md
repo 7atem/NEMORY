@@ -4,6 +4,10 @@ On-device personal vault for documents and life admin. Kotlin, Jetpack Compose, 
 Room (SQLCipher-encrypted), WorkManager, ML Kit, ObjectBox (vector store), TFLite.
 App id is `com.nemory.app`; the user-facing name is Nemory.
 
+The detailed product, architecture, privacy, testing, and release reference is
+`NEMORY_MASTER_DOCUMENTATION.md`. Keep this implementation guide and that master
+document aligned with source changes.
+
 ## Module map
 
 - `app/` — application shell: `VaultBrainApplication` (Hilt + WorkManager config,
@@ -24,28 +28,32 @@ App id is `com.nemory.app`; the user-facing name is Nemory.
 - `core/common` — shared models (`VaultItem`, `LensId`, `ProcessingState`,
   `EnrichmentState`, `Classification`), `ui/MetadataFields.kt`, user frequency tracking.
 - `core/database` — Room DB (encrypted), DAOs, `VaultRepository` (claim primitives for
-  enrichment/indexing queues).
+  enrichment/indexing queues), external-context and Vault Reminder persistence.
+- `core/integrations` — connector contracts, `PersonalContextEngine`, Android Calendar
+  connector, Calendar sync and connection management.
 - `core/vectorstore` — ObjectBox vector store (`VectorStore`, `VaultEmbedding`).
-- `core/ai/vision` — `VisionAnalyzer` (colors/labels/barcodes/classifier, parallelized,
+- `core/ai/vision` — `VisionAnalyzer` (colors/confidence-bearing labels/barcodes/classifier, parallelized,
   shared injected ML Kit clients), `DocumentClassifier` (TFLite, lazy interpreter),
   `di/VisionModule`.
 - `core/ai/heuristics` — `HeuristicExtractor`, `KeywordDictionary`,
   `experience/ExperienceKeywordLibrary` (precompiled keyword regexes),
   `experience/parsers/*` per-experience parsers.
 - `core/ai/embeddings` — text/vision embedding models (All-MiniLM, MobileCLIP).
-- `core/ai/rag` — `RagEngine` retrieval/rerank/answer pipeline (reads the vector store).
+- `core/ai/rag` — `RagEngine` retrieval/rerank/answer pipeline (reads the vector store,
+  validates numbered claim citations, and can add matching bounded external context).
 - `core/ai/llm` — tiered on-device LLM. `TieredLlmClientSelector` (the unqualified
   `LlmClient` binding) delegates per call: Tier 1 Gemini Nano via ML Kit Prompt API
   (`NanoPromptClient`, `AiCapabilityManager`, foreground-gated), Tier 2 Gemma 3 1B
   int4 via MediaPipe `LlmInference` (`GemmaLlmClient`, `gemma/GemmaModelManager`,
   `gemma/GemmaModelDownloadWorker` — on-demand ~530 MB download to
   `filesDir/models/`, URL/SHA-256 configured via `gradle.properties`, no foreground
-  gate so it also serves background workers). Hybrid cloud coordinator (cloud
-  disabled by default).
+  gate so it also serves background workers). Hybrid coordinator interfaces exist,
+  but the current build binds `DisabledCloudAiRuntime`.
 - `core/notifications` — `UnifiedAlertManager`, `PersistentCaptureNotificationManager`,
   `GemmaDownloadPromptManager` (one-tap Tier 2 model download prompt for supported
-  non-AICore devices; max two prompts, 7 days apart).
-- `core/security`, `core/billing` — app lock/decoy mode, Play Billing.
+  non-AICore devices; max two prompts, 7 days apart), Vault Reminder scheduling and
+  notification actions.
+- `core/security` — app lock/decoy mode.
 - `sync/drive`, `sync/gmail` — optional sync integrations.
 
 ## Navigation
@@ -58,7 +66,8 @@ slides up). Other routes: `auth_gate`, `onboarding`, `settings`, `review`,
 ## Personal collections (P0, manual-first)
 
 User-facing organization comes from the user's own `PersonalCollection`s, not from the
-internal lens taxonomy. Room schema v11: `personal_collections` +
+internal lens taxonomy. Collections were introduced in Room schema v11:
+`personal_collections` +
 `personal_collection_memberships` (many-to-many, composite PK, duplicate memberships
 ignored, membership FKs cascade on collection/item delete — items are never deleted by
 collection removal). Removal is soft archival (`archivedAt`); archived collections keep
@@ -88,27 +97,40 @@ matching — do not insert suggestions into the membership table.
 
 ### Deferred share flow
 
-`ShareActivity` → `ShareIngestionViewModel.ingest()` saves **PENDING placeholders**
-(`extractionState = PENDING` for media) and enqueues unique work `deferred_analysis`
-(`APPEND_OR_REPLACE`), then returns immediately with a toast. `DeferredAnalysisWorker`
-(Hilt `CoroutineWorker`) loops `VaultRepository.claimNextIndexing`, runs
-`DeferredItemAnalyzer.analyze` for items whose extraction is pending, saves, generates
-embeddings, marks `completeIndexing`, and schedules alerts. Failures become
-`FAILED_RETRYABLE`; the worker returns `Result.retry()` up to 3 attempts with WorkManager
-backoff. A low-priority foreground-style notification is shown while processing.
+The current exported `ShareActivity` validates incoming text/URL/image/PDF shares,
+shows `ShareReviewScreen`, converts accepted content to `CaptureInput`, and continues
+through `CaptureFlowScreen`. Provenance can retain `ANDROID_SHARE`, source package,
+URL, and received time. The separate `ShareIngestionViewModel` placeholder pipeline
+and `DeferredAnalysisWorker` remain available for deferred ingestion: media may be
+saved with pending extraction, claimed from the indexing queue, analyzed, embedded,
+and completed with WorkManager retry/backoff. Do not assume the visible ShareActivity
+flow and the placeholder API are the same path when changing or testing them.
 
 ### Embeddings
 
 `VaultEmbeddingGenerator` (feature/capture) is the indexing entry point for the vector
 store. Per item it stores up to three 100-dim, L2-normalized `VaultEmbedding` rows via
-`VectorStore.putEmbeddingsForItem`: `ocr_text` (raw OCR, capped), `summary` (title +
-summary + metadata in `RagEngine.buildPrompt`'s labeled record layout), and `image`
-(visual embedding of the stored image / first PDF page). `RagEngine` reads all content
-types (image embeddings get a 0.85 cross-modal penalty); `PostSaveDuplicateDetector`
+`VectorStore.putEmbeddingsForItem`: `ocr_text` (raw OCR, capped) and `summary` (title +
+summary + metadata in `RagEngine.buildPrompt`'s labeled record layout). The old
+grayscale pseudo-image embedding is disabled and must not be re-enabled; a real,
+licensed semantic image encoder needs a compatible separate index. `PostSaveDuplicateDetector`
 only queries `ocr_text`/`summary`. Embedding failures are logged and never fail the
 item — it stays searchable via FTS. `EmbeddingBackfillWorker` (unique work
 `embedding_backfill`, `KEEP`, enqueued from `VaultBrainApplication`) one-time embeds
 older items that have no rows in the vector store.
+
+## Backup and Gmail integration
+
+`sync/drive/DriveBackupManager` implements portable SAF export/import, not direct Drive
+API sync. Archives use a user passphrase, PBKDF2-HMAC-SHA256, AES-256-GCM, a checkpointed
+SQLCipher database plus its re-wrapped key, and private media. Restore validates and
+stages entries, keeps a rollback database, closes Room, and requires an app restart.
+
+`sync/gmail/GmailConnector` is a read-only connector foundation with sanitization,
+bounded local retention/polling, decoy isolation, and Today/Brain context. Its default
+`GmailDataSource` is intentionally unconfigured. Do not add fake email records or claim
+Gmail works until verified production OAuth credentials and the `gmail.readonly` consent
+flow exist.
 
 ## Experience taxonomy (two tiers)
 
@@ -139,7 +161,35 @@ always, and produces the base item. On-device LLMs are an optional enrichment la
 top (categorization/details/highlights for capture, Brain answers, briefing): Tier 1
 Gemini Nano (AICore / ML Kit Prompt API), Tier 2 downloadable Gemma 3 1B for
 non-AICore devices with ≥4 GB RAM. Any LLM failure leaves the heuristic item
-untouched. Cloud AI is disabled by default and requires explicit per-request consent.
+untouched. The current build wires `DisabledCloudAiRuntime` and cannot send vault
+content to cloud AI. Any future implementation would require explicit per-request
+consent plus updated privacy and store disclosures.
+
+## External context, Calendar, and reminders
+
+`VaultItem` is durable user-saved content; `ExternalRecord` is bounded connector-owned
+context and is never silently promoted to the vault. Room schema v14 contains
+`external_connections`, `external_records`, and `vault_reminders`; v15 adds non-unique
+indices on `vault_items` (`primary_lens_id`, `is_archived`, `is_stealth`, `created_at`).
+All access is decoy-aware.
+
+Calendar is the most complete live connector. It requests `READ_CALENDAR`, lets the
+user select calendars, caches events from 30 days past through 90 days future, and
+periodically syncs approximately every 6 hours. Disconnect or permission revocation
+clears locally cached Calendar records. Nemory does not request `WRITE_CALENDAR`;
+creation launches the system Calendar editor with prefilled data for user confirmation.
+
+Health Connect (`core/integrations/health/HealthConnectConnector` +
+`HealthConnectSyncWorker`) reads today's steps, sleep, and active calories into a daily
+summary record. It requires the Health Connect runtime permissions, requested from the
+Connections screen in settings; without them the connection stays PERMISSION_REVOKED
+and sync is a no-op.
+
+Vault Reminders are local records with scheduled/snoozed/completed/dismissed state and
+optional links to a vault item, external record, or personal collection. WorkManager
+schedules one-time notifications with open, snooze-15-minutes, complete, and dismiss
+actions. Today combines reminders and selected Calendar events deterministically; this
+ordering does not require an LLM.
 
 ## Conventions
 

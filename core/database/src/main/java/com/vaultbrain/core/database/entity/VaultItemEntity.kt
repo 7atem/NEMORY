@@ -9,12 +9,22 @@ import com.vaultbrain.core.common.model.ProcessingState
 import com.vaultbrain.core.common.model.SourceType
 import com.vaultbrain.core.common.model.Tier
 
+import androidx.room.Index
+
 /**
  * Encrypted Room entity for a vault item.
  *
  * JSON-backed fields are serialized via [com.vaultbrain.core.database.util.RoomTypeConverters].
  */
-@Entity(tableName = "vault_items")
+@Entity(
+    tableName = "vault_items",
+    indices = [
+        Index("primary_lens_id"),
+        Index("is_archived"),
+        Index("is_stealth"),
+        Index("created_at")
+    ]
+)
 data class VaultItemEntity(
     @PrimaryKey
     val id: String,

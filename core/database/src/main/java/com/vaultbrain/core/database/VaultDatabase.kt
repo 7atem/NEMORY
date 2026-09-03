@@ -53,7 +53,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         ExternalConnectionEntity::class,
         VaultReminderEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)

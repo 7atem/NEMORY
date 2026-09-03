@@ -38,6 +38,15 @@ object VaultDatabaseMigrations {
         }
     }
 
+    val MIGRATION_14_15: Migration = object : Migration(14, 15) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_items_primary_lens_id` ON `vault_items` (`primary_lens_id`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_items_is_archived` ON `vault_items` (`is_archived`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_items_is_stealth` ON `vault_items` (`is_stealth`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_items_created_at` ON `vault_items` (`created_at`)")
+        }
+    }
+
     val MIGRATION_1_2: Migration = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL(
@@ -275,6 +284,7 @@ object VaultDatabaseMigrations {
         MIGRATION_10_11,
         MIGRATION_11_12,
         MIGRATION_12_13,
-        MIGRATION_13_14
+        MIGRATION_13_14,
+        MIGRATION_14_15
     )
 }
