@@ -8,6 +8,8 @@ import com.google.mlkit.vision.label.ImageLabeling
 import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 import com.vaultbrain.core.ai.vision.DocumentClassifier
 import com.vaultbrain.core.ai.vision.VisionAnalyzer
+import com.vaultbrain.core.ai.vision.SemanticVisualClassifier
+import com.vaultbrain.core.ai.vision.UnavailableSemanticVisualClassifier
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -30,9 +32,15 @@ object VisionModule {
 
     @Provides
     @Singleton
+    fun provideSemanticVisualClassifier(): SemanticVisualClassifier =
+        UnavailableSemanticVisualClassifier()
+
+    @Provides
+    @Singleton
     fun provideVisionAnalyzer(
         documentClassifier: DocumentClassifier,
+        semanticVisualClassifier: SemanticVisualClassifier,
         imageLabeler: ImageLabeler,
         barcodeScanner: BarcodeScanner
-    ): VisionAnalyzer = VisionAnalyzer(documentClassifier, imageLabeler, barcodeScanner)
+    ): VisionAnalyzer = VisionAnalyzer(documentClassifier, semanticVisualClassifier, imageLabeler, barcodeScanner)
 }

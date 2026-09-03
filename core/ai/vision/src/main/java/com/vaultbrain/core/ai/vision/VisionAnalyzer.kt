@@ -5,6 +5,7 @@ import androidx.core.graphics.get
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeler
 import com.google.mlkit.vision.barcode.BarcodeScanner
+import com.vaultbrain.core.common.model.ScoredLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -22,13 +23,14 @@ import javax.inject.Singleton
 @Singleton
 class VisionAnalyzer @Inject constructor(
     private val documentClassifier: DocumentClassifier,
+    private val semanticVisualClassifier: SemanticVisualClassifier,
     private val imageLabeler: ImageLabeler,
     private val barcodeScanner: BarcodeScanner
 ) {
 
     suspend fun analyze(bitmap: Bitmap): VisionResult = coroutineScope {
         if (bitmap.isRecycled) {
-            return@coroutineScope VisionResult(emptyList(), emptyList(), emptyList(), null, 0f)
+            return@coroutineScope VisionResult()
         }
 
         val colorsDeferred = async(Dispatchers.Default) {
@@ -49,11 +51,27 @@ class VisionAnalyzer @Inject constructor(
                 }
             }.getOrDefault(null to 0f)
         }
+        val semanticLabelsDeferred = async(Dispatchers.Default) {
+            runCatching {
+                if (semanticVisualClassifier.isAvailable() && !bitmap.isRecycled) {
+                    semanticVisualClassifier.classify(bitmap)
+                } else emptyList()
+            }.getOrDefault(emptyList())
+        }
 
         val (docClassification, docConfidence) = classificationDeferred.await()
+        // NOTE: merging by lowercase label with max-confidence collapses cross-source agreement
+        // (the signal VisualEvidenceClassifier.AGREEMENT_BOOST rewards) and compares confidences
+        // from two differently calibrated models. Revisit with a per-source merge strategy before
+        // binding a real SemanticVisualClassifier; today only ML Kit labels reach here.
+        val scoredLabels = (objectsDeferred.await() + semanticLabelsDeferred.await())
+            .groupBy { it.label.lowercase() }
+            .mapNotNull { (_, candidates) -> candidates.maxByOrNull(ScoredLabel::confidence) }
+            .sortedByDescending(ScoredLabel::confidence)
         VisionResult(
             dominantColors = colorsDeferred.await(),
-            detectedObjects = objectsDeferred.await(),
+            detectedObjects = scoredLabels.map(ScoredLabel::label),
+            scoredLabels = scoredLabels,
             barcodes = barcodesDeferred.await(),
             documentClassification = docClassification,
             documentClassificationConfidence = docConfidence
@@ -92,7 +110,7 @@ class VisionAnalyzer @Inject constructor(
             }
     }
 
-    private suspend fun detectObjects(bitmap: Bitmap): List<String> = suspendCancellableCoroutine { cont ->
+    private suspend fun detectObjects(bitmap: Bitmap): List<ScoredLabel> = suspendCancellableCoroutine { cont ->
         try {
             if (bitmap.isRecycled) {
                 cont.resume(emptyList())
@@ -101,7 +119,15 @@ class VisionAnalyzer @Inject constructor(
             val image = InputImage.fromBitmap(bitmap, 0)
             imageLabeler.process(image)
                 .addOnSuccessListener { labels ->
-                    val detected = labels.filter { it.confidence > 0.3f }.map { it.text }
+                    val detected = runCatching {
+                        labels
+                            .asSequence()
+                            .filter { it.confidence > MIN_LABEL_CONFIDENCE }
+                            .map { ScoredLabel(it.text, it.confidence.coerceIn(0f, 1f)) }
+                            .distinctBy { it.label.lowercase() }
+                            .sortedByDescending(ScoredLabel::confidence)
+                            .toList()
+                    }.getOrDefault(emptyList())
                     cont.resume(detected)
                 }
                 .addOnFailureListener {
@@ -130,5 +156,9 @@ class VisionAnalyzer @Inject constructor(
         } catch (e: Exception) {
             cont.resume(emptyList())
         }
+    }
+
+    private companion object {
+        const val MIN_LABEL_CONFIDENCE = 0.3f
     }
 }

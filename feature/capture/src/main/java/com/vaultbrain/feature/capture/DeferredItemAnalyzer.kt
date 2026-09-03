@@ -55,10 +55,22 @@ class DeferredItemAnalyzer @Inject constructor(
                         parsedMetadata = metadata,
                         extractionState = ProcessingState.COMPLETE
                     )
-                    return@withContext analyzeEvidence(updatedItem, updatedItem.rawOcrText.orEmpty(), emptyList(), emptyList(), emptyList())
+                    return@withContext analyzeEvidence(
+                        item = updatedItem,
+                        ocrText = updatedItem.rawOcrText.orEmpty(),
+                        colors = emptyList(),
+                        objects = emptyList(),
+                        barcodes = emptyList()
+                    )
                 }
             }
-            return@withContext analyzeEvidence(item, text, emptyList(), emptyList(), emptyList())
+            return@withContext analyzeEvidence(
+                item = item,
+                ocrText = text,
+                colors = emptyList(),
+                objects = emptyList(),
+                barcodes = emptyList()
+            )
         }
 
         val isPdf = mediaVaultStorage.mimeType(uri) == "application/pdf"
@@ -80,6 +92,7 @@ class DeferredItemAnalyzer @Inject constructor(
                     .distinct().joinToString("\n").trim(),
                 colors = vision?.dominantColors.orEmpty(),
                 objects = vision?.detectedObjects.orEmpty(),
+                scoredLabels = vision?.scoredLabels.orEmpty(),
                 barcodes = vision?.barcodes.orEmpty(),
                 neuralClassification = vision?.documentClassification,
                 neuralConfidence = vision?.documentClassificationConfidence ?: 0f
@@ -95,6 +108,7 @@ class DeferredItemAnalyzer @Inject constructor(
         ocrText: String,
         colors: List<String>,
         objects: List<String>,
+        scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel> = emptyList(),
         barcodes: List<String>,
         neuralClassification: com.vaultbrain.core.common.model.Classification? = null,
         neuralConfidence: Float = 0f
@@ -106,7 +120,8 @@ class DeferredItemAnalyzer @Inject constructor(
             },
             visionObjects = objects,
             neuralClassification = neuralClassification,
-            neuralConfidence = neuralConfidence
+            neuralConfidence = neuralConfidence,
+            scoredLabels = scoredLabels
         )
         val generatedTitle = heuristic.title?.takeIf(String::isNotBlank)
             ?: ocrText.lineSequence().firstOrNull(String::isNotBlank)
@@ -123,6 +138,14 @@ class DeferredItemAnalyzer @Inject constructor(
                     putAll(item.parsedMetadata)
                     putAll(heuristic.metadata)
                     if (barcodes.isNotEmpty()) put("barcodes", barcodes.joinToString(" | "))
+                    if (scoredLabels.isNotEmpty()) {
+                        put(
+                            INTERNAL_VISION_SCORES_KEY,
+                            scoredLabels.joinToString(" | ") { label ->
+                                "${label.label}:${"%.3f".format(java.util.Locale.US, label.confidence)}"
+                            }
+                        )
+                    }
                 },
                 lensTags = item.lensTags + heuristic.lensTags,
                 expiryDate = item.expiryDate ?: heuristic.expiryDate,
@@ -137,6 +160,7 @@ class DeferredItemAnalyzer @Inject constructor(
             ),
             ocrText = ocrText,
             objects = objects,
+            scoredLabels = scoredLabels,
             barcodes = barcodes
         )
     }
@@ -150,6 +174,7 @@ class DeferredItemAnalyzer @Inject constructor(
         item: VaultItem,
         ocrText: String,
         objects: List<String>,
+        scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel>,
         barcodes: List<String>
     ): VaultItem = try {
         withTimeoutOrNull(LLM_ENRICHMENT_TIMEOUT_MS) {
@@ -157,6 +182,7 @@ class DeferredItemAnalyzer @Inject constructor(
                 evidence = CapturePromptEvidence(
                     ocrText = ocrText,
                     labels = objects,
+                    scoredLabels = scoredLabels,
                     barcodes = barcodes,
                     classificationHint = item.aiClassification,
                     systemFacetHints = item.lensTags,
@@ -172,7 +198,7 @@ class DeferredItemAnalyzer @Inject constructor(
     }
 
     private suspend fun recognize(bitmap: Bitmap): String = runCatching {
-        latinRecognizer.process(InputImage.fromBitmap(bitmap, 0)).await().text.trim()
+        latinRecognizer.recognizeBestDocument(bitmap).trim()
     }.getOrDefault("")
 
     private fun decodeBitmap(uri: Uri): Bitmap? = runCatching {
@@ -226,5 +252,6 @@ class DeferredItemAnalyzer @Inject constructor(
         const val MAX_IMAGE_DIM = 1_200
         const val REVIEW_CONFIDENCE = 0.5f
         const val LLM_ENRICHMENT_TIMEOUT_MS = 30_000L
+        const val INTERNAL_VISION_SCORES_KEY = "_vision_label_scores"
     }
 }

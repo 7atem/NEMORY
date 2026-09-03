@@ -236,12 +236,12 @@ class CaptureViewModel @Inject constructor(
      * on the save screen.
      */
     fun save(onComplete: () -> Unit) {
-        val review = _uiState.value as? CaptureUiState.Review ?: return
-        val item = review.draft.copy(
+        if (batchIndex !in batchDrafts.indices) return
+        val item = batchDrafts[batchIndex].copy(
             needsReview = false,
             userEditedAt = System.currentTimeMillis()
         )
-        if (batchIndex in batchDrafts.indices) batchDrafts[batchIndex] = item
+        batchDrafts[batchIndex] = item
 
         viewModelScope.launch {
             _uiState.value = CaptureUiState.Saving
@@ -316,6 +316,7 @@ class CaptureViewModel @Inject constructor(
     }
 
     private suspend fun analyze(input: CaptureInput): VaultItem {
+        val startMs = System.currentTimeMillis()
         val primaryUri = input.initialUris.firstOrNull()
 
         // PDF pages are rendered once and shared between OCR and the vision preview (page 1).
@@ -327,12 +328,16 @@ class CaptureViewModel @Inject constructor(
             null
         }
         val previewBitmap = pdfPages.firstOrNull() ?: imageBitmap
+        val setupMs = System.currentTimeMillis()
+        android.util.Log.d("CaptureLatency", "Setup took ${setupMs - startMs}ms")
 
         try {
             val ocrText = buildString {
                 input.initialText?.takeIf { it.isNotBlank() }?.let { appendLine(it) }
                 primaryUri?.let { appendLine(recognizeText(it, pdfPages, imageBitmap)) }
             }.trim()
+            val ocrMs = System.currentTimeMillis()
+            android.util.Log.d("CaptureLatency", "OCR took ${ocrMs - setupMs}ms")
 
             // Emit live keywords as OCR completes
             if (ocrText.isNotBlank()) {
@@ -352,6 +357,7 @@ class CaptureViewModel @Inject constructor(
             data class VisionBundle(
                 val colors: List<String>,
                 val objects: List<String>,
+                val scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel>,
                 val barcodes: List<String>,
                 val neuralClassification: com.vaultbrain.core.common.model.Classification?,
                 val neuralConfidence: Float
@@ -362,13 +368,16 @@ class CaptureViewModel @Inject constructor(
                 VisionBundle(
                     colors = result.dominantColors,
                     objects = result.detectedObjects,
+                    scoredLabels = result.scoredLabels,
                     barcodes = result.barcodes,
                     neuralClassification = result.documentClassification,
                     neuralConfidence = result.documentClassificationConfidence
                 )
             } else {
-                VisionBundle(emptyList(), emptyList(), emptyList(), null, 0f)
+                VisionBundle(emptyList(), emptyList(), emptyList(), emptyList(), null, 0f)
             }
+            val visionMs = System.currentTimeMillis()
+            android.util.Log.d("CaptureLatency", "Vision took ${visionMs - ocrMs}ms")
 
             val visionColors = visionBundle.colors
             val visionObjects = visionBundle.objects
@@ -381,8 +390,11 @@ class CaptureViewModel @Inject constructor(
                 },
                 visionObjects = visionObjects,
                 neuralClassification = visionBundle.neuralClassification,
-                neuralConfidence = visionBundle.neuralConfidence
+                neuralConfidence = visionBundle.neuralConfidence,
+                scoredLabels = visionBundle.scoredLabels
             )
+            val heuristicMs = System.currentTimeMillis()
+            android.util.Log.d("CaptureLatency", "Heuristics took ${heuristicMs - visionMs}ms")
 
             val preferredTags = input.preferredLensTags.mapNotNull(LensId::canonicalOrNull).toSet()
             if (preferredTags.isNotEmpty()) {
@@ -406,13 +418,20 @@ class CaptureViewModel @Inject constructor(
                 if (input.provenanceMetadata.isEmpty()) it
                 else it.copy(parsedMetadata = it.parsedMetadata + input.provenanceMetadata)
             }
-            return if (input.skipLlmEnrichment) item else enrichWithLlm(
+            
+            val llmStart = System.currentTimeMillis()
+            val result = if (input.skipLlmEnrichment) item else enrichWithLlm(
                 item,
                 ocrText,
                 visionObjects,
+                visionBundle.scoredLabels,
                 barcodes,
                 previewBitmap
             )
+            val endMs = System.currentTimeMillis()
+            android.util.Log.d("CaptureLatency", "LLM took ${endMs - llmStart}ms")
+            android.util.Log.d("CaptureLatency", "Total capture latency: ${endMs - startMs}ms")
+            return result
         } finally {
             pdfPages.forEach(Bitmap::recycle)
             imageBitmap?.recycle()
@@ -427,6 +446,7 @@ class CaptureViewModel @Inject constructor(
         item: VaultItem,
         ocrText: String,
         visionObjects: List<String>,
+        scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel>,
         barcodes: List<String>,
         imageBitmap: Bitmap?
     ): VaultItem = try {
@@ -443,6 +463,7 @@ class CaptureViewModel @Inject constructor(
                 evidence = CapturePromptEvidence(
                     ocrText = ocrText,
                     labels = visionObjects,
+                    scoredLabels = scoredLabels,
                     barcodes = barcodes,
                     classificationHint = item.aiClassification,
                     systemFacetHints = item.lensTags,
@@ -511,7 +532,7 @@ class CaptureViewModel @Inject constructor(
             else -> {
                 // Fallback if the bitmap failed to decode for some reason
                 val original = runCatching {
-                    latinRecognizer.process(InputImage.fromFilePath(context, uri)).await().text
+                    latinRecognizer.process(InputImage.fromFilePath(context, uri)).await().spatiallyOrderedText()
                 }.getOrNull().orEmpty()
                 listOf(original)
             }
@@ -603,6 +624,13 @@ class CaptureViewModel @Inject constructor(
 
     private fun showCurrentDraft() {
         val item = batchDrafts[batchIndex]
+        
+        // Auto-approve perfect extractions immediately
+        if (item.aiConfidence >= 1.0f && item.title.isNotBlank()) {
+            save(onComplete = {})
+            return
+        }
+
         _uiState.value = CaptureUiState.Review(
             draft = item,
             confidence = item.aiConfidence,

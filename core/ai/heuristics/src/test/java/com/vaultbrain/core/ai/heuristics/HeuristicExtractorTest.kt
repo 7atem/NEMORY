@@ -98,6 +98,29 @@ class HeuristicExtractorTest {
     }
 
     @Test
+    fun testExtractWithNoisyOcrText() {
+        val ocrText = """
+            T@RGET ST0RE #1234
+            123 Main ${'$'}t
+            D@te: 2026-08-23
+            
+            1x Appl3s     $2.99
+            
+            T0TAL:        $2.99
+        """.trimIndent()
+
+        val result = extractor.extract(
+            text = ocrText,
+            visionObjects = listOf("Receipt"),
+            neuralClassification = Classification.RECEIPT,
+            neuralConfidence = 0.9f
+        )
+
+        assertEquals(Classification.RECEIPT, result.inferredClassification)
+        assertEquals("2.99", result.metadata["total"]) // Should fallback or extract correctly
+    }
+
+    @Test
     fun testExtractTicketAccurately() {
         val ocrText = """
             BOARDING PASS
@@ -267,6 +290,36 @@ class HeuristicExtractorTest {
         assertEquals("want_to_read", result.metadata["media_status"])
         assertEquals("Andy Weir", result.metadata["author"])
         assertTrue(result.lensTags.contains(LensId.MEDIA))
+    }
+
+    @Test
+    fun `smart document expiry extracts expiration dates from cards`() {
+        val result = extractor.extract(
+            """
+                MEMBER NAME
+                JOHN DOE
+                VALID THRU 10/30
+                4242 4242 4242 4534
+            """.trimIndent()
+        )
+        
+        assertNotNull(result.metadata["expiry_date"])
+        assertEquals("2030-10-01", result.metadata["expiry_date"])
+    }
+    
+    @Test
+    fun `smart document expiry extracts expiration dates from IDs`() {
+        val result = extractor.extract(
+            """
+                STATE OF CA
+                DRIVER LICENSE
+                DOB 01/01/1990
+                EXP 12/28
+            """.trimIndent()
+        )
+        
+        assertNotNull(result.metadata["expiry_date"])
+        assertEquals("2028-12-01", result.metadata["expiry_date"])
     }
 }
 
