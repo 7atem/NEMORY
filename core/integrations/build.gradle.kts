@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.workmanager.runtime.ktx)
+    implementation(libs.health.connect.client)
 
     // Hilt
     implementation(libs.hilt.android)

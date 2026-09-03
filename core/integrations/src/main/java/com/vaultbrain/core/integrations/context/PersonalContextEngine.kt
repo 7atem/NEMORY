@@ -26,9 +26,10 @@ class PersonalContextEngine @Inject constructor(
         val records = repository.observeRecords()
             .map { list ->
                 list.filter { record ->
-                    query.recordTypes?.let { record.recordType in it } ?: true &&
-                        query.sources?.let { record.source in it } ?: true &&
-                        isWithinWindow(record, query)
+                    (query.recordTypes?.let { record.recordType in it } ?: true) &&
+                        (query.sources?.let { record.source in it } ?: true) &&
+                        isWithinWindow(record, query) &&
+                        (query.text?.takeIf(String::isNotBlank)?.let { text -> matchesText(record, text) } ?: true)
                 }
             }
             .map { it.take(query.limit) }
@@ -49,5 +50,22 @@ class PersonalContextEngine @Inject constructor(
             ?: record.dueAt
             ?: record.createdAt
         return anchor in (now - halfWindow)..(now + halfWindow)
+    }
+
+    private fun matchesText(record: ExternalRecord, query: String): Boolean {
+        val searchable = buildString {
+            append(record.title.orEmpty()).append(' ')
+            append(record.description.orEmpty()).append(' ')
+            append(record.payload.values.joinToString(" "))
+        }.lowercase()
+        val terms = query.lowercase().split(QUERY_SPLIT_PATTERN)
+            .filter { it.length >= 3 && it !in QUERY_STOP_WORDS }
+            .distinct()
+        return terms.isEmpty() || terms.any(searchable::contains)
+    }
+
+    private companion object {
+        val QUERY_SPLIT_PATTERN = Regex("[^\\p{L}\\p{N}]+")
+        val QUERY_STOP_WORDS = setOf("the", "and", "for", "from", "where", "what", "when", "with", "this", "that", "my")
     }
 }

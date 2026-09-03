@@ -70,7 +70,23 @@
     <string name="settings_calendar_sync">مزامنة التقويمات المحددة</string>
     <string name="settings_calendar_syncing">جارٍ المزامنة…</string>
     <string name="settings_calendar_disconnect">قطع اتصال التقويم</string>
+    <string name="settings_health_title">Health Connect</string>
+    <string name="settings_health_unavailable">Health Connect غير متوفر على هذا الجهاز.</string>
+    <string name="settings_health_permission_body">اسمح بالقراءة فقط للخطوات والنوم والسعرات الحرارية النشطة لتضمين ملخص صحي يومي في «اليوم». تبقى البيانات على هذا الجهاز.</string>
+    <string name="settings_health_connected_body">يقرأ Nemory خطوات اليوم والنوم والسعرات الحرارية النشطة. تبقى البيانات على هذا الجهاز.</string>
+    <string name="settings_health_allow">السماح بالوصول إلى الصحة</string>
+    <string name="settings_health_sync">مزامنة البيانات الصحية</string>
+    <string name="settings_health_syncing">جارٍ المزامنة…</string>
+    <string name="settings_health_disconnect">قطع اتصال Health Connect</string>
     <string name="settings_connections_body">أدر التقويمات والمهام وGmail والمصادر الأخرى التي يمكن أن تضيف سياقًا لخزنتك.</string>
     <string name="settings_connections_empty">لا توجد حسابات مرتبطة بعد.</string>
     <string name="settings_connections_manage">إدارة الارتباطات</string>
+    <string name="settings_backup_portable">نسخة احتياطية قابلة للنقل</string>
+    <string name="settings_backup_portable_body">تشمل الخزنة المشفرة والوسائط الخاصة. ستحتاج كلمة المرور على كل جهاز ولا يمكن استعادتها إذا فُقدت.</string>
+    <string name="settings_backup_export">تصدير نسخة</string>
+    <string name="settings_backup_restore">استعادة نسخة</string>
+    <string name="settings_backup_passphrase">كلمة مرور النسخة</string>
+    <string name="settings_backup_passphrase_help">استخدم 12 حرفًا على الأقل للنسخة الجديدة واحفظ كلمة المرور بأمان.</string>
+    <string name="settings_continue">متابعة</string>
+    <string name="settings_cancel">إلغاء</string>
 </resources>

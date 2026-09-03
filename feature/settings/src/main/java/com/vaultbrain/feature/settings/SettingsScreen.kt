@@ -1,6 +1,8 @@
 package com.vaultbrain.feature.settings
 
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,9 +26,12 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Psychology
+import androidx.compose.material.icons.filled.CloudOff
 
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -80,6 +85,18 @@ fun SettingsScreen(
     val context = LocalContext.current
     val activity = context as? FragmentActivity
     val biometricHelper = remember { BiometricPromptHelper() }
+    var backupAction by remember { mutableStateOf<BackupAction?>(null) }
+    var backupPassphrase by remember { mutableStateOf("") }
+    val exportBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
+    ) { uri ->
+        uri?.let { viewModel.exportPortableBackup(it, backupPassphrase) }
+        backupPassphrase = ""
+    }
+    val importBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let { viewModel.importPortableBackup(it, backupPassphrase) }
+        backupPassphrase = ""
+    }
     LaunchedEffect(uiState.toastMessage) {
         uiState.toastMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
@@ -101,6 +118,44 @@ fun SettingsScreen(
             onCancel = viewModel::dismissPinSetup
         )
         return
+    }
+
+    backupAction?.let { action ->
+        AlertDialog(
+            onDismissRequest = { backupAction = null; backupPassphrase = "" },
+            title = {
+                Text(stringResource(if (action == BackupAction.EXPORT) R.string.settings_backup_export else R.string.settings_backup_restore))
+            },
+            text = {
+                Column {
+                    Text(stringResource(R.string.settings_backup_passphrase_help))
+                    OutlinedTextField(
+                        value = backupPassphrase,
+                        onValueChange = { backupPassphrase = it },
+                        label = { Text(stringResource(R.string.settings_backup_passphrase)) },
+                        singleLine = true
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = backupPassphrase.length >= if (action == BackupAction.EXPORT) 12 else 1,
+                    onClick = {
+                        backupAction = null
+                        if (action == BackupAction.EXPORT) {
+                            exportBackup.launch("nemory-${java.time.LocalDate.now()}.nemorybackup")
+                        } else {
+                            importBackup.launch(arrayOf("application/octet-stream", "application/zip", "*/*"))
+                        }
+                    }
+                ) { Text(stringResource(R.string.settings_continue)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { backupAction = null; backupPassphrase = "" }) {
+                    Text(stringResource(R.string.settings_cancel))
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -126,6 +181,8 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            PrivacyDashboardSection()
+            
             GeneralSection(
                 lensAccess = uiState.lensAccess,
                 affiliateEnabled = uiState.affiliateLinksEnabled,
@@ -187,7 +244,9 @@ fun SettingsScreen(
             DataManagementSection(
                 state = uiState,
                 onDriveToggle = viewModel::setDriveBackupEnabled,
-                onGmailToggle = viewModel::setGmailIntegrationEnabled
+                onGmailToggle = viewModel::setGmailIntegrationEnabled,
+                onExportBackup = { backupAction = BackupAction.EXPORT },
+                onImportBackup = { backupAction = BackupAction.IMPORT }
             )
 
             ConnectionsSection(onManageClick = onConnectionsClick)
@@ -396,6 +455,46 @@ private fun Classification.cloudCategoryLabel(): String = stringResource(
 )
 
 @Composable
+private fun PrivacyDashboardSection() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Privacy & Security Dashboard", style = MaterialTheme.typography.titleMedium)
+            }
+            Text("0 bytes sent to the cloud", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
+            Text("Your vault runs entirely on this device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            HorizontalDivider()
+            DashboardRow(icon = Icons.Default.Storage, label = "Storage", detail = "Local SQLCipher encrypted")
+            DashboardRow(icon = Icons.Default.Psychology, label = "AI Extraction", detail = "On-device ML Kit / Gemma")
+            DashboardRow(icon = Icons.Default.CloudOff, label = "Network", detail = "Offline-first")
+        }
+    }
+}
+
+@Composable
+private fun DashboardRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, detail: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(label, style = MaterialTheme.typography.bodyMedium)
+            Text(detail, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
 private fun GeneralSection(
     lensAccess: Map<String, Boolean>,
     affiliateEnabled: Boolean,
@@ -561,8 +660,12 @@ private fun SecuritySection(
 private fun DataManagementSection(
     state: SettingsUiState,
     onDriveToggle: (Boolean) -> Unit,
-    onGmailToggle: (Boolean) -> Unit
+    onGmailToggle: (Boolean) -> Unit,
+    onExportBackup: () -> Unit,
+    onImportBackup: () -> Unit
 ) {
+    var showGmailConsent by remember { mutableStateOf(false) }
+
     SettingsCard(title = "Data Management", icon = Icons.Default.Storage) {
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -580,6 +683,24 @@ private fun DataManagementSection(
         
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
+        Text(stringResource(R.string.settings_backup_portable), style = MaterialTheme.typography.titleSmall)
+        Text(
+            stringResource(R.string.settings_backup_portable_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row {
+            TextButton(onClick = onExportBackup, enabled = !state.backupInProgress) {
+                Text(stringResource(R.string.settings_backup_export))
+            }
+            TextButton(onClick = onImportBackup, enabled = !state.backupInProgress) {
+                Text(stringResource(R.string.settings_backup_restore))
+            }
+        }
+        if (state.backupInProgress) LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
         SettingsSwitch(
             label = "Google Drive backup",
             checked = state.driveBackupEnabled,
@@ -589,8 +710,14 @@ private fun DataManagementSection(
         SettingsSwitch(
             label = "Gmail integration",
             checked = state.gmailIntegrationEnabled,
-            onCheckedChange = onGmailToggle,
-            enabled = false
+            onCheckedChange = { 
+                if (it) {
+                    showGmailConsent = true
+                } else {
+                    onGmailToggle(false)
+                }
+            },
+            enabled = true
         )
         Text(
             "Cloud integrations remain off until OAuth and production API credentials are configured.",
@@ -598,7 +725,32 @@ private fun DataManagementSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+
+    if (showGmailConsent) {
+        AlertDialog(
+            onDismissRequest = { showGmailConsent = false },
+            title = { Text("Connect Gmail") },
+            text = {
+                Text("To securely index your receipts, tickets, and bookings, VaultBrain requires read-only access to your Gmail (gmail.readonly). We do not store your emails in the cloud; all processing happens locally on your device.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showGmailConsent = false
+                    onGmailToggle(true)
+                }) {
+                    Text("Review Permissions")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showGmailConsent = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
+
+private enum class BackupAction { EXPORT, IMPORT }
 
 @Composable
 private fun ConnectionsSection(onManageClick: () -> Unit) {

@@ -70,7 +70,23 @@
     <string name="settings_calendar_sync">Sync selected calendars</string>
     <string name="settings_calendar_syncing">Syncing…</string>
     <string name="settings_calendar_disconnect">Disconnect calendar</string>
+    <string name="settings_health_title">Health Connect</string>
+    <string name="settings_health_unavailable">Health Connect is not available on this device.</string>
+    <string name="settings_health_permission_body">Allow read-only access to steps, sleep, and active calories to include a daily health summary in Today. Data stays on this device.</string>
+    <string name="settings_health_connected_body">Nemory reads today\'s steps, sleep, and active calories. Data stays on this device.</string>
+    <string name="settings_health_allow">Allow health access</string>
+    <string name="settings_health_sync">Sync health data</string>
+    <string name="settings_health_syncing">Syncing…</string>
+    <string name="settings_health_disconnect">Disconnect Health Connect</string>
     <string name="settings_connections_body">Manage calendars, tasks, Gmail, and other sources that can add context to your vault.</string>
     <string name="settings_connections_empty">No connected accounts yet.</string>
     <string name="settings_connections_manage">Manage connections</string>
+    <string name="settings_backup_portable">Portable backup</string>
+    <string name="settings_backup_portable_body">Includes the encrypted vault and private media. Your passphrase is required on every device and cannot be recovered.</string>
+    <string name="settings_backup_export">Export backup</string>
+    <string name="settings_backup_restore">Restore backup</string>
+    <string name="settings_backup_passphrase">Backup passphrase</string>
+    <string name="settings_backup_passphrase_help">Use at least 12 characters for a new backup. Keep it somewhere safe.</string>
+    <string name="settings_continue">Continue</string>
+    <string name="settings_cancel">Cancel</string>
 </resources>

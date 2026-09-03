@@ -14,6 +14,8 @@ import com.vaultbrain.core.notifications.GemmaDownloadPromptManager
 import com.vaultbrain.core.integrations.calendar.CalendarConnector
 import com.vaultbrain.core.integrations.calendar.CalendarSyncWorker
 import com.vaultbrain.core.integrations.connector.ConnectorRegistry
+import com.vaultbrain.sync.gmail.GmailConnector
+import com.vaultbrain.sync.gmail.GmailSyncWorker
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.feature.capture.LocalAiAdoptionManager
 import com.vaultbrain.feature.capture.worker.DeferredAnalysisWorker
@@ -71,6 +73,12 @@ class VaultBrainApplication : Application(), Configuration.Provider {
     @Inject
     lateinit var calendarConnector: CalendarConnector
 
+    @Inject
+    lateinit var gmailConnector: GmailConnector
+
+    @Inject
+    lateinit var healthConnectConnector: com.vaultbrain.core.integrations.health.HealthConnectConnector
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val gemmaRuntimeActivated = MutableStateFlow(false)
 
@@ -97,7 +105,11 @@ class VaultBrainApplication : Application(), Configuration.Provider {
         }
         runCatching { persistentCaptureNotificationManager.showPersistentNotification() }
         connectorRegistry.register(calendarConnector)
+        connectorRegistry.register(gmailConnector)
+        connectorRegistry.register(healthConnectConnector)
+        runCatching { GmailSyncWorker.enqueuePeriodic(this) }
         runCatching { CalendarSyncWorker.enqueuePeriodic(this) }
+        runCatching { com.vaultbrain.core.integrations.health.HealthConnectSyncWorker.enqueuePeriodic(this) }
         // Precompile the ~944 keyword regexes off the main thread so the first
         // capture doesn't pay the compilation cost.
         applicationScope.launch {

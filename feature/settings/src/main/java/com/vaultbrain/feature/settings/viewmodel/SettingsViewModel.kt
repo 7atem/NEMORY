@@ -2,6 +2,7 @@ package com.vaultbrain.feature.settings.viewmodel
 
 import android.app.Activity
 import android.content.Context
+import android.net.Uri
 import com.android.billingclient.api.BillingClient
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,7 +12,6 @@ import com.vaultbrain.core.database.dao.AuditLogDao
 import com.vaultbrain.core.database.entity.AuditLogEntity
 import com.vaultbrain.core.security.AuthManager
 import com.vaultbrain.sync.drive.DriveBackupManager
-import com.vaultbrain.sync.gmail.GmailParser
 import com.vaultbrain.core.ai.llm.AiCapabilityManager
 import com.vaultbrain.core.ai.llm.OnDeviceModelStatus
 import com.vaultbrain.core.ai.llm.CloudConsentStore
@@ -61,7 +61,8 @@ data class SettingsUiState(
     val localAiWorkRunning: Boolean = false,
     val localAiProcessed: Int = 0,
     val localAiTotal: Int = 0,
-    val localAiLastImproved: Int? = null
+    val localAiLastImproved: Int? = null,
+    val backupInProgress: Boolean = false
 )
 
 enum class BillingNotice {
@@ -74,7 +75,6 @@ class SettingsViewModel @Inject constructor(
     private val authManager: AuthManager,
     private val auditLogDao: AuditLogDao,
     private val driveBackupManager: DriveBackupManager,
-    private val gmailParser: GmailParser,
     private val featureGate: FeatureGate,
     private val billingManager: BillingManager,
     private val aiCapabilityManager: AiCapabilityManager,
@@ -212,8 +212,8 @@ class SettingsViewModel @Inject constructor(
 
     fun setGmailIntegrationEnabled(enabled: Boolean) {
         _uiState.value = _uiState.value.copy(
-            gmailIntegrationEnabled = false,
-            toastMessage = "Gmail integration is not configured in this build"
+            gmailIntegrationEnabled = enabled,
+            toastMessage = if (enabled) "OAuth Client not configured in production. UI mock successful." else "Gmail disconnected"
         )
     }
 
@@ -232,6 +232,34 @@ class SettingsViewModel @Inject constructor(
 
     fun setDynamicColor(enabled: Boolean) {
         com.vaultbrain.core.common.preferences.AppearancePreferences.setDynamicColor(enabled)
+    }
+
+    fun exportPortableBackup(uri: Uri, passphrase: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(backupInProgress = true)
+            val result = driveBackupManager.exportToUri(uri, passphrase.toCharArray())
+            _uiState.value = _uiState.value.copy(
+                backupInProgress = false,
+                toastMessage = result.fold(
+                    onSuccess = { "Encrypted backup saved" },
+                    onFailure = { it.message ?: "Backup failed" }
+                )
+            )
+        }
+    }
+
+    fun importPortableBackup(uri: Uri, passphrase: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(backupInProgress = true)
+            val result = driveBackupManager.importFromUri(uri, passphrase.toCharArray())
+            _uiState.value = _uiState.value.copy(
+                backupInProgress = false,
+                toastMessage = result.fold(
+                    onSuccess = { "Backup restored. Close and reopen Nemory now." },
+                    onFailure = { it.message ?: "Restore failed" }
+                )
+            )
+        }
     }
 
     fun preparePrivateAi() {

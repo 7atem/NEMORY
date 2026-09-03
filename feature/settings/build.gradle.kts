@@ -46,6 +46,7 @@ dependencies {
     implementation(project(":feature:capture"))
     implementation(project(":sync:drive"))
     implementation(project(":sync:gmail"))
+    implementation(libs.health.connect.client)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
