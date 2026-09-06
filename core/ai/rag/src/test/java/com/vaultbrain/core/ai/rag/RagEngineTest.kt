@@ -108,7 +108,7 @@ class RagEngineTest {
         every { vectorStore.nearestNeighbors(vector, 50, null) } returns listOf(embedding)
         every { vectorStore.cosineSimilarity(vector, vector) } returns 1f
         coEvery { vaultRepository.filterIds(listOf("1"), null, null, null, null) } returns listOf("1")
-        coEvery { vaultRepository.getById("1") } returns item
+        coEvery { vaultRepository.getByIds(listOf("1")) } returns listOf(item)
         coEvery { llmClient.generate(any()) } returns null
 
         val result = engine.query("receipt", SearchFilters())
@@ -131,7 +131,7 @@ class RagEngineTest {
         every { vectorStore.nearestNeighbors(vector, 50, null) } returns listOf(embedding)
         every { vectorStore.cosineSimilarity(vector, vector) } returns 1f
         coEvery { vaultRepository.filterIds(listOf("1"), null, null, null, null) } returns listOf("1")
-        coEvery { vaultRepository.getById("1") } returns item
+        coEvery { vaultRepository.getByIds(listOf("1")) } returns listOf(item)
         coEvery { llmClient.generate(any()) } returns "You spent EGP 4850 at Carrefour. [Item ID: invented]"
 
         val result = engine.query("receipt", SearchFilters())
@@ -288,6 +288,6 @@ class RagEngineTest {
         every { vectorStore.cosineSimilarity(vector, vector) } returns 1f
         coEvery { vaultRepository.filterIds(listOf(item.id), null, null, null, null) } returns
             listOf(item.id)
-        coEvery { vaultRepository.getById(item.id) } returns item
+        coEvery { vaultRepository.getByIds(listOf(item.id)) } returns listOf(item)
     }
 }

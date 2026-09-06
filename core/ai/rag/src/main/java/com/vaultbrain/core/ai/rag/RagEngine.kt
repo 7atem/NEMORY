@@ -110,7 +110,9 @@ class RagEngine @Inject constructor(
             return RagResponse(answer = null, sources = emptyList(), confidence = 0f)
         }
 
-        val items = filteredIds.mapNotNull { vaultRepository.getById(it) }
+        // One batch query instead of a per-item N+1; re-ordered to match filteredIds.
+        val itemsById = vaultRepository.getByIds(filteredIds).associateBy { it.id }
+        val items = filteredIds.mapNotNull(itemsById::get)
         val scoredItems = rerank(queryVector, candidates, items)
         val topSources = scoredItems.take(MAX_SOURCES)
             .map { it.first }
@@ -248,7 +250,9 @@ class RagEngine @Inject constructor(
             return@flow
         }
 
-        val items = filteredIds.mapNotNull { vaultRepository.getById(it) }
+        // One batch query instead of a per-item N+1; re-ordered to match filteredIds.
+        val itemsById = vaultRepository.getByIds(filteredIds).associateBy { it.id }
+        val items = filteredIds.mapNotNull(itemsById::get)
         val scoredItems = rerank(queryVector, candidates, items)
         val topSources = scoredItems.take(MAX_SOURCES).map { it.first }.ifEmpty { items.take(MAX_SOURCES) }
         val confidence = topSources.firstOrNull()?.let { scoreItem(queryVector, candidates, it) }?.coerceIn(0f, 1f) ?: 0f
@@ -517,7 +521,9 @@ class RagEngine @Inject constructor(
             return@flow
         }
 
-        val items = filteredIds.mapNotNull { vaultRepository.getById(it) }
+        // One batch query instead of a per-item N+1; re-ordered to match filteredIds.
+        val itemsById = vaultRepository.getByIds(filteredIds).associateBy { it.id }
+        val items = filteredIds.mapNotNull(itemsById::get)
         val scoredItems = rerank(queryVector, vectorCandidates, items)
         val topSources = scoredItems.take(MAX_SOURCES).map { it.first }.ifEmpty { items.take(MAX_SOURCES) }
         val confidence = topSources.firstOrNull()?.let { scoreItem(queryVector, vectorCandidates, it) }?.coerceIn(0f, 1f) ?: 0f

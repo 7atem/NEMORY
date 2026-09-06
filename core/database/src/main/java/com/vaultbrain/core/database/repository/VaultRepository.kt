@@ -296,6 +296,13 @@ open class VaultRepository @Inject constructor(
     suspend fun getById(id: String): VaultItem? =
         if (DecoySessionState.isDecoy.value) null else vaultItemDao.getById(id)?.let(VaultItemMapper::toDomain)
 
+    suspend fun getByIds(ids: List<String>): List<VaultItem> =
+        if (DecoySessionState.isDecoy.value) {
+            emptyList()
+        } else {
+            vaultItemDao.getByIds(ids).map(VaultItemMapper::toDomain)
+        }
+
     suspend fun save(item: VaultItem) {
         if (DecoySessionState.isDecoy.value) return
         val action = if (vaultItemDao.getById(item.id) == null) "CREATE" else "EDIT"
