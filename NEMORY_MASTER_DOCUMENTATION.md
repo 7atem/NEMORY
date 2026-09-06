@@ -67,11 +67,14 @@ The product's defining principles are:
 
 ### 1.1 Current release snapshot
 
+**Current published release:** 1.1.1 / versionCode 10
+**Current development candidate:** 1.1.2 / versionCode 15 (release candidate `v1.1.2-rc2`)
+
 | Item | Current value |
 |---|---|
 | User-facing name | Nemory |
-| Version | 1.1.1 |
-| Version code | 10 |
+| Version | 1.1.2 (candidate); 1.1.1 published |
+| Version code | 15 (candidate); 10 published |
 | Application ID | `com.nemory.app` |
 | Minimum Android | API 29 (Android 10) |
 | Target / compile SDK | API 36 |
@@ -1124,7 +1127,7 @@ AI in the public listing as available features.
 - no sensitive real documents, names, addresses, calendar details, or notifications in
   screenshots.
 
-### 10.6 Release notes for 1.1.1 (code 10)
+### 10.6 Release notes for 1.1.1 (code 10, last published release)
 
 Suggested English release notes:
 
