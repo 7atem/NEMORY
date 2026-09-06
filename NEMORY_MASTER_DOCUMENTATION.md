@@ -121,8 +121,8 @@ The product's defining principles are:
 
 Nemory is a single-activity Compose application. The three persistent bottom tabs are:
 
-- **Today** (`home`): briefing, attention items, upcoming Calendar events, reminders,
-  and shortcuts.
+- **Today** (`home`): greeting, "Needs attention", ask composer, briefing, upcoming
+  Calendar events, reminders, and shortcuts.
 - **Vault** (`search`): personal collections first, followed by vault browsing and
   search.
 - **Brain** (`brain`): retrieval-augmented questions and actions over vault content.
@@ -287,6 +287,10 @@ money signals, travel timing, media backlog, and time-based external context.
 
 Ordering of Calendar events and reminders is deterministic. It does not require Gemma
 and must remain available offline after the permitted local Calendar cache is built.
+The top of Today is a "Needs attention" section produced by a pure prioritizer
+(reminders, today's Calendar events, expiring documents, review backlog) plus a
+greeting header and an "Ask Nemory anything..." composer whose text prefills Brain
+(`brain?query=`) without auto-sending.
 The Home screen provides "Explainability Chips" that deterministically explain *why* an item is shown in Today (e.g., "Expires soon", "Possible Duplicate"), building user trust without relying on LLM inference. Additionally, proactive "Backup Nudges" appear here to remind users to perform an encrypted export.
 
 ### 2.10 Calendar context

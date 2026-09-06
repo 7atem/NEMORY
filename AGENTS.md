@@ -12,8 +12,9 @@ document aligned with source changes.
 
 - `app/` — application shell: `VaultBrainApplication` (Hilt + WorkManager config,
   keyword warmup), `MainActivity`, navigation (`navigation/VaultBrainNavGraph.kt`).
-- `feature/vault` — home screen, vault browser/search, item detail, review inbox,
-  auth gate, onboarding, lens detail, personal collections
+- `feature/vault` — home/Today screen (greeting, "Needs attention" prioritizer in
+  `home/AttentionItem.kt`, ask composer), vault browser/search, item detail, review
+  inbox, auth gate, onboarding, lens detail, personal collections
   (`CollectionsScreen.kt` list + detail, `CollectionsViewModel.kt`).
 - `feature/capture` — capture pipeline (camera/gallery/share/voice/text), experience
   picker, review screen, `ShareActivity`, `ShareIngestionViewModel`,
@@ -59,7 +60,8 @@ document aligned with source changes.
 ## Navigation
 
 Single-activity Compose nav (`VaultBrainNavGraph`). Three bottom tabs: Today (`home`),
-Vault (`search`), Brain (`brain`). Capture is a modal route (`capture?imageUris&text&lens&source`,
+Vault (`search`), Brain (`brain`, optional `?query=` prefill from the Today composer —
+prefill only, never auto-sends). Capture is a modal route (`capture?imageUris&text&lens&source`,
 slides up). Other routes: `auth_gate`, `onboarding`, `settings`, `review`,
 `detail/{itemId}`, `collections`, `collection/{collectionId}`, `lens/{lensId}`.
 
