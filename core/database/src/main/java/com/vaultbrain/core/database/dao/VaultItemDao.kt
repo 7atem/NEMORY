@@ -291,6 +291,9 @@ interface VaultItemDao {
     @Query("SELECT * FROM vault_items WHERE expiry_date IS NOT NULL AND expiry_date > :now ORDER BY expiry_date ASC LIMIT :limit")
     suspend fun getExpiringSoon(now: Long, limit: Int): List<VaultItemEntity>
 
+    @Query("SELECT * FROM vault_items WHERE is_archived = 0 AND is_stealth = 0 AND expiry_date IS NOT NULL AND expiry_date <= :limitTime ORDER BY is_pinned DESC, created_at DESC")
+    fun observeExpiringBefore(limitTime: Long): Flow<List<VaultItemEntity>>
+
     @Query("SELECT COUNT(*) FROM vault_items")
     suspend fun count(): Int
 

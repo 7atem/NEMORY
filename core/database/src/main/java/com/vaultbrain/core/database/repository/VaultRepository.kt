@@ -289,8 +289,8 @@ open class VaultRepository @Inject constructor(
         }
 
     fun observeExpiring(limitTime: Long): Flow<List<VaultItem>> =
-        kotlinx.coroutines.flow.combine(vaultItemDao.observeActive(), DecoySessionState.isDecoy) { list, isDecoy ->
-            if (isDecoy) emptyList() else list.map(VaultItemMapper::toDomain).filter { it.expiryDate?.let { exp -> exp <= limitTime } == true }
+        kotlinx.coroutines.flow.combine(vaultItemDao.observeExpiringBefore(limitTime), DecoySessionState.isDecoy) { list, isDecoy ->
+            if (isDecoy) emptyList() else list.map(VaultItemMapper::toDomain)
         }
 
     suspend fun getById(id: String): VaultItem? =
