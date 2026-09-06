@@ -168,6 +168,8 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
     val cloudMessage by viewModel.cloudMessage.collectAsState()
     val pendingWrite by viewModel.pendingWrite.collectAsState()
     val pendingCollectionCreation by viewModel.pendingCollectionCreation.collectAsState()
+    val pendingCollectionTarget by viewModel.pendingCollectionTarget.collectAsState()
+    val activeCollections by viewModel.activeCollections.collectAsState()
     val attachedImageUri by viewModel.attachedImageUri.collectAsState()
     
     // Convert suggestion to just keyword if not conversational
@@ -281,7 +283,8 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
                                 isLatest = isLatest,
                                 isStreaming = isStreaming,
                                 onSourceClick = onSourceClick,
-                                onRetry = viewModel::retryQuery
+                                onRetry = viewModel::retryQuery,
+                                onSuggestedAction = viewModel::onSuggestedAction
                             )
                         }
                     }
@@ -422,6 +425,45 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
         )
     }
 
+    pendingCollectionTarget?.let { target ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissCollectionTarget() },
+            title = { Text("Add to Collection") },
+            text = {
+                if (activeCollections.isEmpty()) {
+                    Text(
+                        "No collections yet. Create one from the Vault tab first.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    Column(
+                        modifier = Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        activeCollections.forEach { collection ->
+                            TextButton(
+                                onClick = { viewModel.confirmAddToCollection(collection.id) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    collection.name,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissCollectionTarget() }) {
+                    Text(stringResource(R.string.brain_chat_cancel))
+                }
+            }
+        )
+    }
+
     cloudConsent?.let { pending ->
         var rememberCategories by remember(pending) { mutableStateOf(false) }
         AlertDialog(
@@ -510,6 +552,7 @@ private fun ChatBubble(
     isStreaming: Boolean,
     onSourceClick: (String) -> Unit,
     onRetry: (String) -> Unit,
+    onSuggestedAction: (com.vaultbrain.feature.brain.model.SuggestedAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (message) {
@@ -528,6 +571,7 @@ private fun ChatBubble(
             isStreaming = isStreaming,
             onSourceClick = onSourceClick,
             onRetry = onRetry,
+            onSuggestedAction = onSuggestedAction,
             modifier = modifier
         )
     }
@@ -641,6 +685,7 @@ private fun AssistantBubble(
     isStreaming: Boolean,
     onSourceClick: (String) -> Unit,
     onRetry: (String) -> Unit,
+    onSuggestedAction: (com.vaultbrain.feature.brain.model.SuggestedAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (text.isBlank() && evidence == null) return
@@ -744,6 +789,8 @@ private fun AssistantBubble(
                         onClick = {
                             if (action.actionId == "OPEN_ITEM") {
                                 action.payload["itemId"]?.let { onSourceClick(it) }
+                            } else {
+                                onSuggestedAction(action)
                             }
                         },
                         label = { Text(action.label) },

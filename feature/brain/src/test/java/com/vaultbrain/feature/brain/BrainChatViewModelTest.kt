@@ -48,12 +48,14 @@ class BrainChatViewModelTest {
     private val cloudConsentStore = mockk<CloudConsentStore>(relaxed = true)
     private val writeActionPlanner = mockk<BrainWriteActionPlanner>()
     private val capabilityManager = mockk<AiCapabilityManager>(relaxed = true)
+    private val vaultReminderManager = mockk<com.vaultbrain.core.notifications.VaultReminderManager>(relaxed = true)
 
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         every { conversationRepository.observeAll() } returns flowOf(emptyList())
         every { vaultRepository.observeActive() } returns flowOf(emptyList())
+        every { vaultRepository.observeActiveCollections() } returns flowOf(emptyList())
         every { capabilityManager.capabilities } returns kotlinx.coroutines.flow.MutableStateFlow(com.vaultbrain.core.ai.llm.AiDeviceCapabilities())
         coEvery { conversationRepository.upsert(any()) } just Runs
         coEvery { conversationRepository.clear() } just Runs
@@ -329,7 +331,8 @@ class BrainChatViewModelTest {
         suggestionProvider = suggestionProvider,
         cloudConsentStore = cloudConsentStore,
         writeActionPlanner = writeActionPlanner,
-        capabilityManager = capabilityManager
+        capabilityManager = capabilityManager,
+        vaultReminderManager = vaultReminderManager
     )
 }
 

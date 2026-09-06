@@ -11,16 +11,24 @@ import com.vaultbrain.core.ai.rag.RagEvidenceKind
 import com.vaultbrain.core.ai.rag.RagCloudFailure
 import com.vaultbrain.core.ai.rag.RagResponse
 import com.vaultbrain.core.ai.rag.SearchFilters
+import com.vaultbrain.core.common.model.PersonalCollection
+import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.core.common.model.VaultReminder
 import com.vaultbrain.core.database.repository.BrainConversationRepository
 import com.vaultbrain.core.database.repository.StoredBrainMessage
 import com.vaultbrain.core.database.repository.VaultRepository
+import com.vaultbrain.core.notifications.VaultReminderManager
 import com.vaultbrain.feature.brain.model.ChatMessage
+import com.vaultbrain.feature.brain.model.SuggestedAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -59,7 +67,8 @@ class BrainChatViewModel @Inject constructor(
     private val suggestionProvider: BrainSuggestionProvider,
     private val cloudConsentStore: CloudConsentStore,
     private val writeActionPlanner: BrainWriteActionPlanner,
-    private val capabilityManager: AiCapabilityManager
+    private val capabilityManager: AiCapabilityManager,
+    private val vaultReminderManager: VaultReminderManager
 ) : ViewModel() {
 
     private val _isAiCoreEnabled = MutableStateFlow(false)
@@ -94,6 +103,94 @@ class BrainChatViewModel @Inject constructor(
 
     private val _pendingCollectionCreation = MutableStateFlow<BrainCollectionCreationPreview?>(null)
     val pendingCollectionCreation: StateFlow<BrainCollectionCreationPreview?> = _pendingCollectionCreation.asStateFlow()
+
+    private val _pendingCollectionTarget = MutableStateFlow<VaultItem?>(null)
+    val pendingCollectionTarget: StateFlow<VaultItem?> = _pendingCollectionTarget.asStateFlow()
+
+    val activeCollections: StateFlow<List<PersonalCollection>> =
+        vaultRepository.observeActiveCollections()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun onSuggestedAction(action: SuggestedAction) {
+        val itemId = action.payload["itemId"] ?: return
+        when (action.actionId) {
+            "REMIND_EXPIRY" -> scheduleExpiryReminder(itemId)
+            "ADD_COLLECTION" -> viewModelScope.launch {
+                _pendingCollectionTarget.value = vaultRepository.getById(itemId)
+            }
+        }
+    }
+
+    private fun scheduleExpiryReminder(itemId: String) {
+        viewModelScope.launch {
+            val item = vaultRepository.getById(itemId) ?: return@launch
+            val expiry = item.expiryDate
+            if (expiry == null) {
+                postActionNote(
+                    if (arabicUi()) "لا يوجد تاريخ انتهاء معروف لهذا المستند."
+                    else "No known expiry date for this document."
+                )
+                return@launch
+            }
+            val now = System.currentTimeMillis()
+            val dueAt = when {
+                expiry - TimeUnit.DAYS.toMillis(30) > now -> expiry - TimeUnit.DAYS.toMillis(30)
+                expiry - TimeUnit.DAYS.toMillis(1) > now -> expiry - TimeUnit.DAYS.toMillis(1)
+                else -> {
+                    postActionNote(
+                        if (arabicUi()) "تاريخ الانتهاء قريب جدًا أو قد مضى بالفعل."
+                        else "The expiry date is too close or has already passed."
+                    )
+                    return@launch
+                }
+            }
+            val created = vaultReminderManager.create(
+                VaultReminder(
+                    id = UUID.nameUUIDFromBytes("$itemId:$dueAt".toByteArray()).toString(),
+                    title = item.title,
+                    dueAt = dueAt,
+                    vaultItemId = itemId
+                )
+            )
+            postActionNote(
+                if (created) {
+                    if (arabicUi()) "تم ضبط التذكير لـ «${item.title}»."
+                    else "Reminder set for '${item.title}'."
+                } else {
+                    if (arabicUi()) "تعذر ضبط التذكير."
+                    else "Could not set the reminder."
+                }
+            )
+        }
+    }
+
+    fun confirmAddToCollection(collectionId: String) {
+        val item = _pendingCollectionTarget.value ?: return
+        _pendingCollectionTarget.value = null
+        viewModelScope.launch {
+            val added = runCatching { vaultRepository.addItemToCollection(item.id, collectionId) }
+                .getOrDefault(false)
+            postActionNote(
+                if (added) {
+                    if (arabicUi()) "تمت إضافة «${item.title}» إلى المجموعة."
+                    else "Added '${item.title}' to the collection."
+                } else {
+                    if (arabicUi()) "تعذرت الإضافة إلى المجموعة."
+                    else "Could not add to the collection."
+                }
+            )
+        }
+    }
+
+    fun dismissCollectionTarget() {
+        _pendingCollectionTarget.value = null
+    }
+
+    private fun postActionNote(text: String) {
+        _messages.update { it + ChatMessage.Assistant(id = UUID.randomUUID().toString(), text = text) }
+    }
+
+    private fun arabicUi(): Boolean = java.util.Locale.getDefault().language.startsWith("ar")
 
     init {
         viewModelScope.launch {
