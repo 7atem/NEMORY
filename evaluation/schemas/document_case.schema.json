@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Document Case",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "source_type": { "type": "string" },
+    "language": { "type": "array", "items": { "type": "string" } },
+    "document_type": { "type": "string" },
+    "primary_lens": { "type": "string" },
+    "ground_truth_text": { "type": "string" },
+    "fields": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "critical_fields": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["id", "source_type", "document_type", "ground_truth_text", "fields"]
+}

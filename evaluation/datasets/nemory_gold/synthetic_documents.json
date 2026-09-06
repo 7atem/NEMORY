@@ -1,0 +1,1077 @@
+[
+  {
+    "id": "receipt_0",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Gas Station\nDate: 2026-08-11\nItem 1  $10.00\nItem 2  $50.11\nTotal: $60.11",
+    "fields": {
+      "merchant": "Gas Station",
+      "total": "60.11",
+      "currency": "USD",
+      "purchase_date": "2026-08-11"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_1",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Electronics Mart\nDate: 2026-08-30\nItem 1  $10.00\nItem 2  $116.22\nTotal: $126.22",
+    "fields": {
+      "merchant": "Electronics Mart",
+      "total": "126.22",
+      "currency": "USD",
+      "purchase_date": "2026-08-30"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_2",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Gas Station\nDate: 2026-08-11\nItem 1  $10.00\nItem 2  $45.74\nTotal: $55.74",
+    "fields": {
+      "merchant": "Gas Station",
+      "total": "55.74",
+      "currency": "USD",
+      "purchase_date": "2026-08-11"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_3",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Restaurant\nDate: 2026-08-21\nItem 1  $10.00\nItem 2  $38.03\nTotal: $48.03",
+    "fields": {
+      "merchant": "Restaurant",
+      "total": "48.03",
+      "currency": "USD",
+      "purchase_date": "2026-08-21"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_4",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Coffee Shop\nDate: 2026-08-28\nItem 1  $10.00\nItem 2  $9.75\nTotal: $19.75",
+    "fields": {
+      "merchant": "Coffee Shop",
+      "total": "19.75",
+      "currency": "USD",
+      "purchase_date": "2026-08-28"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_5",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Grocery Store\nDate: 2026-09-03\nItem 1  $10.00\nItem 2  $245.15\nTotal: $255.15",
+    "fields": {
+      "merchant": "Grocery Store",
+      "total": "255.15",
+      "currency": "USD",
+      "purchase_date": "2026-09-03"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_6",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Restaurant\nDate: 2026-08-14\nItem 1  $10.00\nItem 2  $93.42\nTotal: $103.42",
+    "fields": {
+      "merchant": "Restaurant",
+      "total": "103.42",
+      "currency": "USD",
+      "purchase_date": "2026-08-14"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_7",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Gas Station\nDate: 2026-08-27\nItem 1  $10.00\nItem 2  $264.75\nTotal: $274.75",
+    "fields": {
+      "merchant": "Gas Station",
+      "total": "274.75",
+      "currency": "USD",
+      "purchase_date": "2026-08-27"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_8",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Pharmacy\nDate: 2026-08-09\nItem 1  $10.00\nItem 2  $286.69\nTotal: $296.69",
+    "fields": {
+      "merchant": "Pharmacy",
+      "total": "296.69",
+      "currency": "USD",
+      "purchase_date": "2026-08-09"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_9",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Coffee Shop\nDate: 2026-08-29\nItem 1  $10.00\nItem 2  $370.61\nTotal: $380.61",
+    "fields": {
+      "merchant": "Coffee Shop",
+      "total": "380.61",
+      "currency": "USD",
+      "purchase_date": "2026-08-29"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_10",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Gas Station\nDate: 2026-08-26\nItem 1  $10.00\nItem 2  $204.19\nTotal: $214.19",
+    "fields": {
+      "merchant": "Gas Station",
+      "total": "214.19",
+      "currency": "USD",
+      "purchase_date": "2026-08-26"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_11",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Grocery Store\nDate: 2026-08-10\nItem 1  $10.00\nItem 2  $101.58\nTotal: $111.58",
+    "fields": {
+      "merchant": "Grocery Store",
+      "total": "111.58",
+      "currency": "USD",
+      "purchase_date": "2026-08-10"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_12",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Electronics Mart\nDate: 2026-08-22\nItem 1  $10.00\nItem 2  $45.59\nTotal: $55.59",
+    "fields": {
+      "merchant": "Electronics Mart",
+      "total": "55.59",
+      "currency": "USD",
+      "purchase_date": "2026-08-22"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_13",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Coffee Shop\nDate: 2026-08-23\nItem 1  $10.00\nItem 2  $172.69\nTotal: $182.69",
+    "fields": {
+      "merchant": "Coffee Shop",
+      "total": "182.69",
+      "currency": "USD",
+      "purchase_date": "2026-08-23"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "receipt_14",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Restaurant\nDate: 2026-09-02\nItem 1  $10.00\nItem 2  $125.94\nTotal: $135.94",
+    "fields": {
+      "merchant": "Restaurant",
+      "total": "135.94",
+      "currency": "USD",
+      "purchase_date": "2026-09-02"
+    },
+    "critical_fields": [
+      "total",
+      "merchant",
+      "purchase_date"
+    ]
+  },
+  {
+    "id": "passport_0",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: SARAH TAYLOR\nPassport No: P3094235\nDOB: 1972-09-14\nExpiry: 2032-06-19\nMRZ:\nP<USATAYLOR<<SARAH<<<<<<<<<<<<\nP3094235<0USA720914M320619<<<<<<<<<<<<<",
+    "fields": {
+      "name": "SARAH TAYLOR",
+      "document_number": "P3094235",
+      "dob": "1972-09-14",
+      "expiry_date": "2032-06-19",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "passport_1",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: EMILY SMITH\nPassport No: P1768805\nDOB: 1994-05-11\nExpiry: 2029-04-11\nMRZ:\nP<USASMITH<<EMILY<<<<<<<<<<<<\nP1768805<0USA940511M290411<<<<<<<<<<<<<",
+    "fields": {
+      "name": "EMILY SMITH",
+      "document_number": "P1768805",
+      "dob": "1994-05-11",
+      "expiry_date": "2029-04-11",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "passport_2",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: SARAH JOHNSON\nPassport No: P8606962\nDOB: 1975-06-15\nExpiry: 2031-04-14\nMRZ:\nP<USAJOHNSON<<SARAH<<<<<<<<<<<<\nP8606962<0USA750615M310414<<<<<<<<<<<<<",
+    "fields": {
+      "name": "SARAH JOHNSON",
+      "document_number": "P8606962",
+      "dob": "1975-06-15",
+      "expiry_date": "2031-04-14",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "passport_3",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: JOHN TAYLOR\nPassport No: P3871230\nDOB: 1993-04-12\nExpiry: 2034-08-16\nMRZ:\nP<USATAYLOR<<JOHN<<<<<<<<<<<<\nP3871230<0USA930412M340816<<<<<<<<<<<<<",
+    "fields": {
+      "name": "JOHN TAYLOR",
+      "document_number": "P3871230",
+      "dob": "1993-04-12",
+      "expiry_date": "2034-08-16",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "passport_4",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: MICHAEL TAYLOR\nPassport No: P4684531\nDOB: 1996-01-13\nExpiry: 2031-01-15\nMRZ:\nP<USATAYLOR<<MICHAEL<<<<<<<<<<<<\nP4684531<0USA960113M310115<<<<<<<<<<<<<",
+    "fields": {
+      "name": "MICHAEL TAYLOR",
+      "document_number": "P4684531",
+      "dob": "1996-01-13",
+      "expiry_date": "2031-01-15",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "passport_5",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: SARAH JOHNSON\nPassport No: P2110460\nDOB: 1999-06-13\nExpiry: 2029-08-16\nMRZ:\nP<USAJOHNSON<<SARAH<<<<<<<<<<<<\nP2110460<0USA990613M290816<<<<<<<<<<<<<",
+    "fields": {
+      "name": "SARAH JOHNSON",
+      "document_number": "P2110460",
+      "dob": "1999-06-13",
+      "expiry_date": "2029-08-16",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "passport_6",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: SARAH DOE\nPassport No: P5443951\nDOB: 1977-09-18\nExpiry: 2028-05-19\nMRZ:\nP<USADOE<<SARAH<<<<<<<<<<<<\nP5443951<0USA770918M280519<<<<<<<<<<<<<",
+    "fields": {
+      "name": "SARAH DOE",
+      "document_number": "P5443951",
+      "dob": "1977-09-18",
+      "expiry_date": "2028-05-19",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "passport_7",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: SARAH TAYLOR\nPassport No: P7700828\nDOB: 1977-03-18\nExpiry: 2031-08-11\nMRZ:\nP<USATAYLOR<<SARAH<<<<<<<<<<<<\nP7700828<0USA770318M310811<<<<<<<<<<<<<",
+    "fields": {
+      "name": "SARAH TAYLOR",
+      "document_number": "P7700828",
+      "dob": "1977-03-18",
+      "expiry_date": "2031-08-11",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "passport_8",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: JOHN SMITH\nPassport No: P3564251\nDOB: 1995-07-19\nExpiry: 2028-02-16\nMRZ:\nP<USASMITH<<JOHN<<<<<<<<<<<<\nP3564251<0USA950719M280216<<<<<<<<<<<<<",
+    "fields": {
+      "name": "JOHN SMITH",
+      "document_number": "P3564251",
+      "dob": "1995-07-19",
+      "expiry_date": "2028-02-16",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "passport_9",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "PASSPORT",
+    "primary_lens": "BUREAUCRACY",
+    "ground_truth_text": "PASSPORT\nName: SARAH TAYLOR\nPassport No: P8852574\nDOB: 1978-09-10\nExpiry: 2034-02-18\nMRZ:\nP<USATAYLOR<<SARAH<<<<<<<<<<<<\nP8852574<0USA780910M340218<<<<<<<<<<<<<",
+    "fields": {
+      "name": "SARAH TAYLOR",
+      "document_number": "P8852574",
+      "dob": "1978-09-10",
+      "expiry_date": "2034-02-18",
+      "document_type": "passport"
+    },
+    "critical_fields": [
+      "document_number",
+      "expiry_date",
+      "dob"
+    ]
+  },
+  {
+    "id": "invoice_0",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Design Studio\nINVOICE\nInvoice Number: INV-6573\nDue Date: 2026-10-23\nAmount Due: \u20ac646.61",
+    "fields": {
+      "merchant": "Design Studio",
+      "invoice_number": "INV-6573",
+      "due_date": "2026-10-23",
+      "total": "646.61",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_1",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Tech Supply\nINVOICE\nInvoice Number: INV-8433\nDue Date: 2026-10-18\nAmount Due: \u20ac115.90",
+    "fields": {
+      "merchant": "Tech Supply",
+      "invoice_number": "INV-8433",
+      "due_date": "2026-10-18",
+      "total": "115.90",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_2",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Tech Supply\nINVOICE\nInvoice Number: INV-9317\nDue Date: 2026-10-19\nAmount Due: \u20ac4571.88",
+    "fields": {
+      "merchant": "Tech Supply",
+      "invoice_number": "INV-9317",
+      "due_date": "2026-10-19",
+      "total": "4571.88",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_3",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Tech Supply\nINVOICE\nInvoice Number: INV-3504\nDue Date: 2026-10-15\nAmount Due: \u20ac1932.18",
+    "fields": {
+      "merchant": "Tech Supply",
+      "invoice_number": "INV-3504",
+      "due_date": "2026-10-15",
+      "total": "1932.18",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_4",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Acme Corp\nINVOICE\nInvoice Number: INV-6310\nDue Date: 2026-10-13\nAmount Due: \u20ac2494.17",
+    "fields": {
+      "merchant": "Acme Corp",
+      "invoice_number": "INV-6310",
+      "due_date": "2026-10-13",
+      "total": "2494.17",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_5",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Design Studio\nINVOICE\nInvoice Number: INV-6038\nDue Date: 2026-10-17\nAmount Due: \u20ac1273.32",
+    "fields": {
+      "merchant": "Design Studio",
+      "invoice_number": "INV-6038",
+      "due_date": "2026-10-17",
+      "total": "1273.32",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_6",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Acme Corp\nINVOICE\nInvoice Number: INV-2403\nDue Date: 2026-10-12\nAmount Due: \u20ac3686.35",
+    "fields": {
+      "merchant": "Acme Corp",
+      "invoice_number": "INV-2403",
+      "due_date": "2026-10-12",
+      "total": "3686.35",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_7",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Tech Supply\nINVOICE\nInvoice Number: INV-3103\nDue Date: 2026-10-27\nAmount Due: \u20ac3332.78",
+    "fields": {
+      "merchant": "Tech Supply",
+      "invoice_number": "INV-3103",
+      "due_date": "2026-10-27",
+      "total": "3332.78",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_8",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Tech Supply\nINVOICE\nInvoice Number: INV-5342\nDue Date: 2026-10-23\nAmount Due: \u20ac2685.60",
+    "fields": {
+      "merchant": "Tech Supply",
+      "invoice_number": "INV-5342",
+      "due_date": "2026-10-23",
+      "total": "2685.60",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_9",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Tech Supply\nINVOICE\nInvoice Number: INV-9835\nDue Date: 2026-10-16\nAmount Due: \u20ac3800.80",
+    "fields": {
+      "merchant": "Tech Supply",
+      "invoice_number": "INV-9835",
+      "due_date": "2026-10-16",
+      "total": "3800.80",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_10",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Design Studio\nINVOICE\nInvoice Number: INV-7537\nDue Date: 2026-10-21\nAmount Due: \u20ac4976.23",
+    "fields": {
+      "merchant": "Design Studio",
+      "invoice_number": "INV-7537",
+      "due_date": "2026-10-21",
+      "total": "4976.23",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_11",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Hosting Provider\nINVOICE\nInvoice Number: INV-9479\nDue Date: 2026-10-17\nAmount Due: \u20ac2312.28",
+    "fields": {
+      "merchant": "Hosting Provider",
+      "invoice_number": "INV-9479",
+      "due_date": "2026-10-17",
+      "total": "2312.28",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_12",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Tech Supply\nINVOICE\nInvoice Number: INV-2049\nDue Date: 2026-10-28\nAmount Due: \u20ac1756.62",
+    "fields": {
+      "merchant": "Tech Supply",
+      "invoice_number": "INV-2049",
+      "due_date": "2026-10-28",
+      "total": "1756.62",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_13",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Tech Supply\nINVOICE\nInvoice Number: INV-4608\nDue Date: 2026-10-11\nAmount Due: \u20ac135.24",
+    "fields": {
+      "merchant": "Tech Supply",
+      "invoice_number": "INV-4608",
+      "due_date": "2026-10-11",
+      "total": "135.24",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "invoice_14",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "INVOICE",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Tech Supply\nINVOICE\nInvoice Number: INV-2104\nDue Date: 2026-10-20\nAmount Due: \u20ac4536.56",
+    "fields": {
+      "merchant": "Tech Supply",
+      "invoice_number": "INV-2104",
+      "due_date": "2026-10-20",
+      "total": "4536.56",
+      "currency": "EUR"
+    },
+    "critical_fields": [
+      "invoice_number",
+      "due_date",
+      "total"
+    ]
+  },
+  {
+    "id": "ticket_0",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nEmirates\nPNR: SKRT05\nFlight: EM690\nDate: 2026-11-25\nSeat: 12A",
+    "fields": {
+      "pnr": "SKRT05",
+      "flight_number": "EM690",
+      "date": "2026-11-25",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  },
+  {
+    "id": "ticket_1",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nDelta\nPNR: 23GDPP\nFlight: DE578\nDate: 2026-11-11\nSeat: 12A",
+    "fields": {
+      "pnr": "23GDPP",
+      "flight_number": "DE578",
+      "date": "2026-11-11",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  },
+  {
+    "id": "ticket_2",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nEmirates\nPNR: C02DGT\nFlight: EM243\nDate: 2026-11-23\nSeat: 12A",
+    "fields": {
+      "pnr": "C02DGT",
+      "flight_number": "EM243",
+      "date": "2026-11-23",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  },
+  {
+    "id": "ticket_3",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nDelta\nPNR: KI7P5T\nFlight: DE151\nDate: 2026-11-27\nSeat: 12A",
+    "fields": {
+      "pnr": "KI7P5T",
+      "flight_number": "DE151",
+      "date": "2026-11-27",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  },
+  {
+    "id": "ticket_4",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nEmirates\nPNR: 874FRH\nFlight: EM510\nDate: 2026-11-11\nSeat: 12A",
+    "fields": {
+      "pnr": "874FRH",
+      "flight_number": "EM510",
+      "date": "2026-11-11",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  },
+  {
+    "id": "ticket_5",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nDelta\nPNR: N9J2QP\nFlight: DE848\nDate: 2026-11-27\nSeat: 12A",
+    "fields": {
+      "pnr": "N9J2QP",
+      "flight_number": "DE848",
+      "date": "2026-11-27",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  },
+  {
+    "id": "ticket_6",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nLufthansa\nPNR: FK8UT0\nFlight: LU158\nDate: 2026-11-11\nSeat: 12A",
+    "fields": {
+      "pnr": "FK8UT0",
+      "flight_number": "LU158",
+      "date": "2026-11-11",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  },
+  {
+    "id": "ticket_7",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nLufthansa\nPNR: S4F8CG\nFlight: LU709\nDate: 2026-11-12\nSeat: 12A",
+    "fields": {
+      "pnr": "S4F8CG",
+      "flight_number": "LU709",
+      "date": "2026-11-12",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  },
+  {
+    "id": "ticket_8",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nDelta\nPNR: O7UUBC\nFlight: DE773\nDate: 2026-11-28\nSeat: 12A",
+    "fields": {
+      "pnr": "O7UUBC",
+      "flight_number": "DE773",
+      "date": "2026-11-28",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  },
+  {
+    "id": "ticket_9",
+    "source_type": "synthetic",
+    "language": [
+      "en"
+    ],
+    "document_type": "TICKET",
+    "primary_lens": "TRAVEL",
+    "ground_truth_text": "BOARDING PASS\nBritish Airways\nPNR: 7HZIOY\nFlight: BR407\nDate: 2026-11-24\nSeat: 12A",
+    "fields": {
+      "pnr": "7HZIOY",
+      "flight_number": "BR407",
+      "date": "2026-11-24",
+      "seat": "12A"
+    },
+    "critical_fields": [
+      "pnr",
+      "flight_number",
+      "date"
+    ]
+  }
+]

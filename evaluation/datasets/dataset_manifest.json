@@ -1,0 +1,12 @@
+{
+  "dataset_name": "Example Dataset",
+  "source": "example.com",
+  "version": "1.0",
+  "license": "MIT",
+  "redistribution_allowed": "unknown",
+  "commercial_use_allowed": "unknown",
+  "local_path": "evaluation/datasets/example",
+  "citation": "Example Citation",
+  "transformations_performed": [],
+  "notes": "Template manifest"
+}

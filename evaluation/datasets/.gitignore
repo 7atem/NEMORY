@@ -1,0 +1,4 @@
+# Ignore external dataset files to prevent accidental commits
+external/*/*
+!external/*/README.md
+!external/*/dataset_manifest.json

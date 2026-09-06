@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Retrieval Case",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "query": { "type": "string" },
+    "relevant_documents": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "required": ["id", "query", "relevant_documents"]
+}
