@@ -20,12 +20,6 @@ object PermissionHelper {
     fun hasRecordAudio(context: Context): Boolean =
         hasPermission(context, Manifest.permission.RECORD_AUDIO)
 
-    fun hasFineLocation(context: Context): Boolean =
-        hasPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-
-    fun hasCoarseLocation(context: Context): Boolean =
-        hasPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
-
     fun hasPostNotifications(context: Context): Boolean =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             hasPermission(context, Manifest.permission.POST_NOTIFICATIONS)

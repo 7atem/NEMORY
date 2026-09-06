@@ -10,7 +10,16 @@
     <string name="meta_price">السعر</string>
     <string name="meta_currency">العملة</string>
     <string name="meta_date">التاريخ</string>
+    <string name="meta_date_as_printed">التاريخ كما هو مطبوع</string>
     <string name="meta_tax">الضريبة</string>
+    <string name="meta_subtotal">المجموع الفرعي</string>
+    <string name="meta_cashier">أمين الصندوق</string>
+    <string name="meta_item_count">عدد العناصر</string>
+    <string name="meta_amount_tendered">المبلغ المدفوع</string>
+    <string name="meta_change">الباقي</string>
+    <string name="meta_purchase_time">وقت الشراء</string>
+    <string name="meta_transaction_number">رقم المعاملة</string>
+    <string name="meta_address">العنوان</string>
     <string name="meta_payment_method">طريقة الدفع</string>
     <string name="meta_grocery_list">قائمة المشتريات</string>
     <string name="meta_items">العناصر</string>
@@ -80,5 +89,9 @@
     <string name="meta_recipient">المستلم</string>
     <string name="meta_sender">المرسل</string>
     <string name="meta_tracking_number">رقم التتبع</string>
+    <string name="meta_vin">رقم تعريف المركبة</string>
+    <string name="meta_financial_identifier">المعرف المالي</string>
+    <string name="meta_national_id">الرقم القومي</string>
+    <string name="meta_patient_name">اسم المريض</string>
     <string name="meta_url">الرابط</string>
 </resources>

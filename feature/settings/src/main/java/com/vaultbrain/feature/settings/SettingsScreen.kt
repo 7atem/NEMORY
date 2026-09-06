@@ -664,8 +664,6 @@ private fun DataManagementSection(
     onExportBackup: () -> Unit,
     onImportBackup: () -> Unit
 ) {
-    var showGmailConsent by remember { mutableStateOf(false) }
-
     SettingsCard(title = "Data Management", icon = Icons.Default.Storage) {
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -708,44 +706,15 @@ private fun DataManagementSection(
             enabled = false
         )
         SettingsSwitch(
-            label = "Gmail integration",
-            checked = state.gmailIntegrationEnabled,
-            onCheckedChange = { 
-                if (it) {
-                    showGmailConsent = true
-                } else {
-                    onGmailToggle(false)
-                }
-            },
-            enabled = true
+            label = stringResource(R.string.settings_gmail_unavailable),
+            checked = false,
+            onCheckedChange = onGmailToggle,
+            enabled = false
         )
         Text(
             "Cloud integrations remain off until OAuth and production API credentials are configured.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-
-    if (showGmailConsent) {
-        AlertDialog(
-            onDismissRequest = { showGmailConsent = false },
-            title = { Text("Connect Gmail") },
-            text = {
-                Text("To securely index your receipts, tickets, and bookings, VaultBrain requires read-only access to your Gmail (gmail.readonly). We do not store your emails in the cloud; all processing happens locally on your device.")
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showGmailConsent = false
-                    onGmailToggle(true)
-                }) {
-                    Text("Review Permissions")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showGmailConsent = false }) {
-                    Text("Cancel")
-                }
-            }
         )
     }
 }

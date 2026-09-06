@@ -23,6 +23,13 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import androidx.compose.animation.core.tween
+import androidx.palette.graphics.Palette
+import coil.imageLoader
+import coil.request.ImageRequest
+import android.graphics.drawable.BitmapDrawable
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +60,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.WarningAmber
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.AlertDialog
@@ -136,6 +144,9 @@ fun ItemDetailScreen(
         onAcceptSuggestion = viewModel::acceptSuggestion,
         onRejectSuggestion = viewModel::rejectSuggestion,
         onUpdate = viewModel::updateItem,
+        onAddReminder = { id, title, expiry ->
+            viewModel.createReminder(title, expiry - 86400000L, id) // remind 1 day before
+        },
         onTranslate = viewModel::translate,
         onConfirmCloudTranslation = { rememberForCategory ->
             state.translationTargetLanguage?.let {
@@ -243,6 +254,7 @@ internal fun ItemDetailContent(
     onAcceptSuggestion: (String) -> Unit,
     onRejectSuggestion: (String) -> Unit,
     onUpdate: (VaultItem) -> Unit,
+    onAddReminder: (String, String, Long) -> Unit,
     onTranslate: (String) -> Unit,
     onConfirmCloudTranslation: (Boolean) -> Unit,
     onDismissCloudConsent: () -> Unit,
@@ -255,9 +267,31 @@ internal fun ItemDetailContent(
     val context = androidx.compose.ui.platform.LocalContext.current
     val haptic = LocalHapticFeedback.current
 
+    var dominantColor by remember { mutableStateOf<ComposeColor?>(null) }
+    val animatedColor by animateColorAsState(targetValue = dominantColor ?: MaterialTheme.colorScheme.surface, animationSpec = tween(500))
+
+    LaunchedEffect(state.item?.capturedImageUri) {
+        state.item?.capturedImageUri?.let { uri ->
+            val request = ImageRequest.Builder(context)
+                .data(uri)
+                .allowHardware(false)
+                .build()
+            val result = context.imageLoader.execute(request)
+            (result.drawable as? BitmapDrawable)?.bitmap?.let { bitmap ->
+                Palette.from(bitmap).generate { palette ->
+                    palette?.dominantSwatch?.rgb?.let { rgb ->
+                        dominantColor = ComposeColor(rgb).copy(alpha = 0.15f)
+                    }
+                }
+            }
+        }
+    }
+
     Scaffold(
+        containerColor = animatedColor,
         topBar = {
             TopAppBar(
+                colors = androidx.compose.material3.TopAppBarDefaults.topAppBarColors(containerColor = ComposeColor.Transparent),
                 title = { Text(text = stringResource(R.string.detail_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
@@ -458,7 +492,7 @@ internal fun ItemDetailContent(
                         onTranslate = onTranslate
                     )
 
-                    MetadataCard(item = item)
+                    MetadataCard(item = item, onAddReminder = onAddReminder)
 
                     item.capturedImageUri?.let { uri ->
                         CapturedMediaCard(
@@ -1115,7 +1149,8 @@ private fun ExtractedTextCard(text: String) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MetadataCard(item: VaultItem) {
+private fun MetadataCard(item: VaultItem, onAddReminder: (String, String, Long) -> Unit) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -1131,6 +1166,18 @@ private fun MetadataCard(item: VaultItem) {
             MetadataRow(label = "Created", value = formatDateTime(item.createdAt))
             item.expiryDate?.let { expiry ->
                 MetadataRow(label = "Expires", value = formatDateTime(expiry))
+                androidx.compose.material3.OutlinedButton(
+                    onClick = {
+                        onAddReminder(item.id, "Expiry: ${item.title.orEmpty()}", expiry)
+                        Toast.makeText(context, "Reminder set for 1 day before expiry", Toast.LENGTH_SHORT).show()
+                    },
+                    enabled = expiry - 86400000L > System.currentTimeMillis(),
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                ) {
+                    Icon(androidx.compose.material.icons.Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Remind me before expiry")
+                }
             }
 
             val orderedFields = MetadataFields.orderedFields(item.effectiveClassification, item.parsedMetadata)
@@ -1339,6 +1386,7 @@ private fun ItemDetailContentPreview() {
             onAcceptSuggestion = {},
             onRejectSuggestion = {},
             onUpdate = { _ -> },
+            onAddReminder = { _, _, _ -> },
             onTranslate = {},
             onConfirmCloudTranslation = { _ -> },
             onDismissCloudConsent = {},

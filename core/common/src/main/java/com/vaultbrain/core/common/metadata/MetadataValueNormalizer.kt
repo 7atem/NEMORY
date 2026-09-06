@@ -148,17 +148,28 @@ object MetadataValueNormalizer {
         val value = normalizeDigits(raw).trim()
         parseWithFormatters(value)?.let { return it }
 
-        val numeric = NUMERIC_DATE.matchEntire(value) ?: return null
-        val first = numeric.groupValues[1].toIntOrNull() ?: return null
-        val second = numeric.groupValues[2].toIntOrNull() ?: return null
-        val year = numeric.groupValues[3].toIntOrNull()?.takeIf { it in MIN_YEAR..MAX_YEAR }
-            ?: return null
-        val (day, month) = when {
-            first > 12 && second in 1..12 -> first to second
-            second > 12 && first in 1..12 -> second to first
-            else -> return null
+        val numeric = NUMERIC_DATE.matchEntire(value)
+        if (numeric != null) {
+            val first = numeric.groupValues[1].toIntOrNull() ?: return null
+            val second = numeric.groupValues[2].toIntOrNull() ?: return null
+            val year = numeric.groupValues[3].toIntOrNull()?.takeIf { it in MIN_YEAR..MAX_YEAR }
+                ?: return null
+            val (day, month) = when {
+                first > 12 && second in 1..12 -> first to second
+                second > 12 && first in 1..12 -> second to first
+                else -> return null
+            }
+            return runCatching { LocalDate.of(year, month, day) }.getOrNull()
         }
-        return runCatching { LocalDate.of(year, month, day) }.getOrNull()
+
+        val mmYy = MM_YY_DATE.matchEntire(value)
+        if (mmYy != null) {
+            val month = mmYy.groupValues[1].toIntOrNull()?.takeIf { it in 1..12 } ?: return null
+            val year = mmYy.groupValues[2].toInt() + 2000
+            return runCatching { LocalDate.of(year, month, 1) }.getOrNull()
+        }
+
+        return null
     }
 
     private fun parseWithFormatters(value: String): LocalDate? = STRICT_DATE_FORMATTERS.firstNotNullOfOrNull {
@@ -185,6 +196,7 @@ object MetadataValueNormalizer {
     private const val MAX_YEAR = 2200
     private val ISO_CURRENCY = Regex("[A-Z]{3}")
     private val NUMERIC_DATE = Regex("(\\d{1,2})[/.](\\d{1,2})[/.](\\d{4})")
+    private val MM_YY_DATE = Regex("(\\d{1,2})[-/](\\d{2})")
     private val STRICT_DATE_FORMATTERS = listOf(
         DateTimeFormatter.ISO_LOCAL_DATE.withResolverStyle(ResolverStyle.STRICT),
         DateTimeFormatter.ofPattern("uuuu/M/d", Locale.ROOT).withResolverStyle(ResolverStyle.STRICT),

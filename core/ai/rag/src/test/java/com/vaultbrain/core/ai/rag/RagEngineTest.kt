@@ -1,7 +1,9 @@
 package com.vaultbrain.core.ai.rag
 
 import com.google.common.truth.Truth.assertThat
+import android.content.Context
 import com.vaultbrain.core.ai.embeddings.TextEmbeddingModel
+import com.vaultbrain.core.ai.embeddings.VisionEmbeddingModel
 import com.vaultbrain.core.ai.llm.LlmClient
 import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.core.ai.llm.CloudAiOperation
@@ -15,6 +17,8 @@ import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.vectorstore.VectorStore
 import com.vaultbrain.core.vectorstore.entity.VaultEmbedding
+import com.vaultbrain.core.integrations.context.PersonalContextEngine
+import com.vaultbrain.core.integrations.model.ContextResult
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,22 +32,29 @@ import org.junit.Test
 class RagEngineTest {
 
     private val textEmbeddingModel = mockk<TextEmbeddingModel>()
+    private val visionEmbeddingModel = mockk<VisionEmbeddingModel>()
     private val vectorStore = mockk<VectorStore>()
     private val vaultRepository = mockk<VaultRepository>()
     private val llmClient = mockk<LlmClient>()
     private val hybridAiCoordinator = mockk<HybridAiCoordinator>()
+    private val personalContextEngine = mockk<PersonalContextEngine>()
+    private val context = mockk<Context>(relaxed = true)
 
     @Before
     fun setUp() {
         coEvery { vaultRepository.getActiveCollections() } returns emptyList()
+        coEvery { personalContextEngine.assembleContext(any()) } returns ContextResult()
     }
 
     private val engine = RagEngine(
+        context = context,
         textEmbeddingModel = textEmbeddingModel,
+        visionEmbeddingModel = visionEmbeddingModel,
         vectorStore = vectorStore,
         vaultRepository = vaultRepository,
         llmClient = llmClient,
-        hybridAiCoordinator = hybridAiCoordinator
+        hybridAiCoordinator = hybridAiCoordinator,
+        personalContextEngine = personalContextEngine
     )
 
     private fun sampleItem(id: String, title: String, createdAt: Long = System.currentTimeMillis()) =
@@ -263,7 +274,7 @@ class RagEngineTest {
             explicitCloudConsent = true
         ).toList().last()
 
-        assertThat(result.answer).isEqualTo("A quiet film.")
+        assertThat(result.answer).isEqualTo("A quiet film. [1]")
         assertThat(result.responseOrigin).isEqualTo(AiResponseOrigin.CLOUD_AI)
         assertThat(result.sources.single().id).isEqualTo("1")
     }

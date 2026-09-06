@@ -44,7 +44,8 @@ class CollectionsViewModel @Inject constructor(
 data class CollectionDetailUiState(
     val collection: PersonalCollection? = null,
     val items: List<VaultItem> = emptyList(),
-    val availableItems: List<VaultItem> = emptyList(),
+    val suggestedItems: List<VaultItem> = emptyList(),
+    val otherItems: List<VaultItem> = emptyList(),
     val isLoading: Boolean = true
 )
 
@@ -64,10 +65,28 @@ class CollectionDetailViewModel @Inject constructor(
                 repository.observeItemsForCollection(collectionId),
                 repository.observeActive()
             ) { collection, items, activeItems ->
+                if (collection == null) return@combine CollectionDetailUiState(isLoading = false)
+
+                val available = activeItems.filterNot { candidate -> items.any { it.id == candidate.id } }
+                val collectionNameTokens = collection.name.lowercase().split(Regex("\\s+|-|_"))
+                val targetDomains = setOf("REAL_ESTATE", "LEGAL_DOCUMENT", "MEDICAL_RECORD", "PRESCRIPTION")
+
+                val suggested = available.filter { candidate ->
+                    val classification = candidate.effectiveClassification?.name
+                    val matchesDomain = classification in targetDomains
+                    val matchesName = collectionNameTokens.any { token ->
+                        token.length > 3 && candidate.title.lowercase().contains(token)
+                    }
+                    matchesDomain || matchesName
+                }.sortedByDescending { it.createdAt }.take(10)
+
+                val others = (available - suggested.toSet()).sortedByDescending { it.createdAt }
+
                 CollectionDetailUiState(
                     collection = collection,
                     items = items,
-                    availableItems = activeItems.filterNot { candidate -> items.any { it.id == candidate.id } },
+                    suggestedItems = suggested,
+                    otherItems = others,
                     isLoading = false
                 )
             }.collect { _uiState.value = it }

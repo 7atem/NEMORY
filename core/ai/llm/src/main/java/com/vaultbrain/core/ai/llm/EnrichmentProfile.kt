@@ -127,6 +127,60 @@ object EnrichmentProfileRegistry {
             actions = setOf(ProactiveAction.OPEN_SOURCE, ProactiveAction.REMIND_LATER)
         ),
         profile(
+            Classification.REAL_ESTATE, LensId.BUREAUCRACY,
+            "Use the exact property or project name and document type. Extract parties, financial amounts, and property details.",
+            "Summarize the property clauses, financial obligations, parties involved, and key lease/deed dates; extract dense contract clauses without inventing terms.",
+            "property_address", "tenant_name", "landlord_name", "rent_amount", "lease_start", "lease_end", "deed_number", "registration_date", "project_name", "unit_number", "developer_name", "installment_amount", "due_date"
+        ),
+        profile(
+            Classification.LEGAL_DOCUMENT, LensId.BUREAUCRACY,
+            "Use the exact document type and primary party name.",
+            "Summarize dense legal clauses, the exact legal purpose, involved parties, constraints, and key dates; do not hallucinate external legal implications.",
+            "attorney_name", "grantor_name", "poa_type", "notary_office", "case_number", "court_name", "hearing_date", "plaintiff", "defendant", "tax_id", "tax_year"
+        ),
+        profile(
+            Classification.BANK_STATEMENT, LensId.MONEY,
+            "Use the bank name and statement period.",
+            "State the account holder, period, and balances.",
+            "account_number", "statement_period", "opening_balance", "closing_balance", "iban", "swift_code"
+        ),
+        profile(
+            Classification.CREDIT_CARD, LensId.MONEY,
+            "Use the bank name and Credit Card.",
+            "State the cardholder name, expiry date, and visible partial card number.",
+            "cardholder_name", "expiry_date", "card_last4", "issuer"
+        ),
+        profile(
+            Classification.DRIVERS_LICENSE, LensId.BUREAUCRACY,
+            "Use Driver License plus the visible holder name.",
+            "State issuing state/country, license number, and expiry date.",
+            "full_name", "document_number", "issuing_state", "issuing_country", "dob", "expiry_date", "document_type"
+        ),
+        profile(
+            Classification.UTILITY_BILL, LensId.BUREAUCRACY,
+            "Use the utility provider name and bill month.",
+            "State the amount due, due date, and account or meter number.",
+            "provider", "amount_due", "currency", "due_date", "account_number", "meter_number", "billing_cycle", "consumption"
+        ),
+        profile(
+            Classification.MEDICAL_RECORD, LensId.HEALTH,
+            "Use the document type and medical provider name.",
+            "Summarize key medical facts objectively; do not infer diagnoses.",
+            "patient_weight", "height", "percentile", "vaccine_name", "dose_number", "next_dose_date", "tooth_number", "procedure_code", "dentist_name", "doctor"
+        ),
+        profile(
+            Classification.CRYPTO_TRANSACTION, LensId.MONEY,
+            "Use the cryptocurrency name and transaction type.",
+            "State the amount, wallet, and network.",
+            "wallet_address", "tx_hash", "network", "crypto_amount", "currency", "date"
+        ),
+        profile(
+            Classification.ACADEMIC_RECORD, LensId.BUREAUCRACY,
+            "Use the institution name and record type.",
+            "State the student name, degree or program, and relevant dates.",
+            "institution_name", "student_id", "degree_title", "graduation_date", "gpa", "petition_status"
+        ),
+        profile(
             Classification.SCENE_PHOTO, null,
             "Use a short title based only on visible objects, text, and setting.",
             "Describe only the visible scene and text; do not infer a location, people, or event.",

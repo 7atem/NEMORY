@@ -6,12 +6,17 @@ import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateValue
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.core.VectorConverter
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,6 +26,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.Collections
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,7 +42,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
@@ -102,7 +113,7 @@ private fun parseMarkdown(text: String): AnnotatedString {
         // Match bold (**text**), headers (# text), or list items (- text or * text)
         val regex = Regex("(\\*\\*(.*?)\\*\\*)|(^(#+)\\s+(.*)$)|(^[\\-\\*]\\s+(.*)$)", RegexOption.MULTILINE)
         val matches = regex.findAll(text)
-        
+
         for (match in matches) {
             val startIndex = match.range.first
             if (startIndex > currentIndex) {
@@ -156,6 +167,8 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
     val cloudConsent by viewModel.cloudConsent.collectAsState()
     val cloudMessage by viewModel.cloudMessage.collectAsState()
     val pendingWrite by viewModel.pendingWrite.collectAsState()
+    val pendingCollectionCreation by viewModel.pendingCollectionCreation.collectAsState()
+    val attachedImageUri by viewModel.attachedImageUri.collectAsState()
     
     // Convert suggestion to just keyword if not conversational
     val suggestionQueries = suggestions.map { 
@@ -165,7 +178,7 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
     
     val listState = rememberLazyListState()
     val context = LocalContext.current
-    val interactionBlocked = isLoading || pendingWrite != null
+    val interactionBlocked = isLoading || pendingWrite != null || pendingCollectionCreation != null
     var showClearDialog by remember { mutableStateOf(false) }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -220,8 +233,10 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
         bottomBar = {
             ChatInputBar(
                 input = input,
+                attachedImageUri = attachedImageUri,
                 isLoading = interactionBlocked,
                 onInputChanged = viewModel::onInputChanged,
+                onImageAttached = viewModel::onImageAttached,
                 onSend = { viewModel.sendQuery(input) },
                 onSuggestedQuery = { viewModel.sendQuery(it) },
                 suggestions = suggestionQueries,
@@ -233,12 +248,16 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
         ) {
             LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
+                    contentPadding = PaddingValues(
+                        top = paddingValues.calculateTopPadding() + 16.dp,
+                        bottom = paddingValues.calculateBottomPadding() + 16.dp,
+                        start = 16.dp,
+                        end = 16.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     if (messages.isEmpty()) {
@@ -253,13 +272,18 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
                     items(messages.size, key = { messages[it].id }) { index ->
                         val message = messages[index]
                         val isLatest = index == messages.lastIndex
-                        ChatBubble(
-                            message = message,
-                            isLatest = isLatest,
-                            isStreaming = isStreaming,
-                            onSourceClick = onSourceClick,
-                            onRetry = viewModel::retryQuery
-                        )
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn(animationSpec = tween(300)) + slideInVertically(animationSpec = tween(300)) { it / 2 }
+                        ) {
+                            ChatBubble(
+                                message = message,
+                                isLatest = isLatest,
+                                isStreaming = isStreaming,
+                                onSourceClick = onSourceClick,
+                                onRetry = viewModel::retryQuery
+                            )
+                        }
                     }
                     if (isLoading) {
                         item {
@@ -363,6 +387,41 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
         )
     }
 
+    pendingCollectionCreation?.let { pending ->
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissCollectionCreation() },
+            title = { Text("Create Collection") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        "Create new collection “${pending.name}” with ${pending.items.size} items?",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        "The selected items will be organized into this collection.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        stringResource(R.string.brain_write_confirm_safety),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = { viewModel.confirmCollectionCreation() }) {
+                    Text("Create")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissCollectionCreation() }) {
+                    Text(stringResource(R.string.brain_chat_cancel))
+                }
+            }
+        )
+    }
+
     cloudConsent?.let { pending ->
         var rememberCategories by remember(pending) { mutableStateOf(false) }
         AlertDialog(
@@ -454,15 +513,17 @@ private fun ChatBubble(
     modifier: Modifier = Modifier
 ) {
     when (message) {
-        is ChatMessage.User -> UserBubble(text = message.text, modifier = modifier)
+        is ChatMessage.User -> UserBubble(text = message.text, imageUri = message.imageUri, modifier = modifier)
         is ChatMessage.Assistant -> AssistantBubble(
             text = message.text,
             sources = message.sources,
+            externalSources = message.externalSources,
             confidence = message.confidence,
             evidence = message.evidence,
             responseOrigin = message.responseOrigin,
             isError = message.isError,
             originalQuery = message.originalQuery,
+            suggestedActions = message.suggestedActions,
             isLatest = isLatest,
             isStreaming = isStreaming,
             onSourceClick = onSourceClick,
@@ -473,7 +534,7 @@ private fun ChatBubble(
 }
 
 @Composable
-private fun UserBubble(text: String, modifier: Modifier = Modifier) {
+private fun UserBubble(text: String, imageUri: String? = null, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.End
@@ -486,11 +547,26 @@ private fun UserBubble(text: String, modifier: Modifier = Modifier) {
             shape = RoundedCornerShape(20.dp, 4.dp, 20.dp, 20.dp),
             modifier = Modifier.widthIn(max = 280.dp)
         ) {
-            Text(
-                text = text,
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(12.dp)
-            )
+            Column(modifier = Modifier.padding(12.dp)) {
+                if (imageUri != null) {
+                    AsyncImage(
+                        model = imageUri,
+                        contentDescription = "Attached image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+                    if (text.isNotBlank()) Spacer(Modifier.height(8.dp))
+                }
+                if (text.isNotBlank()) {
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
         }
     }
 }
@@ -554,11 +630,13 @@ private fun StreamingIndicator(modifier: Modifier = Modifier) {
 private fun AssistantBubble(
     text: String,
     sources: List<VaultItem>,
+    externalSources: List<com.vaultbrain.core.integrations.model.ExternalRecord>,
     confidence: Float,
     evidence: RagEvidence?,
     responseOrigin: AiResponseOrigin?,
     isError: Boolean,
     originalQuery: String?,
+    suggestedActions: List<com.vaultbrain.feature.brain.model.SuggestedAction> = emptyList(),
     isLatest: Boolean,
     isStreaming: Boolean,
     onSourceClick: (String) -> Unit,
@@ -655,13 +733,39 @@ private fun AssistantBubble(
             }
         }
 
-        if (sources.isNotEmpty()) {
+        if (suggestedActions.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                suggestedActions.forEach { action ->
+                    androidx.compose.material3.ElevatedAssistChip(
+                        onClick = {
+                            if (action.actionId == "OPEN_ITEM") {
+                                action.payload["itemId"]?.let { onSourceClick(it) }
+                            }
+                        },
+                        label = { Text(action.label) },
+                        leadingIcon = {
+                            if (action.actionId == "REMIND_EXPIRY") {
+                                Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
+                            } else if (action.actionId == "ADD_COLLECTION") {
+                                Icon(Icons.Default.Collections, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    )
+                }
+            }
+        }
+
+        if (sources.isNotEmpty() || externalSources.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = stringResource(
                     R.string.brain_chat_based_on,
                     evidenceLabel(confidence),
-                    sources.size
+                    sources.size + externalSources.size
                 ),
                 style = MaterialTheme.typography.labelMedium,
                 color = if (confidence >= 0.65f) MaterialTheme.colorScheme.primary
@@ -669,8 +773,11 @@ private fun AssistantBubble(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                sources.forEach { item ->
-                    SourceCitationCard(item = item, onClick = onSourceClick)
+                sources.forEachIndexed { index, item ->
+                    SourceCitationCard(index = index + 1, item = item, onClick = onSourceClick)
+                }
+                externalSources.forEachIndexed { index, record ->
+                    ExternalCitationCard(index = sources.size + index + 1, record = record)
                 }
             }
         }
@@ -752,6 +859,7 @@ private fun WelcomePanel(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SourceCitationCard(
+    index: Int,
     item: VaultItem,
     onClick: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -770,7 +878,11 @@ private fun SourceCitationCard(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Description, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Text(
+                text = "[$index]",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.title,
@@ -782,6 +894,7 @@ private fun SourceCitationCard(
                     ?: item.topics.firstOrNull()
                     ?: item.entities.firstOrNull()
                     ?: item.summary
+                    ?: item.rawOcrText?.lineSequence()?.firstOrNull { it.isNotBlank() }
                 supportingText?.let {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
@@ -790,6 +903,41 @@ private fun SourceCitationCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExternalCitationCard(
+    index: Int,
+    record: com.vaultbrain.core.integrations.model.ExternalRecord,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("[$index]", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    record.title ?: record.source.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                record.description?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
@@ -835,8 +983,10 @@ private fun AssistantLoadingBubble(modifier: Modifier = Modifier) {
 @Composable
 private fun ChatInputBar(
     input: String,
+    attachedImageUri: String?,
     isLoading: Boolean,
     onInputChanged: (String) -> Unit,
+    onImageAttached: (String?) -> Unit,
     onSend: () -> Unit,
     onSuggestedQuery: (String) -> Unit,
     suggestions: List<String>,
@@ -844,8 +994,15 @@ private fun ChatInputBar(
     modifier: Modifier = Modifier
 ) {
     var showSuggestions by remember { mutableStateOf(true) }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        onImageAttached(uri?.toString())
+    }
 
-    Surface(modifier = modifier, shadowElevation = 8.dp) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+        shadowElevation = 8.dp
+    ) {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             if (suggestions.isNotEmpty() && showSuggestions) {
                 LazyRow(
@@ -867,10 +1024,41 @@ private fun ChatInputBar(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
+            if (attachedImageUri != null) {
+                Box(modifier = Modifier.padding(bottom = 8.dp)) {
+                    AsyncImage(
+                        model = attachedImageUri,
+                        contentDescription = "Attached image",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                    )
+                    IconButton(
+                        onClick = { onImageAttached(null) },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .size(24.dp)
+                            .padding(2.dp)
+                    ) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear image", tint = MaterialTheme.colorScheme.onSurface)
+                    }
+                }
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                IconButton(
+                    onClick = { launcher.launch("image/*") },
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddPhotoAlternate,
+                        contentDescription = "Attach image"
+                    )
+                }
                 OutlinedTextField(
                     value = input,
                     onValueChange = {
@@ -888,12 +1076,12 @@ private fun ChatInputBar(
                     maxLines = 4,
                     shape = MaterialTheme.shapes.extraLarge,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(onSend = { if (input.isNotBlank() && !isLoading) onSend() })
+                    keyboardActions = KeyboardActions(onSend = { if ((input.isNotBlank() || attachedImageUri != null) && !isLoading) onSend() })
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(
                     onClick = onSend,
-                    enabled = input.isNotBlank() && !isLoading
+                    enabled = (input.isNotBlank() || attachedImageUri != null) && !isLoading
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Send,

@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":core:vectorstore"))
     implementation(project(":core:ai:embeddings"))
     implementation(project(":core:ai:llm"))
+    implementation(project(":core:integrations"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)

@@ -7,7 +7,6 @@ import com.vaultbrain.core.integrations.calendar.CalendarConnector
 import com.vaultbrain.core.integrations.calendar.CalendarInfo
 
 import com.vaultbrain.core.integrations.connector.ConnectorRegistry
-import com.vaultbrain.core.integrations.health.HealthConnectConnector
 import com.vaultbrain.core.integrations.model.ConnectionRecord
 import com.vaultbrain.core.integrations.model.SyncRequest
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository
@@ -30,21 +29,15 @@ import javax.inject.Inject
 class ConnectionsViewModel @Inject constructor(
     private val repository: ExternalContextRepository,
     private val registry: ConnectorRegistry,
-    private val calendarConnector: CalendarConnector,
-    private val healthConnectConnector: HealthConnectConnector
+    private val calendarConnector: CalendarConnector
 ) : ViewModel() {
 
     private val calendarState = MutableStateFlow(CalendarConnectionUiState())
-    private val healthState = MutableStateFlow(HealthConnectionUiState())
-
-    /** Permissions to pass to the Health Connect permission contract. */
-    val healthPermissions: Set<String> = HealthConnectConnector.REQUIRED_PERMISSIONS
 
     val uiState: StateFlow<ConnectionsUiState> = combine(
         repository.observeConnections(),
-        calendarState,
-        healthState
-    ) { connections, calendar, health -> ConnectionsUiState(connections, calendar, health) }
+        calendarState
+    ) { connections, calendar -> ConnectionsUiState(connections, calendar) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -53,10 +46,8 @@ class ConnectionsViewModel @Inject constructor(
 
     init {
         registry.register(calendarConnector)
-        registry.register(healthConnectConnector)
 
         refreshCalendar()
-        refreshHealth()
     }
 
     fun refreshCalendar() {
@@ -113,68 +104,13 @@ class ConnectionsViewModel @Inject constructor(
         }
     }
 
-    fun refreshHealth() {
-        viewModelScope.launch {
-            val availability = healthConnectConnector.availability()
-            healthState.value = HealthConnectionUiState(
-                isAvailable = availability.isAvailable,
-                hasPermission = availability.state == ConnectionState.CONNECTED
-            )
-        }
-    }
-
-    fun onHealthPermissionResult(granted: Set<String>) {
-        viewModelScope.launch {
-            if (granted.containsAll(HealthConnectConnector.REQUIRED_PERMISSIONS)) {
-                healthConnectConnector.connect().getOrNull()
-                syncHealth()
-            }
-            refreshHealth()
-        }
-    }
-
-    fun syncHealth() {
-        viewModelScope.launch {
-            healthState.update { it.copy(isSyncing = true, error = null) }
-            val connection = repository.getConnection(
-                HealthConnectConnector.CONNECTOR_ID,
-                HealthConnectConnector.ACCOUNT_ID
-            ) ?: healthConnectConnector.connect().getOrNull()
-            val result = connection?.let { healthConnectConnector.sync(it, SyncRequest(force = true)) }
-            healthState.update {
-                it.copy(
-                    isSyncing = false,
-                    error = result?.exceptionOrNull()?.message,
-                    lastSyncAt = if (result?.isSuccess == true) System.currentTimeMillis() else it.lastSyncAt
-                )
-            }
-        }
-    }
-
-    fun disconnectHealth() {
-        viewModelScope.launch {
-            repository.getConnection(HealthConnectConnector.CONNECTOR_ID, HealthConnectConnector.ACCOUNT_ID)
-                ?.let { healthConnectConnector.disconnect(it) }
-            refreshHealth()
-        }
-    }
-
     fun isRegistered(connectorId: String): Boolean = registry.get(connectorId) != null
 }
 
 data class ConnectionsUiState(
     val connections: List<ConnectionRecord> = emptyList(),
     val calendar: CalendarConnectionUiState = CalendarConnectionUiState(),
-    val health: HealthConnectionUiState = HealthConnectionUiState(),
     val isLoading: Boolean = false
-)
-
-data class HealthConnectionUiState(
-    val isAvailable: Boolean = true,
-    val hasPermission: Boolean = false,
-    val isSyncing: Boolean = false,
-    val lastSyncAt: Long? = null,
-    val error: String? = null
 )
 
 data class CalendarConnectionUiState(

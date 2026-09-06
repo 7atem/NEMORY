@@ -105,7 +105,7 @@ interface VaultItemDao {
             enrichment_error_code = NULL,
             updated_at = :now
         WHERE extraction_state = 'COMPLETE'
-          AND enrichment_state != 'RUNNING'
+          AND enrichment_state NOT IN ('RUNNING', 'SKIPPED_PRIVACY')
     """)
     suspend fun queueAllForLocalAiEnrichment(now: Long): Int
 

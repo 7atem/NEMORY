@@ -246,19 +246,49 @@ fun CollectionDetailScreen(
             onDismissRequest = { showAddItems = false },
             title = { Text(stringResource(R.string.collection_add_items)) },
             text = {
-                if (state.availableItems.isEmpty()) {
+                if (state.suggestedItems.isEmpty() && state.otherItems.isEmpty()) {
                     Text(stringResource(R.string.collection_no_items_available))
                 } else {
                     LazyColumn(modifier = Modifier.height(420.dp)) {
-                        items(state.availableItems, key = { it.id }) { item ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth().clickable {
-                                    viewModel.addItem(item.id)
-                                }.padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Checkbox(checked = false, onCheckedChange = { viewModel.addItem(item.id) })
-                                Text(item.title, modifier = Modifier.weight(1f))
+                        if (state.suggestedItems.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "Smart Suggestions",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                )
+                            }
+                            items(state.suggestedItems, key = { it.id }) { item ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().clickable {
+                                        viewModel.addItem(item.id)
+                                    }.padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(checked = false, onCheckedChange = { viewModel.addItem(item.id) })
+                                    Text(item.title, modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                        if (state.otherItems.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "All Items",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                                )
+                            }
+                            items(state.otherItems, key = { it.id }) { item ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().clickable {
+                                        viewModel.addItem(item.id)
+                                    }.padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(checked = false, onCheckedChange = { viewModel.addItem(item.id) })
+                                    Text(item.title, modifier = Modifier.weight(1f))
+                                }
                             }
                         }
                     }

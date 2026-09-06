@@ -3,6 +3,7 @@ package com.vaultbrain.core.ai.rag
 import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.core.ai.llm.CloudConsentDisclosure
 import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.core.integrations.model.ExternalRecord
 
 /**
  * Result of a retrieval-augmented generation query.
@@ -10,6 +11,7 @@ import com.vaultbrain.core.common.model.VaultItem
 data class RagResponse(
     val answer: String? = null,
     val sources: List<VaultItem> = emptyList(),
+    val externalSources: List<ExternalRecord> = emptyList(),
     val confidence: Float = 0f,
     val evidence: RagEvidence? = null,
     val responseOrigin: AiResponseOrigin? = null,

@@ -1,8 +1,7 @@
 package com.vaultbrain.core.security
 
 import android.content.Context
-import android.security.keystore.KeyGenParameterSpec
-import android.security.keystore.KeyProperties
+import android.util.AtomicFile
 import androidx.security.crypto.EncryptedFile
 import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,6 +24,7 @@ class KeystoreManager @Inject constructor(
     companion object {
         private const val PASSPHRASE_FILE_NAME = "vaultbrain_passphrase.bin"
         private const val PASSPHRASE_LENGTH_BYTES = 32
+        private val keyLock = Any()
     }
 
     private val masterKey: MasterKey by lazy {
@@ -37,23 +37,50 @@ class KeystoreManager @Inject constructor(
     /**
      * Returns the existing database passphrase or generates and persists a new one.
      */
-    fun getOrCreateDatabasePassphrase(): ByteArray {
+    fun getOrCreateDatabasePassphrase(): ByteArray = synchronized(keyLock) {
         val file = File(context.filesDir, PASSPHRASE_FILE_NAME)
-        return if (file.exists()) {
+        val atomicFile = AtomicFile(file)
+        if (file.exists() || File(file.path + ".bak").exists()) {
+            // Recover an interrupted atomic write before EncryptedFile opens the final filename.
+            atomicFile.openRead().close()
             try {
                 readPassphrase(file)
             } catch (e: Exception) {
-                // Keystore corrupted or key invalidated (e.g., after OS update/reinstall)
-                file.delete()
-                val passphrase = generatePassphrase()
-                runCatching { writePassphrase(file, passphrase) }
-                passphrase
+                // Older builds encrypted using the .tmp basename, then renamed the ciphertext.
+                // Try that exact associated filename without changing the original key file.
+                val directory = java.nio.file.Files.createTempDirectory(context.cacheDir.toPath(), "key_recovery_").toFile()
+                try {
+                    val legacy = File(directory, file.name + ".tmp")
+                    file.copyTo(legacy)
+                    val recovered = try {
+                        readPassphrase(legacy)
+                    } catch (failure: Exception) {
+                        throw java.io.IOException("Unable to unlock the existing database key", e)
+                    }
+                    writePassphrase(file, recovered)
+                    recovered
+                } finally {
+                    directory.deleteRecursively()
+                }
             }
         } else {
+            check(!context.getDatabasePath("vaultbrain.db").exists()) {
+                "The existing database key is missing; refusing to replace it"
+            }
             val passphrase = generatePassphrase()
-            runCatching { writePassphrase(file, passphrase) }
+            writePassphrase(file, passphrase)
             passphrase
         }
+    }
+
+    /**
+     * Re-wraps an imported SQLCipher key with this device's Android Keystore key.
+     * Callers MUST have closed the Room database first (restore flow only) —
+     * overwriting the passphrase while the database is open orphans live data.
+     */
+    fun replaceDatabasePassphrase(passphrase: ByteArray) = synchronized(keyLock) {
+        require(passphrase.size == PASSPHRASE_LENGTH_BYTES) { "Invalid database passphrase" }
+        writePassphrase(File(context.filesDir, PASSPHRASE_FILE_NAME), passphrase)
     }
 
     private fun generatePassphrase(): ByteArray {
@@ -70,20 +97,42 @@ class KeystoreManager @Inject constructor(
             masterKey,
             EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
         ).build()
-        return encryptedFile.openFileInput().use { it.readBytes() }
+        return encryptedFile.openFileInput().use { it.readBytes() }.also {
+            require(it.size == PASSPHRASE_LENGTH_BYTES) { "Invalid stored database key" }
+        }
     }
 
     private fun writePassphrase(file: File, passphrase: ByteArray) {
-        // Delete any stale file before writing.
-        if (file.exists()) file.delete()
-        val encryptedFile = EncryptedFile.Builder(
-            context,
-            file,
-            masterKey,
-            EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
-        ).build()
-        encryptedFile.openFileOutput().use { output ->
-            output.write(passphrase)
+        // EncryptedFile authenticates the basename. Stage under the SAME basename.
+        val directory = java.nio.file.Files.createTempDirectory(context.filesDir.toPath(), "key_write_").toFile()
+        val temp = File(directory, file.name)
+        try {
+            val encryptedFile = EncryptedFile.Builder(
+                context,
+                temp,
+                masterKey,
+                EncryptedFile.FileEncryptionScheme.AES256_GCM_HKDF_4KB
+            ).build()
+            encryptedFile.openFileOutput().use { output ->
+                output.write(passphrase)
+            }
+            val verified = readPassphrase(temp)
+            try {
+                check(verified.contentEquals(passphrase)) { "Database key verification failed" }
+            } finally {
+                verified.fill(0)
+            }
+            val atomicFile = AtomicFile(file)
+            val output = atomicFile.startWrite()
+            try {
+                temp.inputStream().use { it.copyTo(output) }
+                atomicFile.finishWrite(output)
+            } catch (failure: Throwable) {
+                atomicFile.failWrite(output)
+                throw failure
+            }
+        } finally {
+            directory.deleteRecursively()
         }
     }
 }

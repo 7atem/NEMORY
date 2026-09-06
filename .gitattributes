@@ -1,0 +1,2 @@
+# Preserve PDF byte offsets and xref records exactly, including test fixtures.
+*.pdf binary

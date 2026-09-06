@@ -259,4 +259,7 @@
     <string name="suggested_collections">المجموعات المقترحة</string>
     <string name="add_suggestion">إضافة</string>
     <string name="reject_suggestion">ليس هذا</string>
+    <string name="home_email_context">تحديث عبر البريد</string>
+    <string name="home_tracking_number">رقم التتبع %1$s</string>
+    <string name="home_order_number">الطلب %1$s</string>
 </resources>

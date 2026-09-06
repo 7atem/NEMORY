@@ -53,7 +53,8 @@ class ItemDetailViewModel @Inject constructor(
     private val repository: VaultRepository,
     private val alertManager: UnifiedAlertManager,
     private val hybridAiCoordinator: HybridAiCoordinator,
-    private val cloudConsentStore: CloudConsentStore
+    private val cloudConsentStore: CloudConsentStore,
+    private val vaultReminderManager: com.vaultbrain.core.notifications.VaultReminderManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ItemDetailUiState())
@@ -139,6 +140,21 @@ class ItemDetailViewModel @Inject constructor(
         viewModelScope.launch {
             repository.setPinned(item.id, !item.isPinned)
             _uiState.value = _uiState.value.copy(item = item.copy(isPinned = !item.isPinned))
+        }
+    }
+
+    fun createReminder(title: String, dueAt: Long, itemId: String) {
+        viewModelScope.launch {
+            vaultReminderManager.create(
+                com.vaultbrain.core.common.model.VaultReminder(
+                    id = java.util.UUID.nameUUIDFromBytes("$itemId:$dueAt".toByteArray()).toString(),
+                    title = title,
+                    dueAt = dueAt,
+                    status = com.vaultbrain.core.common.model.VaultReminderStatus.SCHEDULED,
+                    createdAt = System.currentTimeMillis(),
+                    vaultItemId = itemId
+                )
+            )
         }
     }
 

@@ -16,8 +16,11 @@ object MetadataFields {
         classification: Classification?,
         metadata: Map<String, String>
     ): List<Pair<String, String>> {
+        val priority = PRIORITY_BY_CLASSIFICATION[classification].orEmpty() + DEFAULT_PRIORITY
+        val rank = priority.distinct().withIndex().associate { (index, key) -> key to index }
         return metadata.entries
             .filter { it.value.isNotBlank() }
+            .sortedWith(compareBy<Map.Entry<String, String>> { rank[it.key] ?: Int.MAX_VALUE })
             .map { it.key to it.value }
     }
 
@@ -47,7 +50,16 @@ object MetadataFields {
         "price" -> R.string.meta_price
         "currency" -> R.string.meta_currency
         "date" -> R.string.meta_date
+        "date_text" -> R.string.meta_date_as_printed
         "tax" -> R.string.meta_tax
+        "subtotal" -> R.string.meta_subtotal
+        "cashier" -> R.string.meta_cashier
+        "item_count" -> R.string.meta_item_count
+        "amount_tendered" -> R.string.meta_amount_tendered
+        "change" -> R.string.meta_change
+        "purchase_time" -> R.string.meta_purchase_time
+        "transaction_number" -> R.string.meta_transaction_number
+        "address" -> R.string.meta_address
         "card_last4" -> R.string.meta_payment_method
         "grocery_list" -> R.string.meta_grocery_list
         "items" -> R.string.meta_items
@@ -128,11 +140,59 @@ object MetadataFields {
         "return_by" -> R.string.meta_return_by
         "provider_url" -> R.string.meta_provider_url
         "release_year" -> R.string.meta_release_year
+        "financial_identifier" -> R.string.meta_financial_identifier
+        "national_id" -> R.string.meta_national_id
+        "patient_name" -> R.string.meta_patient_name
         // Optional additions for new fields (they will default to prettified key if null)
         else -> null
     }
 
     private val DEFAULT_PRIORITY = listOf(
         "date", "amount", "total", "due_date", "expiry_date"
+    )
+
+    private val PRIORITY_BY_CLASSIFICATION = mapOf(
+        Classification.RECEIPT to listOf(
+            "merchant", "total", "currency", "purchase_date", "date_text", "purchase_time", "subtotal",
+            "tax", "items", "item_count", "cashier", "amount_tendered", "change",
+            "transaction_number", "financial_identifier", "address", "card_last4", "reference_number"
+        ),
+        Classification.INVOICE to listOf(
+            "supplier", "merchant", "total", "amount_due", "currency", "due_date", "date",
+            "tax", "invoice_number", "financial_identifier", "reference_number", "iban"
+        ),
+        Classification.PRESCRIPTION to listOf(
+            "patient_name", "medication", "dosage", "frequency", "doctor", "pharmacy", "refills", "prescription_date"
+        ),
+        Classification.TICKET to listOf(
+            "passenger", "carrier", "flight_number", "route", "departure_date", "time", "gate", "seat", "pnr"
+        ),
+        Classification.REAL_ESTATE to listOf(
+            "project_name", "property_address", "deed_number", "unit_number", "tenant_name", "landlord_name", "rent_amount", "installment_amount", "due_date", "lease_start", "lease_end"
+        ),
+        Classification.LEGAL_DOCUMENT to listOf(
+            "attorney_name", "grantor_name", "poa_type", "court_name", "case_number", "hearing_date", "plaintiff", "defendant", "tax_id"
+        ),
+        Classification.BANK_STATEMENT to listOf(
+            "account_number", "statement_period", "opening_balance", "closing_balance", "iban", "swift_code"
+        ),
+        Classification.UTILITY_BILL to listOf(
+            "provider", "amount_due", "currency", "due_date", "account_number", "meter_number", "billing_cycle", "consumption"
+        ),
+        Classification.MEDICAL_RECORD to listOf(
+            "patient_name", "patient_weight", "height", "vaccine_name", "dose_number", "next_dose_date", "tooth_number", "procedure_code", "dentist_name", "doctor"
+        ),
+        Classification.CRYPTO_TRANSACTION to listOf(
+            "wallet_address", "tx_hash", "network", "crypto_amount", "currency", "date"
+        ),
+        Classification.ACADEMIC_RECORD to listOf(
+            "institution_name", "student_id", "degree_title", "graduation_date", "gpa", "petition_status"
+        ),
+        Classification.IDENTITY_DOCUMENT to listOf(
+            "national_id", "document_number", "name", "dob", "expiry_date", "authority"
+        ),
+        Classification.PASSPORT to listOf(
+            "passport_number", "document_number", "national_id", "name", "nationality", "dob", "expiry_date", "authority"
+        )
     )
 }

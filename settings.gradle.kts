@@ -57,3 +57,7 @@ include(":feature:settings")
 include(":feature:voice")
 include(":sync:drive")
 include(":sync:gmail")
+// Diagnostic tooling is opt-in and is not required by production builds.
+if (providers.gradleProperty("includeEvaluation").orNull == "true") {
+    include(":evaluation")
+}

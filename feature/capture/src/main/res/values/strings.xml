@@ -17,7 +17,7 @@
     <string name="feature_capture_classification">Classification: %1$s</string>
     <string name="feature_capture_suggested_lenses">Suggested lenses</string>
     <string name="feature_capture_review_title">Review &amp; save</string>
-    <string name="feature_capture_review_hint">Check the important details before they enter your vault.</string>
+    <string name="feature_capture_review_hint">Check the important details before saving. Automatic text recognition does not support Arabic script and may miss small print.</string>
     <string name="feature_capture_ready">Looks ready</string>
     <string name="feature_capture_check">A quick check is recommended</string>
     <string name="feature_capture_ready_body">Nemory found a strong match. You can still adjust anything below.</string>

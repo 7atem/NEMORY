@@ -250,4 +250,7 @@
     <string name="suggested_collections">Suggested collections</string>
     <string name="add_suggestion">Add</string>
     <string name="reject_suggestion">Not this</string>
+    <string name="home_email_context">Email update</string>
+    <string name="home_tracking_number">Tracking %1$s</string>
+    <string name="home_order_number">Order %1$s</string>
 </resources>

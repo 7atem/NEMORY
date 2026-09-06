@@ -237,11 +237,13 @@ class CaptureViewModel @Inject constructor(
      */
     fun save(onComplete: () -> Unit) {
         if (batchIndex !in batchDrafts.indices) return
+        if (_uiState.value is CaptureUiState.Saving || batchDrafts[batchIndex].title.isBlank()) return
         val item = batchDrafts[batchIndex].copy(
             needsReview = false,
             userEditedAt = System.currentTimeMillis()
         )
         batchDrafts[batchIndex] = item
+        _uiState.value = CaptureUiState.Saving
 
         viewModelScope.launch {
             _uiState.value = CaptureUiState.Saving
@@ -320,7 +322,7 @@ class CaptureViewModel @Inject constructor(
         val primaryUri = input.initialUris.firstOrNull()
 
         // PDF pages are rendered once and shared between OCR and the vision preview (page 1).
-        // Plain images are decoded once at the 1200px cap and reused the same way.
+        // Preserve small document text within a bounded 2400px decode.
         val pdfPages = primaryUri?.takeIf(::isPdf)?.let { renderPdfPages(it, MAX_PDF_OCR_PAGES) }.orEmpty()
         val imageBitmap = if (primaryUri != null && pdfPages.isEmpty()) {
             decodeBitmapFromUri(primaryUri)
@@ -420,7 +422,9 @@ class CaptureViewModel @Inject constructor(
             }
             
             val llmStart = System.currentTimeMillis()
-            val result = if (input.skipLlmEnrichment) item else enrichWithLlm(
+            val result = if (input.skipLlmEnrichment) item.copy(
+                enrichmentState = com.vaultbrain.core.common.model.EnrichmentState.SKIPPED_PRIVACY
+            ) else enrichWithLlm(
                 item,
                 ocrText,
                 visionObjects,
@@ -431,7 +435,10 @@ class CaptureViewModel @Inject constructor(
             val endMs = System.currentTimeMillis()
             android.util.Log.d("CaptureLatency", "LLM took ${endMs - llmStart}ms")
             android.util.Log.d("CaptureLatency", "Total capture latency: ${endMs - startMs}ms")
-            return result
+            return result.copy(
+                lensTags = result.lensTags + preferredTags,
+                parsedMetadata = result.parsedMetadata + input.provenanceMetadata
+            )
         } finally {
             pdfPages.forEach(Bitmap::recycle)
             imageBitmap?.recycle()
@@ -485,7 +492,7 @@ class CaptureViewModel @Inject constructor(
                 android.graphics.ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
                     decoder.allocator = android.graphics.ImageDecoder.ALLOCATOR_SOFTWARE
                     decoder.isMutableRequired = true
-                    val maxDim = 1200
+                    val maxDim = 2400
                     if (info.size.width > maxDim || info.size.height > maxDim) {
                         val scale = maxDim.toFloat() / maxOf(info.size.width, info.size.height)
                         val targetWidth = (info.size.width * scale).toInt().coerceAtLeast(1)
@@ -501,7 +508,7 @@ class CaptureViewModel @Inject constructor(
                     android.graphics.BitmapFactory.decodeStream(it, null, options) 
                 }
                 var sampleSize = 1
-                val maxDim = 1200
+                val maxDim = 2400
                 while (options.outWidth / sampleSize > maxDim || options.outHeight / sampleSize > maxDim) {
                     sampleSize *= 2
                 }
@@ -625,12 +632,6 @@ class CaptureViewModel @Inject constructor(
     private fun showCurrentDraft() {
         val item = batchDrafts[batchIndex]
         
-        // Auto-approve perfect extractions immediately
-        if (item.aiConfidence >= 1.0f && item.title.isNotBlank()) {
-            save(onComplete = {})
-            return
-        }
-
         _uiState.value = CaptureUiState.Review(
             draft = item,
             confidence = item.aiConfidence,

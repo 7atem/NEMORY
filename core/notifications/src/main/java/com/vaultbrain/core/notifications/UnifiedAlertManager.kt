@@ -22,6 +22,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.core.common.model.Classification
 import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.entity.NotificationQueueEntity
 import dagger.assisted.Assisted
@@ -151,6 +152,17 @@ class UnifiedAlertManager @Inject constructor(
             val verb = if (mediaType == "book") "read" else "watch"
             return "Ready to $verb: ${item.title}" to
                 "You saved this for later. Tap to open it in Nemory."
+        }
+        val vaccine = item.parsedMetadata["vaccine_name"]?.takeIf(String::isNotBlank)
+        if (LensId.HEALTH in item.lensTags && vaccine != null) {
+            val patient = item.parsedMetadata["patient_name"]?.takeIf(String::isNotBlank)
+                ?: context.getString(R.string.alert_vaccine_default_patient)
+            return context.getString(R.string.alert_vaccine_title) to
+                context.getString(R.string.alert_vaccine_body, patient, vaccine)
+        }
+        if (item.aiClassification == Classification.INVOICE) {
+            return context.getString(R.string.alert_invoice_title) to
+                context.getString(R.string.alert_invoice_body, item.title)
         }
         return "Upcoming: ${item.title}" to
             "A reminder you saved is due now. Tap to review it."

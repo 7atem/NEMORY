@@ -1,4 +1,4 @@
-﻿package com.vaultbrain.feature.capture.ui.components
+package com.vaultbrain.feature.capture.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -58,6 +58,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.unit.IntOffset
 import coil.compose.AsyncImage
 import com.vaultbrain.core.common.model.Classification
 import com.vaultbrain.core.common.model.VaultItem
@@ -94,6 +98,8 @@ fun ReviewScreen(
     onOnDeviceAiDownload: () -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
+    var swipeOffset by remember { mutableStateOf(0f) }
+    val animatedSwipeOffset by animateFloatAsState(targetValue = swipeOffset, label = "swipeOffset")
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -188,7 +194,27 @@ fun ReviewScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = 20.dp)
+                    .offset { IntOffset(animatedSwipeOffset.roundToInt(), 0) }
+                    .pointerInput(Unit) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                if (swipeOffset > 250f && draft.title.isNotBlank()) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    onSave()
+                                    swipeOffset = 0f
+                                } else if (swipeOffset < -250f) {
+                                    onDiscard()
+                                    swipeOffset = 0f
+                                } else {
+                                    swipeOffset = 0f
+                                }
+                            },
+                            onHorizontalDrag = { _, dragAmount ->
+                                swipeOffset += dragAmount
+                            }
+                        )
+                    },
                 shape = MaterialTheme.shapes.extraLarge,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {

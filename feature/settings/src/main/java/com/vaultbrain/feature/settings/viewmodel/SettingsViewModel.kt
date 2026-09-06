@@ -212,8 +212,8 @@ class SettingsViewModel @Inject constructor(
 
     fun setGmailIntegrationEnabled(enabled: Boolean) {
         _uiState.value = _uiState.value.copy(
-            gmailIntegrationEnabled = enabled,
-            toastMessage = if (enabled) "OAuth Client not configured in production. UI mock successful." else "Gmail disconnected"
+            gmailIntegrationEnabled = false,
+            toastMessage = null
         )
     }
 

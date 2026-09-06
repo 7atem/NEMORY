@@ -43,6 +43,9 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:billing"))
     implementation(project(":core:notifications"))
+    implementation(project(":core:integrations"))
+
+    implementation(platform(libs.androidx.compose.bom))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.ui)
@@ -60,6 +63,7 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
@@ -70,5 +74,3 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }
-
-

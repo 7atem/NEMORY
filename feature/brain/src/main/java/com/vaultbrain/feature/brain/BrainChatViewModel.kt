@@ -42,6 +42,13 @@ data class BrainPendingWrite(
     internal val assistantMessageId: String
 )
 
+data class BrainCollectionCreationPreview(
+    val name: String,
+    val items: List<com.vaultbrain.core.common.model.VaultItem>,
+    val originalQuery: String,
+    val assistantMessageId: String
+)
+
 /** Local, persistent Brain conversation orchestrator for single-turn RAG requests. */
 @HiltViewModel
 class BrainChatViewModel @Inject constructor(
@@ -70,6 +77,9 @@ class BrainChatViewModel @Inject constructor(
     private val _input = MutableStateFlow("")
     val input: StateFlow<String> = _input.asStateFlow()
 
+    private val _attachedImageUri = MutableStateFlow<String?>(null)
+    val attachedImageUri: StateFlow<String?> = _attachedImageUri.asStateFlow()
+
     private val _suggestions = MutableStateFlow<List<BrainSuggestion>>(emptyList())
     val suggestions: StateFlow<List<BrainSuggestion>> = _suggestions.asStateFlow()
 
@@ -81,6 +91,9 @@ class BrainChatViewModel @Inject constructor(
 
     private val _pendingWrite = MutableStateFlow<BrainPendingWrite?>(null)
     val pendingWrite: StateFlow<BrainPendingWrite?> = _pendingWrite.asStateFlow()
+
+    private val _pendingCollectionCreation = MutableStateFlow<BrainCollectionCreationPreview?>(null)
+    val pendingCollectionCreation: StateFlow<BrainCollectionCreationPreview?> = _pendingCollectionCreation.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -106,18 +119,24 @@ class BrainChatViewModel @Inject constructor(
         _input.value = text
     }
 
+    fun onImageAttached(uri: String?) {
+        _attachedImageUri.value = uri
+    }
+
     fun clearConversation() {
         if (_isLoading.value) return
         _messages.value = emptyList()
         _input.value = ""
+        _attachedImageUri.value = null
         _cloudConsent.value = null
         _cloudMessage.value = null
         _pendingWrite.value = null
+        _pendingCollectionCreation.value = null
         viewModelScope.launch { conversationRepository.clear() }
     }
 
     fun retryQuery(query: String) {
-        if (_isLoading.value || _pendingWrite.value != null) return
+        if (_isLoading.value || _pendingWrite.value != null || _pendingCollectionCreation.value != null) return
         val current = _messages.value
         val removeIds = buildList {
             val last = current.lastOrNull()
@@ -135,16 +154,21 @@ class BrainChatViewModel @Inject constructor(
 
     fun sendQuery(query: String) {
         val trimmed = query.trim()
-        if (trimmed.isEmpty() || _isLoading.value || _pendingWrite.value != null) return
+        val imageUri = _attachedImageUri.value
+
+        if (trimmed.isEmpty() && imageUri == null) return
+        if (_isLoading.value || _pendingWrite.value != null || _pendingCollectionCreation.value != null) return
 
         val priorContext = memoryBuilder.build(_messages.value)
         val userMessage = ChatMessage.User(
             id = generateId(),
             text = trimmed,
+            imageUri = imageUri,
             createdAt = System.currentTimeMillis()
         )
         _messages.update { it + userMessage }
         _input.value = ""
+        _attachedImageUri.value = null
         _isLoading.value = true
         _cloudConsent.value = null
         _cloudMessage.value = null
@@ -195,9 +219,16 @@ class BrainChatViewModel @Inject constructor(
 
             try {
                 _isStreaming.value = true
-                ragEngine.queryStream(trimmed, SearchFilters(), priorContext).collect { response ->
-                    receivedResponse = true
-                    applyResponse(assistantMessageId, trimmed, priorContext, response)
+                if (imageUri != null) {
+                    ragEngine.queryVisualStream(imageUri, SearchFilters()).collect { response ->
+                        receivedResponse = true
+                        applyResponse(assistantMessageId, trimmed, priorContext, response)
+                    }
+                } else {
+                    ragEngine.queryStream(trimmed, SearchFilters(), priorContext).collect { response ->
+                        receivedResponse = true
+                        applyResponse(assistantMessageId, trimmed, priorContext, response)
+                    }
                 }
                 if (!receivedResponse) {
                     updateAssistantError(assistantMessageId, trimmed, NO_RESULTS_MESSAGE)
@@ -229,12 +260,12 @@ class BrainChatViewModel @Inject constructor(
                     is BrainWriteExecutionResult.Success -> updateWriteAssistant(
                         pending.assistantMessageId,
                         writeSuccessMessage(pending.preview, result.updatedItem),
-                        result.updatedItem
+                        listOf(result.updatedItem)
                     )
                     is BrainWriteExecutionResult.Failed -> updateWriteAssistant(
                         pending.assistantMessageId,
                         writeIssueMessage(result.issue, pending.preview.originalQuery),
-                        pending.preview.item
+                        listOf(pending.preview.item)
                     )
                 }
             } catch (cancelled: CancellationException) {
@@ -243,7 +274,7 @@ class BrainChatViewModel @Inject constructor(
                 updateWriteAssistant(
                     pending.assistantMessageId,
                     writeIssueMessage(BrainWriteIssue.EXECUTION_FAILED, pending.preview.originalQuery),
-                    pending.preview.item
+                    listOf(pending.preview.item)
                 )
             } finally {
                 _isLoading.value = false
@@ -257,15 +288,55 @@ class BrainChatViewModel @Inject constructor(
         val text = issue?.let { writeIssueMessage(it, pending.preview.originalQuery) }
             ?: if (containsArabic(pending.preview.originalQuery)) "لم يتم إجراء أي تغييرات."
             else "No changes were made."
-        updateWriteAssistant(pending.assistantMessageId, text, pending.preview.item)
+        updateWriteAssistant(pending.assistantMessageId, text, listOf(pending.preview.item))
     }
 
-    private fun updateWriteAssistant(messageId: String, text: String, item: com.vaultbrain.core.common.model.VaultItem) {
+    fun confirmCollectionCreation() {
+        val pending = _pendingCollectionCreation.value ?: return
+        if (_isLoading.value) return
+        _pendingCollectionCreation.value = null
+        _isLoading.value = true
+        viewModelScope.launch {
+            try {
+                val collection = vaultRepository.createCollection(
+                    name = pending.name
+                )
+                pending.items.forEach { item ->
+                    vaultRepository.addItemToCollection(item.id, collection.id)
+                }
+                updateWriteAssistant(
+                    pending.assistantMessageId,
+                    if (containsArabic(pending.originalQuery)) "تم إنشاء المجموعة «${pending.name}» بنجاح." else "Created collection '${pending.name}' successfully.",
+                    pending.items
+                )
+            } catch (e: Exception) {
+                updateWriteAssistant(
+                    pending.assistantMessageId,
+                    if (containsArabic(pending.originalQuery)) "حدث خطأ أثناء إنشاء المجموعة." else "Failed to create collection.",
+                    pending.items
+                )
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun dismissCollectionCreation() {
+        val pending = _pendingCollectionCreation.value ?: return
+        _pendingCollectionCreation.value = null
+        updateWriteAssistant(
+            pending.assistantMessageId,
+            if (containsArabic(pending.originalQuery)) "لم يتم إنشاء المجموعة." else "Collection creation cancelled.",
+            pending.items
+        )
+    }
+
+    private fun updateWriteAssistant(messageId: String, text: String, items: List<com.vaultbrain.core.common.model.VaultItem>) {
         var updatedMessage: ChatMessage.Assistant? = null
         _messages.update { current ->
             current.map { message ->
                 if (message.id == messageId && message is ChatMessage.Assistant) {
-                    message.copy(text = text, sources = listOf(item), confidence = 1f)
+                    message.copy(text = text, sources = items, confidence = 1f)
                         .also { updatedMessage = it }
                 } else {
                     message
@@ -436,11 +507,47 @@ class BrainChatViewModel @Inject constructor(
         _messages.update { currentMessages ->
             currentMessages.map { message ->
                 if (message.id == assistantMessageId && message is ChatMessage.Assistant) {
+                    var parsedAnswer = response.answer.orEmpty()
+
+                    val createCollectionRegex = Regex("<create_collection name=\"([^\"]+)\">(.*?)</create_collection>")
+                    val match = createCollectionRegex.find(parsedAnswer)
+                    if (match != null) {
+                        val collectionName = match.groupValues[1]
+                        val indicesStr = match.groupValues[2]
+                        val indexRegex = Regex("\\[(\\d+)\\]")
+                        val indices = indexRegex.findAll(indicesStr).mapNotNull { it.groupValues[1].toIntOrNull() }.toSet()
+
+                        val selectedItems = response.sources.filterIndexed { index, _ -> (index + 1) in indices }
+
+                        if (selectedItems.isNotEmpty()) {
+                            _pendingCollectionCreation.value = BrainCollectionCreationPreview(
+                                name = collectionName,
+                                items = selectedItems,
+                                originalQuery = query,
+                                assistantMessageId = assistantMessageId
+                            )
+                        }
+                        parsedAnswer = parsedAnswer.replace(match.value, "").trim()
+                    }
+
+                    val actions = mutableListOf<com.vaultbrain.feature.brain.model.SuggestedAction>()
+                    if (response.sources.isNotEmpty()) {
+                        val topItem = response.sources.first()
+                        actions.add(com.vaultbrain.feature.brain.model.SuggestedAction("Open document", "OPEN_ITEM", mapOf("itemId" to topItem.id)))
+
+                        if (topItem.parsedMetadata.containsKey("expiry_date") || topItem.parsedMetadata.containsKey("due_date")) {
+                            actions.add(com.vaultbrain.feature.brain.model.SuggestedAction("Remind me 30 days before", "REMIND_EXPIRY", mapOf("itemId" to topItem.id)))
+                        }
+                        actions.add(com.vaultbrain.feature.brain.model.SuggestedAction("Add to collection", "ADD_COLLECTION", mapOf("itemId" to topItem.id)))
+                    }
+
                     message.copy(
-                        text = response.answer.orEmpty().ifBlank {
-                            if (response.sources.isEmpty()) NO_RESULTS_MESSAGE else message.text
+                        text = parsedAnswer.ifBlank {
+                            if (response.sources.isEmpty() && response.externalSources.isEmpty()) NO_RESULTS_MESSAGE else message.text
                         },
                         sources = response.sources,
+                        externalSources = response.externalSources,
+                        suggestedActions = actions,
                         confidence = response.confidence,
                         evidence = response.evidence,
                         responseOrigin = response.responseOrigin ?: message.responseOrigin,

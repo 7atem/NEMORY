@@ -41,8 +41,6 @@ class MainActivity : FragmentActivity() {
     @Inject
     lateinit var authManager: AuthManager
 
-    @Inject
-    lateinit var featureGate: com.vaultbrain.core.billing.FeatureGate
 
     @Inject
     lateinit var gemmaModelManager: com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
@@ -238,9 +236,6 @@ class MainActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch {
-            runCatching { featureGate.syncEntitlementWithBilling() }
-        }
         if (pausedAtMillis > 0L && authManager.autoLockMinutes > 0) {
             val elapsedMs = System.currentTimeMillis() - pausedAtMillis
             val thresholdMs = authManager.autoLockMinutes * 60_000L

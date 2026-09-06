@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FactCheck
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -405,6 +406,10 @@ internal fun HomeContent(
                 }
 
                 item {
+                    BackupNudgeCard(onAction = onSettingsClick)
+                }
+
+                item {
                     SectionHeader(
                         title = stringResource(R.string.home_recently_dumped),
                         actionLabel = if (state.recentItems.isNotEmpty()) stringResource(R.string.home_see_all) else null,
@@ -639,6 +644,45 @@ private fun OverviewStat(
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
+
+@Composable
+private fun BackupNudgeCard(onAction: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onAction),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Security,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Protect your vault",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+                Text(
+                    text = "Your data stays offline. Set up an encrypted backup to prevent data loss.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                )
+            }
+            Icon(
+                Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "Setup Backup",
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PasteTextDialog(onDismiss: () -> Unit, onContinue: (String) -> Unit) {
@@ -816,9 +860,27 @@ private fun TemporalContextCard(
 @Composable
 private fun CalendarContextRow(record: ExternalRecord, onOpen: (ExternalRecord) -> Unit) {
     ListItem(
+        overlineContent = { Text("From your Calendar", color = MaterialTheme.colorScheme.primary) },
         headlineContent = { Text(record.title ?: stringResource(R.string.home_calendar_event)) },
         supportingContent = { Text(formatContextTime(record.startAt)) },
         leadingContent = { Icon(Icons.Default.Event, contentDescription = null) },
+        modifier = Modifier.clickable { onOpen(record) }
+    )
+}
+
+@Composable
+private fun EmailContextRow(record: ExternalRecord, onOpen: (ExternalRecord) -> Unit) {
+    ListItem(
+        overlineContent = { Text("From your Gmail", color = MaterialTheme.colorScheme.secondary) },
+        headlineContent = { Text(record.title ?: stringResource(R.string.home_email_context)) },
+        supportingContent = {
+            Text(
+                record.payload["tracking_number"]?.let { stringResource(R.string.home_tracking_number, it) }
+                    ?: record.payload["order_number"]?.let { stringResource(R.string.home_order_number, it) }
+                    ?: record.description.orEmpty()
+            )
+        },
+        leadingContent = { Icon(Icons.Default.Email, contentDescription = null) },
         modifier = Modifier.clickable { onOpen(record) }
     )
 }
@@ -831,6 +893,7 @@ private fun ReminderContextRow(
     onComplete: (VaultReminder) -> Unit
 ) {
     ListItem(
+        overlineContent = { Text("Vault Reminder", color = MaterialTheme.colorScheme.tertiary) },
         headlineContent = { Text(reminder.title) },
         supportingContent = { Text(formatContextTime(reminder.dueAt)) },
         leadingContent = { Icon(Icons.Default.NotificationsActive, contentDescription = null) },

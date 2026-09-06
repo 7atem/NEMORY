@@ -2,9 +2,21 @@ package com.vaultbrain.core.ai.llm
 
 import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.core.common.model.ScoredLabel
 import org.junit.Test
 
 class EnrichmentProfileTest {
+    @Test
+    fun `vision confidence and provenance are preserved in the prompt`() {
+        val prompt = CaptureEnrichmentPrompt.build(
+            CapturePromptEvidence(
+                ocrText = "",
+                scoredLabels = listOf(ScoredLabel("Prescription", 0.934f))
+            )
+        )
+
+        assertThat(prompt).contains("Prescription 0.93 (ml_kit)")
+    }
     @Test
     fun `every classification has a category profile`() {
         assertThat(EnrichmentProfileRegistry.supportedClassifications)
@@ -25,7 +37,7 @@ class EnrichmentProfileTest {
         assertThat(prompt).contains("USER_CLASSIFICATION: MOVIE (must remain unchanged)")
         assertThat(prompt).contains("provider_url")
         assertThat(prompt).contains("REMIND_LATER")
-        assertThat(prompt).contains("Write title, summary, highlights, and suggestions in English")
+        assertThat(prompt).contains("Write title, summary, and suggestions in English")
     }
 
     @Test
@@ -39,7 +51,7 @@ class EnrichmentProfileTest {
         )
 
         assertThat(prompt).contains("give no medical advice")
-        assertThat(prompt).contains("Write title, summary, highlights, and suggestions in Arabic")
+        assertThat(prompt).contains("Write title, summary, and suggestions in Arabic")
     }
 
     @Test
@@ -87,7 +99,6 @@ class EnrichmentProfileTest {
         assertThat(prompt).contains("You are the local enrichment model for VaultBrain")
         assertThat(prompt).contains("\"system_facets\":[]")
         assertThat(prompt).contains("\"subtype\"")
-        assertThat(prompt).contains("\"topics\"")
         assertThat(prompt).contains("\"supported_actions\"")
         assertThat(prompt).contains("HEURISTIC_METADATA_CANDIDATES:\nbrand=Lipton")
         assertThat(prompt).contains("quantity=100 tea bags")

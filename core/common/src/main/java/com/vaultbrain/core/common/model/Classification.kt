@@ -11,6 +11,7 @@ enum class Classification {
     PRESCRIPTION,
     LAB_RESULT,
     PASSPORT,
+    DRIVERS_LICENSE,
     IDENTITY_DOCUMENT,
     TICKET,
     HOTEL,
@@ -27,6 +28,14 @@ enum class Classification {
     BOOK,
     SCENE_PHOTO,
     MEME_JUNK,
+    REAL_ESTATE,
+    LEGAL_DOCUMENT,
+    CREDIT_CARD,
+    BANK_STATEMENT,
+    UTILITY_BILL,
+    MEDICAL_RECORD,
+    CRYPTO_TRANSACTION,
+    ACADEMIC_RECORD,
     /** Supported evidence that does not reasonably fit another broad category. */
     OTHER,
     /** Internal low-confidence state used before semantic enrichment. */

@@ -34,13 +34,11 @@ class CaptureEnrichmentResultTest {
     }
 
     @Test
-    fun `parser rejects surrounding prose and maps unlisted classification to OTHER`() {
+    fun `parser rejects surrounding prose and unlisted classification`() {
         val customResult = CaptureEnrichmentResultParser.parse(
             """{"classification":"SECRET","lens":"MEDIA","title":"x","summary":"x"}"""
         )
-        assertThat(customResult).isNotNull()
-        assertThat(customResult?.classification).isEqualTo(Classification.OTHER)
-        assertThat(customResult?.tags).isEmpty()
+        assertThat(customResult).isNull()
 
         assertThat(CaptureEnrichmentResultParser.parse("not json")).isNull()
         assertThat(CaptureEnrichmentResultParser.parse("prose {\"classification\":\"OTHER\"}")).isNull()
@@ -303,10 +301,7 @@ class CaptureEnrichmentResultTest {
             """.trimIndent()
         )
 
-        assertThat(result).isNotNull()
-        assertThat(result?.classification).isEqualTo(Classification.OTHER)
-        assertThat(result?.systemFacets).isEmpty()
-        assertThat(result?.tags).isEmpty()
+        assertThat(result).isNull()
     }
 
     @Test

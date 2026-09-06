@@ -84,9 +84,10 @@ matching — do not insert suggestions into the membership table.
 2. `MediaVaultStorage.import()` copies shared media into app-private storage.
 3. `CaptureViewModel.analyze()`:
    - PDF pages are rendered **once** (`renderPdfPages`); page 1 doubles as the vision
-     preview. Plain images are decoded once at a 1200 px cap and reused for OCR + vision.
+     preview. Plain images are decoded once at a 2400 px cap and reused for OCR + vision.
    - OCR runs raw + contrast-enhanced passes **concurrently** through the shared
-     `TextRecognizer` (`recognizeBestDocument`), with a conditional 90°/270° retry.
+     `TextRecognizer` (`recognizeBestDocument`), with a conditional 90°/180°/270° retry.
+     The installed recognizer is Latin-script only; Arabic UI support does not imply Arabic OCR.
    - `VisionAnalyzer.analyze()` runs colors/labels/barcodes/classifier concurrently.
    - `HeuristicExtractor` merges OCR text, barcodes, vision objects, and the neural
      classification into metadata/lens tags/confidence.
@@ -94,13 +95,18 @@ matching — do not insert suggestions into the membership table.
    `Dispatchers.Default`; auto-select above the threshold).
 5. User reviews/edits; `save()` persists with `extractionState = COMPLETE`,
    `indexingState = PENDING`, schedules alerts, and enqueues `DeferredAnalysisWorker`.
+   Model confidence never bypasses review. Enrichment preserves omitted metadata and
+   app-owned Share provenance; explicit skip is persisted as `SKIPPED_PRIVACY`.
+   Invalid model classification/title responses are rejected. Classification corrections
+   replace the obsolete automatic lens and do not inherit the old classification confidence.
 
 ### Deferred share flow
 
 The current exported `ShareActivity` validates incoming text/URL/image/PDF shares,
 shows `ShareReviewScreen`, converts accepted content to `CaptureInput`, and continues
-through `CaptureFlowScreen`. Provenance can retain `ANDROID_SHARE`, source package,
-URL, and received time. The separate `ShareIngestionViewModel` placeholder pipeline
+through `CaptureFlowScreen`. The input preserves `targetCollectionId`,
+`provenanceMetadata`, and `skipLlmEnrichment`; provenance can retain `ANDROID_SHARE`,
+source package, URL, and received time. The separate `ShareIngestionViewModel` placeholder pipeline
 and `DeferredAnalysisWorker` remain available for deferred ingestion: media may be
 saved with pending extraction, claimed from the indexing queue, analyzed, embedded,
 and completed with WorkManager retry/backoff. Do not assume the visible ShareActivity
@@ -122,15 +128,21 @@ older items that have no rows in the vector store.
 ## Backup and Gmail integration
 
 `sync/drive/DriveBackupManager` implements portable SAF export/import, not direct Drive
-API sync. Archives use a user passphrase, PBKDF2-HMAC-SHA256, AES-256-GCM, a checkpointed
-SQLCipher database plus its re-wrapped key, and private media. Restore validates and
-stages entries, keeps a rollback database, closes Room, and requires an app restart.
+API sync. Archives use a user passphrase, PBKDF2-HMAC-SHA256, AES-256-GCM, a
+checkpointed, transactionally stable SQLCipher snapshot plus its re-wrapped key, and private media.
+Restore validates and stages entries, closes Room before creating its rollback copy,
+and requires an app restart.
+Snapshots use `sqlcipher_export` in a transaction on a separate connection and retain
+Room schema identity/version. Import requires the current schema. Key ciphertext is
+staged under its final basename, verified, and atomically installed; unreadable keys
+are never silently regenerated. Legacy `.tmp`-authenticated keys are recovered when possible.
 
 `sync/gmail/GmailConnector` is a read-only connector foundation with sanitization,
 bounded local retention/polling, decoy isolation, and Today/Brain context. Its default
 `GmailDataSource` is intentionally unconfigured. Do not add fake email records or claim
 Gmail works until verified production OAuth credentials and the `gmail.readonly` consent
-flow exist.
+flow exist. The current settings control is disabled and explicitly reports Gmail as
+not configured.
 
 ## Experience taxonomy (two tiers)
 
@@ -179,11 +191,10 @@ periodically syncs approximately every 6 hours. Disconnect or permission revocat
 clears locally cached Calendar records. Nemory does not request `WRITE_CALENDAR`;
 creation launches the system Calendar editor with prefilled data for user confirmation.
 
-Health Connect (`core/integrations/health/HealthConnectConnector` +
-`HealthConnectSyncWorker`) reads today's steps, sleep, and active calories into a daily
-summary record. It requires the Health Connect runtime permissions, requested from the
-Connections screen in settings; without them the connection stays PERMISSION_REVOKED
-and sync is a no-op.
+Health Connect is planned but disabled for v1.1.1. The production path contains no
+Health Connect manifest permissions, settings permission flow, connector registration,
+or worker scheduling. Treat enabling it as a future product/release decision, not a
+debugging change.
 
 Vault Reminders are local records with scheduled/snoozed/completed/dismissed state and
 optional links to a vault item, external record, or personal collection. WorkManager

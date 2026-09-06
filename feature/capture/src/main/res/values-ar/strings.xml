@@ -17,7 +17,7 @@
     <string name="feature_capture_classification">التصنيف: %1$s</string>
     <string name="feature_capture_suggested_lenses">العدسات المقترحة</string>
     <string name="feature_capture_review_title">مراجعة وحفظ</string>
-    <string name="feature_capture_review_hint">تحقق من التفاصيل المهمة قبل إضافتها إلى خزنتك.</string>
+    <string name="feature_capture_review_hint">تحقق من التفاصيل المهمة قبل الحفظ. التعرّف التلقائي على النص لا يدعم الحروف العربية وقد يفوّت النص الصغير.</string>
     <string name="feature_capture_ready">جاهز للحفظ</string>
     <string name="feature_capture_check">يُنصح بمراجعة سريعة</string>
     <string name="feature_capture_ready_body">وجد Nemory تطابقًا قويًا، ويمكنك تعديل أي تفصيل أدناه.</string>

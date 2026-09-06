@@ -123,7 +123,7 @@ class CollectionDetailViewModelTest {
         assertThat(state.isLoading).isFalse()
         assertThat(state.collection?.name).isEqualTo("Europe Trip")
         assertThat(state.items.map { it.id }).containsExactly("i1")
-        assertThat(state.availableItems.map { it.id }).containsExactly("i2")
+        assertThat(state.otherItems.map { it.id }).containsExactly("i2")
     }
 
     @Test

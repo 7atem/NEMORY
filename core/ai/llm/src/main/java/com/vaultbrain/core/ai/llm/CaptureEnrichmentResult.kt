@@ -40,18 +40,22 @@ data class CaptureEnrichmentResult(
 ) {
     /** Merge conservatively by default; historical adoption may replace older heuristic fields. */
     fun applyTo(item: VaultItem, replaceHeuristicContent: Boolean = false): VaultItem {
+        val canReplace = replaceHeuristicContent && item.userEditedAt == null
         val enrichedClassification = when {
-            replaceHeuristicContent && item.userClassificationOverride == null -> classification
+            canReplace && item.userClassificationOverride == null -> classification
             item.aiClassification == null || item.aiClassification == Classification.UNKNOWN -> classification
             else -> item.aiClassification
         }
         val shouldUseGeneratedTitle = title.isNotBlank() &&
-            (replaceHeuristicContent || item.title == "Captured item")
+            (canReplace || item.title == "Captured item")
         val enrichedTitle = if (shouldUseGeneratedTitle) title else item.title
-        val enrichedConfidence = confidence
-            ?.coerceIn(0f, 1f)
-            ?.let { maxOf(item.aiConfidence, it) }
-            ?: item.aiConfidence
+        val classificationChanged = enrichedClassification != item.aiClassification
+        val modelConfidence = confidence?.takeIf(Float::isFinite)?.coerceIn(0f, 1f)
+        val enrichedConfidence = if (classificationChanged && canReplace) {
+            modelConfidence ?: 0f
+        } else {
+            modelConfidence?.let { maxOf(item.aiConfidence, it) } ?: item.aiConfidence
+        }
         val effectiveClassification = item.userClassificationOverride
             ?: enrichedClassification
             ?: classification
@@ -74,13 +78,20 @@ data class CaptureEnrichmentResult(
                 null
             }
         }.toMap()
-        val mergedMetadata = buildMap {
-            if (!replaceHeuristicContent) {
-                putAll(MetadataValueNormalizer.normalizeExisting(item.parsedMetadata))
-            }
+        val mergedMetadata = buildMap<String, String> {
+            putAll(MetadataValueNormalizer.normalizeExisting(item.parsedMetadata))
             putAll(groundedMetadata)
-            item.parsedMetadata["media_mime_type"]?.let { put("media_mime_type", it) }
-            item.parsedMetadata["barcodes"]?.let { put("barcodes", it) }
+            // Provenance and private pipeline fields are app-owned, never model-owned.
+            keys.filter { it.startsWith("share_") || it.startsWith("_") }.toList().forEach { remove(it) }
+            putAll(item.parsedMetadata.filterKeys {
+                it.startsWith("share_") || it.startsWith("_") ||
+                    it == "media_mime_type" || it == "barcodes"
+            })
+            if (item.userEditedAt != null) putAll(item.parsedMetadata)
+            if (classificationChanged && canReplace) {
+                remove("type")
+                remove(ProactiveActionResolver.METADATA_KEY)
+            }
 
             val allowedActions = supportedActions.intersect(profile.supportedActions)
             if (allowedActions.isNotEmpty()) {
@@ -96,7 +107,7 @@ data class CaptureEnrichmentResult(
         val safeGeneratedSummary = summary.takeIf(String::isNotBlank)?.takeUnless {
             effectiveClassification.isIdentityDocument() && SENSITIVE_NUMBER.containsMatchIn(it)
         }
-        val enrichedSummary = if (replaceHeuristicContent) {
+        val enrichedSummary = if (canReplace) {
             safeGeneratedSummary ?: item.summary?.takeIf(String::isNotBlank)
         } else {
             item.summary?.takeIf(String::isNotBlank) ?: safeGeneratedSummary
@@ -115,8 +126,14 @@ data class CaptureEnrichmentResult(
         val deterministicLens = profile.primaryLens
         val resolvedLenses = modelLenses + listOfNotNull(deterministicLens)
         val modelPrimaryLens = deterministicLens ?: modelLenses.firstOrNull()
-        val shouldReplacePrimaryLens = replaceHeuristicContent &&
+        val shouldReplacePrimaryLens = canReplace &&
             (item.experienceId == null || item.experienceId == ExperienceId.GENERIC)
+        val previousAutomaticLens = item.aiClassification
+            ?.let(EnrichmentProfileRegistry::forClassification)?.primaryLens
+        val retainedLenses = if (shouldReplacePrimaryLens && classificationChanged &&
+            item.userClassificationOverride == null) {
+            item.lensTags - listOfNotNull(previousAutomaticLens).toSet()
+        } else item.lensTags
         val dateProjection = MetadataDateProjector.project(effectiveClassification, mergedMetadata)
         val classificationConflict = item.userClassificationOverride == null &&
             item.aiClassification != null &&
@@ -135,7 +152,7 @@ data class CaptureEnrichmentResult(
             },
             summary = enrichedSummary,
             aiClassification = enrichedClassification,
-            lensTags = item.lensTags + resolvedLenses,
+            lensTags = retainedLenses + resolvedLenses,
             primaryLensId = when {
                 shouldReplacePrimaryLens -> modelPrimaryLens
                 item.primaryLensId == null -> modelPrimaryLens
@@ -147,18 +164,18 @@ data class CaptureEnrichmentResult(
             } else {
                 item.customFields + (AI_HIGHLIGHTS_KEY to safeHighlights.joinToString("\n") { "• $it" })
             },
-            subtype = safeSubtype ?: item.subtype,
-            topics = mergeSemanticList(item.topics, safeTopics, replaceHeuristicContent),
-            entities = mergeSemanticList(item.entities, safeEntities, replaceHeuristicContent),
-            tags = mergeSemanticList(item.tags, safeTags, replaceHeuristicContent),
-            suggestions = mergeSemanticList(item.suggestions, safeSuggestions, replaceHeuristicContent),
+            subtype = safeSubtype ?: item.subtype.takeUnless { classificationChanged && canReplace },
+            topics = mergeSemanticList(item.topics, safeTopics, canReplace),
+            entities = mergeSemanticList(item.entities, safeEntities, canReplace),
+            tags = mergeSemanticList(item.tags, safeTags, canReplace),
+            suggestions = mergeSemanticList(item.suggestions, safeSuggestions, canReplace),
             expiryDate = item.expiryDate ?: dateProjection.expiryDate,
             secondaryAlertDate = item.secondaryAlertDate ?: dateProjection.secondaryAlertDate,
             aiConfidence = enrichedConfidence,
             enrichmentState = EnrichmentState.COMPLETE,
             enrichmentClaimedAt = null,
             enrichmentErrorCode = null,
-            needsReview = item.needsReview || classificationConflict,
+            needsReview = item.needsReview || classificationConflict || enrichedConfidence < 0.5f,
             updatedAt = System.currentTimeMillis(),
             // Raw model output is available on this result for diagnostics but is not user content.
             aiScratchpad = null
@@ -212,7 +229,8 @@ object CaptureEnrichmentResultParser {
                 ?.replace(classificationSeparators, "_")
                 ?.let { normalized -> Classification.entries.firstOrNull { it.name == normalized } }
                 ?.takeUnless { it == Classification.UNKNOWN }
-            val classification = matchedClassification ?: Classification.OTHER
+            val classification = matchedClassification ?: return null
+            if (root.string("title").isNullOrBlank()) return null
             val rawLegacyLens = root.string("lens")?.trim()
             val systemFacets = parseSystemFacets(root, rawLegacyLens)
 

@@ -46,6 +46,7 @@ data class HomeUiState(
     val quickCaptureSuggestion: CaptureSuggestion? = null,
     val todayEvents: List<ExternalRecord> = emptyList(),
     val upcomingEvents: List<ExternalRecord> = emptyList(),
+    val recentEmailContext: List<ExternalRecord> = emptyList(),
     val todayReminders: List<VaultReminder> = emptyList(),
     val upcomingReminders: List<VaultReminder> = emptyList()
 )
@@ -105,8 +106,9 @@ class HomeViewModel @Inject constructor(
 
     private val temporalContext = combine(
         externalContextRepository.observeRecordsBySource(ExternalSource.CALENDAR),
+        externalContextRepository.observeRecordsBySource(ExternalSource.GMAIL),
         vaultReminderManager.observeActive()
-    ) { events, reminders ->
+    ) { events, emails, reminders ->
         val now = System.currentTimeMillis()
         val zone = java.time.ZoneId.systemDefault()
         val todayStart = java.time.LocalDate.now(zone).atStartOfDay(zone).toInstant().toEpochMilli()
@@ -122,6 +124,10 @@ class HomeViewModel @Inject constructor(
                 val start = it.startAt ?: return@filter false
                 start in tomorrowStart..upcomingEnd
             }.sortedBy { it.startAt },
+            recentEmailContext = emails.filter { email ->
+                !email.isResolved && email.createdAt >= now - 7L * 24 * 60 * 60 * 1000 &&
+                    email.payload.keys.any { it in ACTIONABLE_EMAIL_FIELDS }
+            }.sortedByDescending { it.createdAt }.take(5),
             todayReminders = reminders.filter { it.dueAt < tomorrowStart }.sortedBy { it.dueAt },
             upcomingReminders = reminders.filter { it.dueAt in tomorrowStart..upcomingEnd }.sortedBy { it.dueAt }
         )
@@ -149,6 +155,7 @@ class HomeViewModel @Inject constructor(
             quickCaptureSuggestion = suggestion,
             todayEvents = temporal.todayEvents,
             upcomingEvents = temporal.upcomingEvents,
+            recentEmailContext = temporal.recentEmailContext,
             todayReminders = temporal.todayReminders,
             upcomingReminders = temporal.upcomingReminders
         )
@@ -194,6 +201,9 @@ class HomeViewModel @Inject constructor(
 private data class TemporalContext(
     val todayEvents: List<ExternalRecord>,
     val upcomingEvents: List<ExternalRecord>,
+    val recentEmailContext: List<ExternalRecord>,
     val todayReminders: List<VaultReminder>,
     val upcomingReminders: List<VaultReminder>
 )
+
+private val ACTIONABLE_EMAIL_FIELDS = setOf("order_number", "tracking_number", "total")

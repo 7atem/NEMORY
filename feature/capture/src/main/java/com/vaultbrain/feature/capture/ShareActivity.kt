@@ -33,7 +33,6 @@ class ShareActivity : ComponentActivity() {
 
     @Inject
     lateinit var parser: IncomingShareParser
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(

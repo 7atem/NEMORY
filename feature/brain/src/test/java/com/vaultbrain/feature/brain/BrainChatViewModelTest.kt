@@ -102,6 +102,27 @@ class BrainChatViewModelTest {
     }
 
     @Test
+    fun `concurrent queries are ignored while loading`() = runTest(dispatcher) {
+        val flow1 = kotlinx.coroutines.flow.MutableStateFlow(RagResponse(answer = "First"))
+        val flow2 = kotlinx.coroutines.flow.MutableStateFlow(RagResponse(answer = "Second"))
+
+        var callCount = 0
+        coEvery { ragEngine.queryStream(any(), any(), any(), any()) } answers {
+            if (callCount++ == 0) flow1 else flow2
+        }
+
+        val viewModel = viewModel()
+        viewModel.sendQuery("query 1")
+
+        // At this point _isLoading is true, so sendQuery("query 2") should be ignored
+        viewModel.sendQuery("query 2")
+        advanceUntilIdle()
+
+        val messages = viewModel.messages.value.filterIsInstance<ChatMessage.Assistant>()
+        assertThat(messages.last().text).isEqualTo("First")
+    }
+
+    @Test
     fun `clear conversation removes messages and draft`() = runTest(dispatcher) {
         coEvery { ragEngine.queryStream("receipt", SearchFilters(), null, false) } returns flowOf(
             RagResponse(answer = "Found it", sources = emptyList(), confidence = 0.7f)
@@ -264,6 +285,40 @@ class BrainChatViewModelTest {
         val answer = viewModel.messages.value.last() as ChatMessage.Assistant
         assertThat(answer.text).isEqualTo("No changes were made.")
         coVerify(exactly = 0) { writeActionPlanner.execute(any(), any()) }
+    }
+
+    @Test
+    fun `collection creation executes successfully when confirmed`() = runTest(dispatcher) {
+        val collection = com.vaultbrain.core.common.model.PersonalCollection(
+            id = "collection-id",
+            name = "Test Collection",
+            createdAt = 100L,
+            updatedAt = 100L,
+            source = com.vaultbrain.core.common.model.PersonalCollectionSource.USER
+        )
+        val items = listOf(VaultItem(id = "item1", title = "Item 1"))
+
+        coEvery { vaultRepository.createCollection("Test Collection", any()) } returns collection
+        coEvery { vaultRepository.addItemToCollection("item1", "collection-id") } returns true
+
+        val viewModel = viewModel()
+
+        val field = BrainChatViewModel::class.java.getDeclaredField("_pendingCollectionCreation")
+        field.isAccessible = true
+        val flow = field.get(viewModel) as kotlinx.coroutines.flow.MutableStateFlow<BrainCollectionCreationPreview?>
+        flow.value = BrainCollectionCreationPreview(
+            name = "Test Collection",
+            items = items,
+            originalQuery = "Make a collection",
+            assistantMessageId = "msg-id"
+        )
+
+        viewModel.confirmCollectionCreation()
+        advanceUntilIdle()
+
+        assertThat(viewModel.pendingCollectionCreation.value).isNull()
+        coVerify(exactly = 1) { vaultRepository.createCollection("Test Collection", any()) }
+        coVerify(exactly = 1) { vaultRepository.addItemToCollection("item1", "collection-id") }
     }
 
     private fun viewModel() = BrainChatViewModel(

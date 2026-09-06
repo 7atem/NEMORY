@@ -9,4 +9,9 @@
     <string name="gemma_prompt_title">فهم أذكى للمستندات متاح</string>
     <string name="gemma_prompt_body">احصل على تنظيم خاص أفضل للقطات مع تنزيل نموذج على الجهاز بحجم ~530 ميغابايت لمرة واحدة. استخدم Wi-Fi؛ ويعمل دون اتصال بالكامل بعد ذلك.</string>
     <string name="gemma_prompt_download">تنزيل</string>
+    <string name="alert_vaccine_title">حان موعد الجرعة المعززة</string>
+    <string name="alert_vaccine_body">حان وقت الجرعة المعززة %2$s لـ %1$s.</string>
+    <string name="alert_invoice_title">فاتورة تقترب من الاستحقاق</string>
+    <string name="alert_invoice_body">%1$s يقترب من تاريخ استحقاقه. اضغط للمراجعة.</string>
+    <string name="alert_vaccine_default_patient">حيوانك الأليف</string>
 </resources>

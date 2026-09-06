@@ -21,6 +21,12 @@ interface VaultReminderDao {
     suspend fun get(id: String): VaultReminderEntity?
 
     @Query(
+        "SELECT * FROM vault_reminders WHERE vault_item_id = :vaultItemId AND due_at = :dueAt " +
+            "AND status IN ('SCHEDULED', 'SNOOZED') LIMIT 1"
+    )
+    suspend fun getActiveForVaultItemAt(vaultItemId: String, dueAt: Long): VaultReminderEntity?
+
+    @Query(
         "SELECT * FROM vault_reminders WHERE status IN ('SCHEDULED', 'SNOOZED') " +
             "ORDER BY due_at ASC"
     )

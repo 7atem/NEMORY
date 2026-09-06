@@ -58,10 +58,16 @@ class VaultReminderManager @Inject constructor(
     suspend fun create(reminder: VaultReminder): Boolean {
         if (DecoySessionState.isDecoy.value) return false
         require(reminder.title.isNotBlank()) { "Reminder title cannot be blank" }
+        val now = System.currentTimeMillis()
+        if (reminder.dueAt <= now) return false
+        if (reminder.vaultItemId?.let {
+                reminderDao.getActiveForVaultItemAt(it, reminder.dueAt)
+            } != null
+        ) return true
         val scheduled = reminder.copy(
             title = reminder.title.trim(),
             status = VaultReminderStatus.SCHEDULED,
-            updatedAt = System.currentTimeMillis()
+            updatedAt = now
         )
         upsert(scheduled)
         enqueue(scheduled)

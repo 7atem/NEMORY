@@ -26,8 +26,8 @@ android {
         applicationId = "com.nemory.app"
         minSdk = 29
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.1.1"
+        versionCode = 15
+        versionName = "1.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -99,7 +99,7 @@ dependencies {
     implementation(project(":core:security"))
     implementation(project(":core:notifications"))
     implementation(project(":core:integrations"))
-    implementation(project(":core:billing"))
+
     implementation(project(":core:ai:embeddings"))
     implementation(project(":core:ai:rag"))
     implementation(project(":core:ai:llm"))
@@ -116,6 +116,7 @@ dependencies {
     implementation(project(":feature:lens-bureaucracy"))
     implementation(project(":feature:lens-media"))
     implementation(project(":feature:settings"))
+    implementation(project(":sync:gmail"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

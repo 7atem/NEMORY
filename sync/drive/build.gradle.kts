@@ -33,8 +33,12 @@ android {
 
 dependencies {
     implementation(project(":core:common"))
+    implementation(project(":core:database"))
+    implementation(project(":core:security"))
 
     implementation(libs.androidx.core.ktx)
+    implementation(libs.room.runtime)
+    implementation(libs.sqlcipher)
     implementation(libs.kotlinx.coroutines.android)
 
     // Cloud upload is intentionally disabled until production OAuth credentials exist.

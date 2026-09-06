@@ -51,6 +51,38 @@ class VaultReminderManagerTest {
     }
 
     @Test
+    fun `create rejects reminders in the past`() = runTest {
+        val reminder = VaultReminder(id = "past", title = "Expired", dueAt = System.currentTimeMillis() - 1)
+
+        assertThat(manager.create(reminder)).isFalse()
+        coVerify(exactly = 0) { dao.insert(any()) }
+        verify(exactly = 0) { workManager.enqueueUniqueWork(any(), any(), any<OneTimeWorkRequest>()) }
+    }
+
+    @Test
+    fun `create does not duplicate an active item reminder for the same date`() = runTest {
+        val dueAt = System.currentTimeMillis() + 60_000
+        val existing = VaultReminderEntity(
+            id = "existing",
+            title = "Expiry",
+            dueAt = dueAt,
+            status = VaultReminderStatus.SCHEDULED,
+            createdAt = 1,
+            updatedAt = 1,
+            vaultItemId = "item-1"
+        )
+        coEvery { dao.getActiveForVaultItemAt("item-1", dueAt) } returns existing
+
+        assertThat(
+            manager.create(
+                VaultReminder(id = "new", title = "Expiry", dueAt = dueAt, vaultItemId = "item-1")
+            )
+        ).isTrue()
+        coVerify(exactly = 0) { dao.insert(any()) }
+        verify(exactly = 0) { workManager.enqueueUniqueWork(any(), any(), any<OneTimeWorkRequest>()) }
+    }
+
+    @Test
     fun `snooze changes due time and completion cancels work`() = runTest {
         val entity = VaultReminderEntity("r1", "Call", 1, VaultReminderStatus.SCHEDULED, createdAt = 1, updatedAt = 1)
         coEvery { dao.get("r1") } returns entity

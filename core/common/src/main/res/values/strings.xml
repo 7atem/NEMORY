@@ -10,7 +10,16 @@
     <string name="meta_price">Price</string>
     <string name="meta_currency">Currency</string>
     <string name="meta_date">Date</string>
+    <string name="meta_date_as_printed">Date as Printed</string>
     <string name="meta_tax">Tax</string>
+    <string name="meta_subtotal">Subtotal</string>
+    <string name="meta_cashier">Cashier</string>
+    <string name="meta_item_count">Item Count</string>
+    <string name="meta_amount_tendered">Amount Tendered</string>
+    <string name="meta_change">Change</string>
+    <string name="meta_purchase_time">Purchase Time</string>
+    <string name="meta_transaction_number">Transaction Number</string>
+    <string name="meta_address">Address</string>
     <string name="meta_payment_method">Payment Method</string>
     <string name="meta_grocery_list">Grocery List</string>
     <string name="meta_items">Items</string>
@@ -91,4 +100,7 @@
     <string name="meta_return_by">Return By</string>
     <string name="meta_provider_url">Provider URL</string>
     <string name="meta_release_year">Release Year</string>
+    <string name="meta_financial_identifier">Financial Identifier</string>
+    <string name="meta_national_id">National ID</string>
+    <string name="meta_patient_name">Patient Name</string>
 </resources>

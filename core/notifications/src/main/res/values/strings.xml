@@ -9,4 +9,9 @@
     <string name="gemma_prompt_title">Smarter document understanding available</string>
     <string name="gemma_prompt_body">Get better private capture organization with a one-time ~530 MB on-device model download. Use Wi-Fi; it works fully offline afterwards.</string>
     <string name="gemma_prompt_download">Download</string>
+    <string name="alert_vaccine_title">Vaccine booster due</string>
+    <string name="alert_vaccine_body">It\'s time for %1$s\'s %2$s booster shot.</string>
+    <string name="alert_invoice_title">Invoice due soon</string>
+    <string name="alert_invoice_body">%1$s is approaching its due date. Tap to review.</string>
+    <string name="alert_vaccine_default_patient">Your pet</string>
 </resources>

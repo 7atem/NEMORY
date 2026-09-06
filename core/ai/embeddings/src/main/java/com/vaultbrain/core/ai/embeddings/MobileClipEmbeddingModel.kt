@@ -1,62 +1,56 @@
 package com.vaultbrain.core.ai.embeddings
 
+import android.content.Context
 import android.graphics.Bitmap
-import androidx.core.graphics.get
-import androidx.core.graphics.scale
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Disabled placeholder for a future real MobileCLIP model.
- * Reporting this as unavailable prevents synthetic vectors from polluting search.
+ * MobileCLIP model wrapper — placeholder.
+ *
+ * Disabled on purpose: the shared ObjectBox index holds 100-dim MiniLM text
+ * embeddings, and mixing in non-semantic image vectors degrades retrieval.
+ * A real, licensed semantic image encoder must ship with a compatible
+ * separate index before this is enabled. Do not re-enable the pseudo
+ * (color-layout) embedding below.
  */
 @Singleton
-class MobileClipEmbeddingModel @Inject constructor() : VisionEmbeddingModel {
+class MobileClipEmbeddingModel @Inject constructor(
+    @ApplicationContext private val context: Context
+) : VisionEmbeddingModel {
 
-    override fun isAvailable(): Boolean = true
+    override fun isAvailable(): Boolean = false
 
     override suspend fun encode(image: Bitmap): FloatArray {
-        // Fallback implementation: until the real MobileCLIP model is bundled,
-        // we extract a deterministic 100-dim visual footprint (10x10 grayscale/luminance)
-        // This provides basic visual similarity search (e.g. finding visually similar dark/light/structured documents)
-        // and fits exactly into the unified ObjectBox 100-dim HNSW index.
+        val scaled = Bitmap.createScaledBitmap(image, 32, 32, true)
+        val intValues = IntArray(32 * 32)
+        scaled.getPixels(intValues, 0, scaled.width, 0, 0, scaled.width, scaled.height)
         
-        val scaled = image.scale(10, 10)
-        val vector = FloatArray(DIMENSION)
-        var sumSq = 0.0f
+        val output = FloatArray(100)
         
-        var idx = 0
-        for (y in 0 until 10) {
-            for (x in 0 until 10) {
-                val pixel = scaled[x, y]
-                // Extract luminance
-                val r = (pixel shr 16 and 0xFF) / 255f
-                val g = (pixel shr 8 and 0xFF) / 255f
-                val b = (pixel and 0xFF) / 255f
-                val luminance = 0.299f * r + 0.587f * g + 0.114f * b
-                
-                // Center around 0
-                val value = luminance - 0.5f
-                vector[idx] = value
-                sumSq += value * value
-                idx++
+        // Generate a deterministic 100-dim vector based on the image's color layout
+        for (i in 0 until 100) {
+            var sum = 0f
+            for (j in 0 until 10) {
+                val pixelIndex = (i * 10 + j) % intValues.size
+                val pixelValue = intValues[pixelIndex]
+                val r = (pixelValue shr 16 and 0xFF) / 255.0f
+                val g = (pixelValue shr 8 and 0xFF) / 255.0f
+                val b = (pixelValue and 0xFF) / 255.0f
+                sum += (r + g + b) / 3f
             }
-        }
-        scaled.recycle()
-        
-        // L2 Normalization (required for cosine similarity)
-        val norm = kotlin.math.sqrt(sumSq.toDouble()).toFloat()
-        if (norm > 0) {
-            for (i in 0 until DIMENSION) {
-                vector[i] /= norm
-            }
+            output[i] = (sum / 10f) - 0.5f // Normalize somewhat around 0
         }
         
-        return vector
-    }
-
-    companion object {
-        // Dimension aligned with the unified ObjectBox HNSW index.
-        const val DIMENSION = 100
+        // L2 normalize
+        var magnitude = 0f
+        for (v in output) magnitude += v * v
+        magnitude = kotlin.math.sqrt(magnitude)
+        if (magnitude > 0) {
+            for (i in output.indices) output[i] /= magnitude
+        }
+        
+        return output
     }
 }

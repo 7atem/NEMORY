@@ -32,9 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.health.connect.client.PermissionController
 import com.vaultbrain.core.integrations.calendar.CalendarConnector
-import com.vaultbrain.core.integrations.health.HealthConnectConnector
 import com.vaultbrain.feature.settings.viewmodel.ConnectionsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,18 +43,13 @@ fun ConnectionsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val nonCalendarConnections = uiState.connections.filterNot {
-        it.connectorId == CalendarConnector.CONNECTOR_ID ||
-            it.connectorId == HealthConnectConnector.CONNECTOR_ID
+        it.connectorId == CalendarConnector.CONNECTOR_ID
     }
     val calendarPermission = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
         viewModel::onCalendarPermissionResult
     )
-    val healthPermission = rememberLauncherForActivityResult(
-        PermissionController.createRequestPermissionResultContract(),
-        viewModel::onHealthPermissionResult
-    )
-    LaunchedEffect(Unit) { viewModel.refreshCalendar(); viewModel.refreshHealth() }
+    LaunchedEffect(Unit) { viewModel.refreshCalendar() }
 
     Scaffold(
         topBar = {
@@ -130,50 +123,6 @@ fun ConnectionsScreen(
                         }
                         TextButton(onClick = viewModel::disconnectCalendar) {
                             Text(stringResource(R.string.settings_calendar_disconnect))
-                        }
-                    }
-                }
-            }
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.padding(6.dp))
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = stringResource(R.string.settings_health_title),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Text(
-                        text = when {
-                            !uiState.health.isAvailable -> stringResource(R.string.settings_health_unavailable)
-                            !uiState.health.hasPermission -> stringResource(R.string.settings_health_permission_body)
-                            else -> stringResource(R.string.settings_health_connected_body)
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                    if (!uiState.health.hasPermission && uiState.health.isAvailable) {
-                        Button(
-                            onClick = { healthPermission.launch(viewModel.healthPermissions) },
-                            modifier = Modifier.padding(top = 12.dp)
-                        ) {
-                            Text(stringResource(R.string.settings_health_allow))
-                        }
-                    } else if (uiState.health.hasPermission) {
-                        uiState.health.error?.let {
-                            Text(it, color = MaterialTheme.colorScheme.error)
-                        }
-                        Button(
-                            onClick = viewModel::syncHealth,
-                            enabled = !uiState.health.isSyncing,
-                            modifier = Modifier.padding(top = 12.dp)
-                        ) {
-                            Text(
-                                if (uiState.health.isSyncing) stringResource(R.string.settings_health_syncing)
-                                else stringResource(R.string.settings_health_sync)
-                            )
-                        }
-                        TextButton(onClick = viewModel::disconnectHealth) {
-                            Text(stringResource(R.string.settings_health_disconnect))
                         }
                     }
                 }
