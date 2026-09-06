@@ -457,13 +457,30 @@ open class VaultRepository @Inject constructor(
         auditLogDao.insert(AuditLogEntity(action = "DELETE", itemId = item.id))
     }
 
-    suspend fun search(query: String): List<VaultItem> =
-        if (DecoySessionState.isDecoy.value) emptyList() else vaultItemDao.searchFts(query).map(VaultItemMapper::toDomain)
+    suspend fun search(query: String): List<VaultItem> {
+        val ftsQuery = buildFtsQuery(query) ?: return emptyList()
+        return if (DecoySessionState.isDecoy.value) emptyList() else vaultItemDao.searchFts(ftsQuery).map(VaultItemMapper::toDomain)
+    }
 
-    fun observeSearch(query: String): Flow<List<VaultItem>> =
-        kotlinx.coroutines.flow.combine(vaultItemDao.observeSearchFts("*$query*"), DecoySessionState.isDecoy) { list, isDecoy ->
+    fun observeSearch(query: String): Flow<List<VaultItem>> {
+        val ftsQuery = buildFtsQuery(query) ?: return kotlinx.coroutines.flow.flowOf(emptyList())
+        return kotlinx.coroutines.flow.combine(vaultItemDao.observeSearchFts(ftsQuery), DecoySessionState.isDecoy) { list, isDecoy ->
             if (isDecoy) emptyList() else list.map(VaultItemMapper::toDomain)
         }
+    }
+
+    /**
+     * FTS4 MATCH accepts only trailing wildcards and treats most punctuation as syntax.
+     * Reduce arbitrary user text to prefix tokens ("foo bar" -> "foo* bar*") so search
+     * cannot throw SQLiteException per keystroke. Null means "no usable tokens".
+     */
+    private fun buildFtsQuery(raw: String): String? {
+        val tokens = raw.trim()
+            .split(Regex("\\s+"))
+            .map { it.replace(Regex("[^\\p{L}\\p{N}_]"), "") }
+            .filter { it.isNotBlank() }
+        return tokens.takeIf { it.isNotEmpty() }?.joinToString(" ") { "$it*" }
+    }
 
     /**
      * Filter item IDs by exact metadata predicates. Used by the RAG pipeline after

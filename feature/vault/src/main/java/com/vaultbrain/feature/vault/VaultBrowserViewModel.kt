@@ -11,10 +11,12 @@ import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -51,7 +53,7 @@ enum class BrowserSort(@StringRes val labelRes: Int) {
     PRICE_DESC(R.string.sort_price_desc)
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, FlowPreview::class)
 @HiltViewModel
 class VaultBrowserViewModel @Inject constructor(
     private val repository: VaultRepository,
@@ -67,7 +69,10 @@ class VaultBrowserViewModel @Inject constructor(
     private var initialStateApplied = false
 
     val uiState: StateFlow<VaultBrowserUiState> =
-        combine(searchQuery, activeCollectionId) { query, collectionId -> query to collectionId }
+        combine(
+            searchQuery.debounce { query -> if (query.isBlank()) 0L else 300L },
+            activeCollectionId
+        ) { query, collectionId -> query to collectionId }
             .flatMapLatest { (query, collectionId) ->
         val intent = query.takeIf(String::isNotBlank)?.let(intentParser::parse)
         val itemsFlow = when {
