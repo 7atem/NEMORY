@@ -33,6 +33,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -333,7 +335,36 @@ class CaptureViewModel @Inject constructor(
         val setupMs = System.currentTimeMillis()
         android.util.Log.d("CaptureLatency", "Setup took ${setupMs - startMs}ms")
 
-        try {
+        return try {
+            coroutineScope {
+            // Vision analysis (colors, labels, barcodes, and neural document classifier) starts
+            // immediately and overlaps with OCR; both only read the shared bitmaps, which are
+            // recycled in the finally below after every consumer has completed.
+            data class VisionBundle(
+                val colors: List<String>,
+                val objects: List<String>,
+                val scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel>,
+                val barcodes: List<String>,
+                val neuralClassification: com.vaultbrain.core.common.model.Classification?,
+                val neuralConfidence: Float
+            )
+
+            val visionDeferred = async {
+                if (previewBitmap != null) {
+                    val result = visionAnalyzer.analyze(previewBitmap)
+                    VisionBundle(
+                        colors = result.dominantColors,
+                        objects = result.detectedObjects,
+                        scoredLabels = result.scoredLabels,
+                        barcodes = result.barcodes,
+                        neuralClassification = result.documentClassification,
+                        neuralConfidence = result.documentClassificationConfidence
+                    )
+                } else {
+                    VisionBundle(emptyList(), emptyList(), emptyList(), emptyList(), null, 0f)
+                }
+            }
+
             val ocrText = buildString {
                 input.initialText?.takeIf { it.isNotBlank() }?.let { appendLine(it) }
                 primaryUri?.let { appendLine(recognizeText(it, pdfPages, imageBitmap)) }
@@ -355,31 +386,9 @@ class CaptureViewModel @Inject constructor(
                 _uiState.value = CaptureUiState.Processing(detectedKeywords = detectedKws)
             }
 
-            // Run vision analysis (colors, labels, barcodes, and neural document classifier).
-            data class VisionBundle(
-                val colors: List<String>,
-                val objects: List<String>,
-                val scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel>,
-                val barcodes: List<String>,
-                val neuralClassification: com.vaultbrain.core.common.model.Classification?,
-                val neuralConfidence: Float
-            )
-
-            val visionBundle = if (previewBitmap != null) {
-                val result = visionAnalyzer.analyze(previewBitmap)
-                VisionBundle(
-                    colors = result.dominantColors,
-                    objects = result.detectedObjects,
-                    scoredLabels = result.scoredLabels,
-                    barcodes = result.barcodes,
-                    neuralClassification = result.documentClassification,
-                    neuralConfidence = result.documentClassificationConfidence
-                )
-            } else {
-                VisionBundle(emptyList(), emptyList(), emptyList(), emptyList(), null, 0f)
-            }
+            val visionBundle = visionDeferred.await()
             val visionMs = System.currentTimeMillis()
-            android.util.Log.d("CaptureLatency", "Vision took ${visionMs - ocrMs}ms")
+            android.util.Log.d("CaptureLatency", "Vision finished ${visionMs - setupMs}ms after setup (overlapped with OCR)")
 
             val visionColors = visionBundle.colors
             val visionObjects = visionBundle.objects
@@ -435,10 +444,11 @@ class CaptureViewModel @Inject constructor(
             val endMs = System.currentTimeMillis()
             android.util.Log.d("CaptureLatency", "LLM took ${endMs - llmStart}ms")
             android.util.Log.d("CaptureLatency", "Total capture latency: ${endMs - startMs}ms")
-            return result.copy(
+            result.copy(
                 lensTags = result.lensTags + preferredTags,
                 parsedMetadata = result.parsedMetadata + input.provenanceMetadata
             )
+            }
         } finally {
             pdfPages.forEach(Bitmap::recycle)
             imageBitmap?.recycle()
