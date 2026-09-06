@@ -19,6 +19,7 @@
     <string name="brain_chat_evidence_moderate">Related evidence</string>
     <string name="brain_chat_evidence_low">Possible matches</string>
     <string name="brain_chat_based_on" tools:ignore="PluralsCandidate">%1$s • %2$d vault items</string>
+    <string name="brain_chat_voice_input">Voice input</string>
     <string name="brain_chat_send">Send question</string>
     <string name="brain_write_confirm_title">Confirm this change?</string>
     <string name="brain_write_pin_description">Pin this item to the top of your vault.</string>

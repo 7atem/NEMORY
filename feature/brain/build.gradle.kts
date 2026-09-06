@@ -43,6 +43,7 @@ dependencies {
     implementation(project(":core:database"))
     implementation(project(":core:billing"))
     implementation(project(":core:notifications"))
+    implementation(project(":feature:voice"))
     implementation(project(":core:integrations"))
 
     implementation(platform(libs.androidx.compose.bom))

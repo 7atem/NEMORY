@@ -19,6 +19,7 @@
     <string name="brain_chat_evidence_moderate">أدلة مرتبطة</string>
     <string name="brain_chat_evidence_low">نتائج محتملة</string>
     <string name="brain_chat_based_on">%1$s • %2$d عناصر من الخزنة</string>
+    <string name="brain_chat_voice_input">إدخال صوتي</string>
     <string name="brain_chat_send">إرسال السؤال</string>
     <string name="brain_write_confirm_title">تأكيد هذا التغيير؟</string>
     <string name="brain_write_pin_description">ثبّت هذا العنصر في أعلى خزنتك.</string>

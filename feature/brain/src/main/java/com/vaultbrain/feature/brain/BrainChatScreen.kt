@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.Collections
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -100,6 +101,7 @@ import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.core.ai.rag.RagEvidence
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.feature.brain.model.ChatMessage
+import com.vaultbrain.feature.voice.OnDeviceVoiceCaptureDialog
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Build
@@ -1041,8 +1043,22 @@ private fun ChatInputBar(
     modifier: Modifier = Modifier
 ) {
     var showSuggestions by remember { mutableStateOf(true) }
+    var showVoiceDialog by remember { mutableStateOf(false) }
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         onImageAttached(uri?.toString())
+    }
+
+    if (showVoiceDialog) {
+        OnDeviceVoiceCaptureDialog(
+            onDismiss = { showVoiceDialog = false },
+            onCaptured = { text ->
+                showVoiceDialog = false
+                if (text.isNotBlank()) {
+                    onInputChanged(if (input.isBlank()) text else "$input $text")
+                }
+            },
+            onManualEntry = { showVoiceDialog = false }
+        )
     }
 
     Surface(
@@ -1106,6 +1122,15 @@ private fun ChatInputBar(
                         contentDescription = "Attach image"
                     )
                 }
+                IconButton(
+                    onClick = { showVoiceDialog = true },
+                    enabled = !isLoading
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = stringResource(R.string.brain_chat_voice_input)
+                    )
+                }
                 OutlinedTextField(
                     value = input,
                     onValueChange = {
@@ -1113,11 +1138,8 @@ private fun ChatInputBar(
                         if (it.isNotBlank()) showSuggestions = false
                         if (it.isBlank()) showSuggestions = true
                     },
-                    placeholder = { 
-                        Text(
-                            if (isAiCoreEnabled) stringResource(R.string.brain_chat_placeholder)
-                            else "Search vault..."
-                        ) 
+                    placeholder = {
+                        Text(stringResource(R.string.brain_chat_placeholder))
                     },
                     modifier = Modifier.weight(1f),
                     maxLines = 4,
