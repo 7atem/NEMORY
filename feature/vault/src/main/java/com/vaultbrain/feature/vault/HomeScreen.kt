@@ -14,11 +14,14 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -34,6 +37,7 @@ import com.vaultbrain.feature.briefing.MorningBriefingCard
 import com.vaultbrain.feature.vault.components.EmptyState
 import com.vaultbrain.feature.vault.components.PreviewData
 import com.vaultbrain.feature.vault.components.VaultItemCard
+import com.vaultbrain.feature.vault.home.AttentionItem
 import com.vaultbrain.feature.voice.OnDeviceVoiceCaptureDialog
 
 import com.vaultbrain.core.common.model.VaultItem
@@ -56,6 +60,7 @@ fun HomeScreen(
     onTextPasted: (String) -> Unit,
     onVoiceCaptured: (String) -> Unit,
     onSettingsClick: () -> Unit,
+    onAskBrain: (String) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -118,6 +123,28 @@ fun HomeScreen(
         onGemmaBannerDismiss = viewModel::dismissGemmaBanner,
         backupNudgeVisible = backupNudgeVisible,
         onBackupNudgeDismiss = viewModel::dismissBackupNudge,
+        onAskBrain = onAskBrain,
+        onAttentionClick = { attention ->
+            when (attention.kind) {
+                com.vaultbrain.feature.vault.home.AttentionItem.Kind.REMINDER ->
+                    state.todayReminders.find { it.id == attention.targetId }?.let {
+                        reminderToEdit = it
+                        showReminderDialog = true
+                    }
+                com.vaultbrain.feature.vault.home.AttentionItem.Kind.EVENT ->
+                    state.todayEvents.find { it.externalId == attention.targetId }?.let { record ->
+                        record.deepLinkUri?.let { uri ->
+                            runCatching {
+                                context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(uri)))
+                            }
+                        }
+                    }
+                com.vaultbrain.feature.vault.home.AttentionItem.Kind.EXPIRING ->
+                    attention.targetId?.let(onItemClick)
+                com.vaultbrain.feature.vault.home.AttentionItem.Kind.REVIEW ->
+                    onFilterClick("needs_review")
+            }
+        },
         onOpenEvent = { record ->
             record.deepLinkUri?.let { uri ->
                 runCatching {
@@ -210,7 +237,9 @@ internal fun HomeContent(
     onSnoozeReminder: (VaultReminder) -> Unit = {},
     onCompleteReminder: (VaultReminder) -> Unit = {},
     backupNudgeVisible: Boolean = true,
-    onBackupNudgeDismiss: () -> Unit = {}
+    onBackupNudgeDismiss: () -> Unit = {},
+    onAskBrain: (String) -> Unit = {},
+    onAttentionClick: (AttentionItem) -> Unit = {}
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var searchActive by rememberSaveable { mutableStateOf(false) }
@@ -237,7 +266,15 @@ internal fun HomeContent(
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(text = stringResource(R.string.vault_home_title), style = MaterialTheme.typography.titleLarge)
+                        Column {
+                            Text(text = greetingText(), style = MaterialTheme.typography.titleLarge)
+                            Text(
+                                text = java.text.DateFormat.getDateInstance(java.text.DateFormat.FULL)
+                                    .format(java.util.Date()),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 },
                 actions = {
@@ -261,6 +298,16 @@ internal fun HomeContent(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                if (state.attentionItems.isNotEmpty()) {
+                    item {
+                        AttentionSection(
+                            items = state.attentionItems,
+                            needsReviewCount = state.needsReviewCount,
+                            onClick = onAttentionClick
+                        )
+                    }
+                }
+
                 item {
                     briefingCard()
                 }
@@ -359,10 +406,10 @@ internal fun HomeContent(
                 }
 
                 item {
-                    QuickAddCard(
+                    AskComposerCard(
+                        onAsk = onAskBrain,
                         onScanClick = onCaptureClick,
                         onImportClick = onGalleryClick,
-                        onPasteClick = onPasteClick,
                         onVoiceClick = onVoiceClick
                     )
                 }
@@ -513,94 +560,6 @@ internal fun HomeContent(
         }
     }
 
-}
-
-@Composable
-private fun QuickAddCard(
-    onScanClick: () -> Unit,
-    onImportClick: () -> Unit,
-    onPasteClick: () -> Unit,
-    onVoiceClick: () -> Unit
-) {
-    Card(
-        shape = MaterialTheme.shapes.extraLarge,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.home_quick_add), style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(R.string.home_quick_add_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                QuickAction(
-                    label = stringResource(R.string.home_action_scan),
-                    icon = Icons.Default.DocumentScanner,
-                    primary = true,
-                    onClick = onScanClick,
-                    modifier = Modifier.weight(1f)
-                )
-                QuickAction(
-                    label = stringResource(R.string.home_action_import),
-                    icon = Icons.Default.PhotoLibrary,
-                    onClick = onImportClick,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                QuickAction(
-                    label = stringResource(R.string.home_action_paste),
-                    icon = Icons.Default.ContentPaste,
-                    onClick = onPasteClick,
-                    modifier = Modifier.weight(1f)
-                )
-                QuickAction(
-                    label = stringResource(R.string.home_action_voice),
-                    icon = Icons.Default.Mic,
-                    onClick = onVoiceClick,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun QuickAction(
-    label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    primary: Boolean = false
-) {
-    val haptic = LocalHapticFeedback.current
-    Surface(
-        modifier = modifier.height(76.dp).clickable {
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            onClick()
-        },
-        shape = MaterialTheme.shapes.large,
-        color = if (primary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
-        contentColor = if (primary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(22.dp))
-            Spacer(Modifier.height(6.dp))
-            Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
-        }
-    }
 }
 
 @Composable
@@ -971,6 +930,108 @@ private fun formatContextTime(value: Long?): String = value?.let {
     java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT, java.text.DateFormat.SHORT)
         .format(java.util.Date(it))
 }.orEmpty()
+
+
+@Composable
+private fun greetingText(): String {
+    val hour = remember { java.time.LocalTime.now().hour }
+    return stringResource(
+        when {
+            hour < 12 -> R.string.home_greeting_morning
+            hour < 17 -> R.string.home_greeting_afternoon
+            else -> R.string.home_greeting_evening
+        }
+    )
+}
+
+@Composable
+private fun AttentionSection(
+    items: List<AttentionItem>,
+    needsReviewCount: Int,
+    onClick: (AttentionItem) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.home_attention_title), style = MaterialTheme.typography.titleMedium)
+        Card(shape = MaterialTheme.shapes.extraLarge) {
+            Column {
+                items.forEach { item ->
+                    val (icon, tint) = when (item.kind) {
+                        AttentionItem.Kind.REMINDER ->
+                            Icons.Default.NotificationsActive to MaterialTheme.colorScheme.tertiary
+                        AttentionItem.Kind.EVENT ->
+                            Icons.Default.Event to MaterialTheme.colorScheme.primary
+                        AttentionItem.Kind.EXPIRING ->
+                            Icons.Default.WarningAmber to MaterialTheme.colorScheme.error
+                        AttentionItem.Kind.REVIEW ->
+                            Icons.Default.RateReview to MaterialTheme.colorScheme.secondary
+                    }
+                    ListItem(
+                        headlineContent = {
+                            Text(
+                                if (item.kind == AttentionItem.Kind.REVIEW) {
+                                    stringResource(R.string.home_attention_review, needsReviewCount)
+                                } else {
+                                    item.title
+                                }
+                            )
+                        },
+                        supportingContent = item.dueAt?.let { due ->
+                            { Text(formatContextTime(due)) }
+                        },
+                        leadingContent = { Icon(icon, contentDescription = null, tint = tint) },
+                        modifier = Modifier.clickable { onClick(item) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AskComposerCard(
+    onAsk: (String) -> Unit,
+    onScanClick: () -> Unit,
+    onImportClick: () -> Unit,
+    onVoiceClick: () -> Unit
+) {
+    var query by rememberSaveable { mutableStateOf("") }
+    Card(
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = { Text(stringResource(R.string.home_ask_placeholder)) },
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+                shape = MaterialTheme.shapes.extraLarge,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                keyboardActions = KeyboardActions(
+                    onSend = {
+                        if (query.isNotBlank()) {
+                            onAsk(query.trim())
+                            query = ""
+                        }
+                    }
+                )
+            )
+            IconButton(onClick = onScanClick) {
+                Icon(Icons.Default.DocumentScanner, contentDescription = stringResource(R.string.home_action_scan))
+            }
+            IconButton(onClick = onVoiceClick) {
+                Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.home_action_voice))
+            }
+            IconButton(onClick = onImportClick) {
+                Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(R.string.home_action_import))
+            }
+        }
+    }
+}
 
 @Preview(showBackground = true)
 @Composable

@@ -68,7 +68,8 @@ class BrainChatViewModel @Inject constructor(
     private val cloudConsentStore: CloudConsentStore,
     private val writeActionPlanner: BrainWriteActionPlanner,
     private val capabilityManager: AiCapabilityManager,
-    private val vaultReminderManager: VaultReminderManager
+    private val vaultReminderManager: VaultReminderManager,
+    private val savedStateHandle: androidx.lifecycle.SavedStateHandle = androidx.lifecycle.SavedStateHandle()
 ) : ViewModel() {
 
     private val _isAiCoreEnabled = MutableStateFlow(false)
@@ -193,6 +194,9 @@ class BrainChatViewModel @Inject constructor(
     private fun arabicUi(): Boolean = java.util.Locale.getDefault().language.startsWith("ar")
 
     init {
+        // Optional prefill from the Today composer ("brain?query=..."). Prefill only —
+        // the user always confirms before a query is sent.
+        savedStateHandle.get<String>("query")?.takeIf { it.isNotBlank() }?.let { _input.value = it }
         viewModelScope.launch {
             conversationRepository.observeAll().collect { stored ->
                 // A streaming turn is committed once complete, so database refreshes cannot

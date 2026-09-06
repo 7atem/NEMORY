@@ -145,7 +145,15 @@ fun VaultBrainNavGraph(
                     )
                 }
             }
-            composable(Screen.Brain.route) {
+            composable(
+                route = "${Screen.Brain.route}?query={query}",
+                arguments = listOf(
+                    androidx.navigation.navArgument("query") {
+                        nullable = true
+                        defaultValue = null
+                    }
+                )
+            ) {
                 MainScaffold(navController, Screen.Brain.route) {
                     com.vaultbrain.feature.brain.BrainChatScreen(
                         onSourceClick = { id -> navController.navigate("detail/${android.net.Uri.encode(id)}") },

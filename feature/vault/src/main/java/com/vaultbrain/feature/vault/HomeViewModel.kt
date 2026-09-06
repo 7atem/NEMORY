@@ -15,6 +15,9 @@ import com.vaultbrain.core.integrations.repository.ExternalContextRepository
 import com.vaultbrain.core.notifications.BackupNudgeStore
 import com.vaultbrain.core.notifications.GemmaBannerStore
 import com.vaultbrain.core.notifications.VaultReminderManager
+import com.vaultbrain.feature.vault.home.AttentionItem
+import com.vaultbrain.feature.vault.home.ExpiringDocument
+import com.vaultbrain.feature.vault.home.buildAttentionItems
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,7 +49,8 @@ data class HomeUiState(
     val todayEvents: List<ExternalRecord> = emptyList(),
     val upcomingEvents: List<ExternalRecord> = emptyList(),
     val todayReminders: List<VaultReminder> = emptyList(),
-    val upcomingReminders: List<VaultReminder> = emptyList()
+    val upcomingReminders: List<VaultReminder> = emptyList(),
+    val attentionItems: List<AttentionItem> = emptyList()
 )
 
 @HiltViewModel
@@ -155,7 +159,18 @@ class HomeViewModel @Inject constructor(
             todayEvents = temporal.todayEvents,
             upcomingEvents = temporal.upcomingEvents,
             todayReminders = temporal.todayReminders,
-            upcomingReminders = temporal.upcomingReminders
+            upcomingReminders = temporal.upcomingReminders,
+            attentionItems = buildAttentionItems(
+                todayReminders = temporal.todayReminders,
+                todayEvents = temporal.todayEvents,
+                expiringDocuments = active.mapNotNull { item ->
+                    listOfNotNull(item.expiryDate, item.secondaryAlertDate)
+                        .filter { it in System.currentTimeMillis()..expiryThreshold }
+                        .minOrNull()
+                        ?.let { due -> ExpiringDocument(item.id, item.title, due) }
+                },
+                needsReviewCount = active.count { it.needsReview }
+            )
         )
     }.stateIn(
         scope = viewModelScope,

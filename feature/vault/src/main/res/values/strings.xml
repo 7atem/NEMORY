@@ -34,10 +34,15 @@
     <string name="fab_dump">Dump</string>
     <string name="home_action_settings">Settings</string>
     <string name="home_search_placeholder">Search titles, OCR text, tags…</string>
-    <string name="home_quick_add">Add to your vault</string>
-    <string name="home_quick_add_hint">Scan paper, import an image, or paste anything worth remembering.</string>
     <string name="home_action_scan">Scan</string>
     <string name="home_action_import">Import</string>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_attention_title">Needs attention</string>
+    <string name="home_attention_review">%1$d items to review</string>
+    <string name="home_ask_placeholder">Ask Nemory anything...</string>
+    <string name="home_ask_send">Ask Nemory</string>
     <string name="home_action_voice">Voice</string>
     <string name="home_search_recent">Recent</string>
     <string name="home_search_close">Close search</string>

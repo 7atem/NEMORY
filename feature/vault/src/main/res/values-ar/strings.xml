@@ -33,10 +33,15 @@
     <string name="fab_dump">إضافة</string>
     <string name="home_action_settings">الإعدادات</string>
     <string name="home_search_placeholder">البحث في العناوين، النصوص، العلامات…</string>
-    <string name="home_quick_add">أضف إلى خزنتك</string>
-    <string name="home_quick_add_hint">امسح ورقة، أو استورد صورة، أو الصق أي شيء يستحق التذكر.</string>
     <string name="home_action_scan">مسح</string>
     <string name="home_action_import">استيراد</string>
+    <string name="home_greeting_morning">صباح الخير</string>
+    <string name="home_greeting_afternoon">طاب يومك</string>
+    <string name="home_greeting_evening">مساء الخير</string>
+    <string name="home_attention_title">يحتاج إلى انتباهك</string>
+    <string name="home_attention_review">%1$d عناصر للمراجعة</string>
+    <string name="home_ask_placeholder">اسأل نيموري أي شيء...</string>
+    <string name="home_ask_send">اسأل نيموري</string>
     <string name="home_action_voice">صوت</string>
     <string name="home_search_recent">الأخيرة</string>
     <string name="home_search_close">إغلاق البحث</string>
