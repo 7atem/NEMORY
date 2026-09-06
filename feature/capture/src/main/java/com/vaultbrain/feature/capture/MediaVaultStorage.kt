@@ -41,16 +41,19 @@ class MediaVaultStorage @Inject constructor(
             }
         )
 
-        val input = if (sourceFile != null) {
-            FileInputStream(sourceFile)
-        } else {
-            context.contentResolver.openInputStream(uri)
-                ?: error("Unable to read selected media")
-        }
-        input.use { source -> destination.outputStream().use(source::copyTo) }
-
-        if (sourceFile != null && sourceFile.parentFile?.canonicalFile == context.cacheDir.canonicalFile) {
-            sourceFile.delete()
+        val sourceInCache = sourceFile != null &&
+            sourceFile.parentFile?.canonicalFile == context.cacheDir.canonicalFile
+        // Same-filesystem moves are O(1); only stream bytes when a rename is not possible.
+        val moved = sourceInCache && sourceFile!!.renameTo(destination)
+        if (!moved) {
+            val input = if (sourceFile != null) {
+                FileInputStream(sourceFile)
+            } else {
+                context.contentResolver.openInputStream(uri)
+                    ?: error("Unable to read selected media")
+            }
+            input.use { source -> destination.outputStream().use(source::copyTo) }
+            if (sourceInCache) sourceFile!!.delete()
         }
         Uri.fromFile(destination)
     }
