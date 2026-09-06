@@ -677,7 +677,7 @@ private fun AssistantBubble(
                             fullText = text,
                             isStreaming = isStreaming
                         ) { visibleText ->
-                            MarkdownText(text = visibleText)
+                            RevealedMarkdownText(fullText = text, visibleChars = visibleText.length)
                         }
                     } else {
                         MarkdownText(text = text)

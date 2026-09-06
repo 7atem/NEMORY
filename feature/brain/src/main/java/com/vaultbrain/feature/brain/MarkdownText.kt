@@ -33,6 +33,57 @@ fun MarkdownText(
     color: Color = LocalContentColor.current
 ) {
     val blocks = remember(text) { parseMarkdownBlocks(text) }
+    MarkdownBlockColumn(blocks, modifier, color)
+}
+
+/**
+ * Typewriter-friendly variant: parses [fullText] once and reveals already-parsed
+ * blocks up to [visibleChars], instead of re-parsing a growing substring per tick.
+ */
+@Composable
+fun RevealedMarkdownText(
+    fullText: String,
+    visibleChars: Int,
+    modifier: Modifier = Modifier,
+    color: Color = LocalContentColor.current
+) {
+    val blocks = remember(fullText) { parseMarkdownBlocks(fullText) }
+    val visibleBlocks = remember(blocks, visibleChars) { clipBlocks(blocks, visibleChars) }
+    MarkdownBlockColumn(visibleBlocks, modifier, color)
+}
+
+private fun clipBlocks(blocks: List<MarkdownBlock>, visibleChars: Int): List<MarkdownBlock> {
+    var remaining = visibleChars
+    val result = mutableListOf<MarkdownBlock>()
+    for (block in blocks) {
+        if (remaining <= 0) break
+        val text = when (block) {
+            is MarkdownBlock.Header -> block.text
+            is MarkdownBlock.ListItem -> block.text
+            is MarkdownBlock.Paragraph -> block.text
+        }
+        if (text.length <= remaining) {
+            result += block
+            remaining -= text.length + 1
+        } else {
+            val clipped = text.take(remaining)
+            result += when (block) {
+                is MarkdownBlock.Header -> block.copy(text = clipped)
+                is MarkdownBlock.ListItem -> block.copy(text = clipped)
+                is MarkdownBlock.Paragraph -> block.copy(text = clipped)
+            }
+            break
+        }
+    }
+    return result
+}
+
+@Composable
+private fun MarkdownBlockColumn(
+    blocks: List<MarkdownBlock>,
+    modifier: Modifier = Modifier,
+    color: Color = LocalContentColor.current
+) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         blocks.forEach { block ->
             when (block) {
