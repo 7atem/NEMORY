@@ -5,7 +5,6 @@ import androidx.lifecycle.viewModelScope
 import com.vaultbrain.core.ai.llm.gemma.GemmaDownloadEligibility
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
-import com.vaultbrain.core.billing.FeatureGate
 import com.vaultbrain.core.common.model.PersonalCollection
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.common.model.VaultReminder
@@ -13,6 +12,7 @@ import com.vaultbrain.core.common.model.external.ExternalSource
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository
+import com.vaultbrain.core.notifications.BackupNudgeStore
 import com.vaultbrain.core.notifications.GemmaBannerStore
 import com.vaultbrain.core.notifications.VaultReminderManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,11 +42,9 @@ data class HomeUiState(
     val collections: List<PersonalCollection> = emptyList(),
     val needsReviewCount: Int = 0,
     val expiringSoonCount: Int = 0,
-    val showAds: Boolean = false,
     val quickCaptureSuggestion: CaptureSuggestion? = null,
     val todayEvents: List<ExternalRecord> = emptyList(),
     val upcomingEvents: List<ExternalRecord> = emptyList(),
-    val recentEmailContext: List<ExternalRecord> = emptyList(),
     val todayReminders: List<VaultReminder> = emptyList(),
     val upcomingReminders: List<VaultReminder> = emptyList()
 )
@@ -54,23 +52,32 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val repository: VaultRepository,
-    private val featureGate: FeatureGate,
     private val patternDetector: CapturePatternDetector,
     private val gemmaDownloadEligibility: GemmaDownloadEligibility,
     private val gemmaModelManager: GemmaModelManager,
     private val gemmaBannerStore: GemmaBannerStore,
     private val externalContextRepository: ExternalContextRepository,
-    private val vaultReminderManager: VaultReminderManager
+    private val vaultReminderManager: VaultReminderManager,
+    private val backupNudgeStore: BackupNudgeStore
 ) : ViewModel() {
 
     private val gemmaEligible = MutableStateFlow(false)
     private val bannerDismissTick = MutableStateFlow(0)
 
+    private val _backupNudgeVisible = MutableStateFlow(true)
+    val backupNudgeVisible: StateFlow<Boolean> = _backupNudgeVisible
+
     init {
+        _backupNudgeVisible.value = runCatching { backupNudgeStore.shouldShow() }.getOrDefault(true)
         viewModelScope.launch {
             gemmaEligible.value = runCatching { gemmaDownloadEligibility.isPromptEligible() }
                 .getOrDefault(false)
         }
+    }
+
+    fun dismissBackupNudge() {
+        backupNudgeStore.recordDismiss()
+        _backupNudgeVisible.value = false
     }
 
     /**
@@ -106,10 +113,8 @@ class HomeViewModel @Inject constructor(
 
     private val temporalContext = combine(
         externalContextRepository.observeRecordsBySource(ExternalSource.CALENDAR),
-        externalContextRepository.observeRecordsBySource(ExternalSource.GMAIL),
         vaultReminderManager.observeActive()
-    ) { events, emails, reminders ->
-        val now = System.currentTimeMillis()
+    ) { events, reminders ->
         val zone = java.time.ZoneId.systemDefault()
         val todayStart = java.time.LocalDate.now(zone).atStartOfDay(zone).toInstant().toEpochMilli()
         val tomorrowStart = java.time.LocalDate.now(zone).plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
@@ -124,10 +129,6 @@ class HomeViewModel @Inject constructor(
                 val start = it.startAt ?: return@filter false
                 start in tomorrowStart..upcomingEnd
             }.sortedBy { it.startAt },
-            recentEmailContext = emails.filter { email ->
-                !email.isResolved && email.createdAt >= now - 7L * 24 * 60 * 60 * 1000 &&
-                    email.payload.keys.any { it in ACTIONABLE_EMAIL_FIELDS }
-            }.sortedByDescending { it.createdAt }.take(5),
             todayReminders = reminders.filter { it.dueAt < tomorrowStart }.sortedBy { it.dueAt },
             upcomingReminders = reminders.filter { it.dueAt in tomorrowStart..upcomingEnd }.sortedBy { it.dueAt }
         )
@@ -137,9 +138,8 @@ class HomeViewModel @Inject constructor(
         repository.observeRecent(50), // Increased to feed pattern detector
         repository.observeActive(),
         repository.observeActiveCollections(),
-        featureGate.entitlement,
         temporalContext
-    ) { recent, active, collections, entitlement, temporal ->
+    ) { recent, active, collections, temporal ->
         val expiryThreshold = System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000
         val suggestion = patternDetector.detectPattern(recent)
         HomeUiState(
@@ -151,11 +151,9 @@ class HomeViewModel @Inject constructor(
                 listOfNotNull(item.expiryDate, item.secondaryAlertDate)
                     .any { it in System.currentTimeMillis()..expiryThreshold }
             },
-            showAds = false,
             quickCaptureSuggestion = suggestion,
             todayEvents = temporal.todayEvents,
             upcomingEvents = temporal.upcomingEvents,
-            recentEmailContext = temporal.recentEmailContext,
             todayReminders = temporal.todayReminders,
             upcomingReminders = temporal.upcomingReminders
         )
@@ -201,9 +199,7 @@ class HomeViewModel @Inject constructor(
 private data class TemporalContext(
     val todayEvents: List<ExternalRecord>,
     val upcomingEvents: List<ExternalRecord>,
-    val recentEmailContext: List<ExternalRecord>,
     val todayReminders: List<VaultReminder>,
     val upcomingReminders: List<VaultReminder>
 )
 
-private val ACTIONABLE_EMAIL_FIELDS = setOf("order_number", "tracking_number", "total")

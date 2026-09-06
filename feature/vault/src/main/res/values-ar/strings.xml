@@ -37,6 +37,15 @@
     <string name="home_quick_add_hint">امسح ورقة، أو استورد صورة، أو الصق أي شيء يستحق التذكر.</string>
     <string name="home_action_scan">مسح</string>
     <string name="home_action_import">استيراد</string>
+    <string name="home_action_voice">صوت</string>
+    <string name="home_search_recent">الأخيرة</string>
+    <string name="home_search_close">إغلاق البحث</string>
+    <string name="home_backup_nudge_title">احمِ خزنتك</string>
+    <string name="home_backup_nudge_body">بياناتك تبقى على جهازك. قم بإعداد نسخة احتياطية مشفرة لمنع فقدان البيانات.</string>
+    <string name="home_backup_nudge_setup">إعداد النسخ الاحتياطي</string>
+    <string name="home_backup_nudge_dismiss">إغلاق</string>
+    <string name="home_from_calendar">من تقويمك</string>
+    <string name="home_vault_reminder_overline">تذكير الخزنة</string>
     <string name="home_action_paste">لصق نص</string>
     <string name="home_overview">نظرة عامة</string>
     <string name="home_overview_items">العناصر</string>
@@ -259,7 +268,4 @@
     <string name="suggested_collections">المجموعات المقترحة</string>
     <string name="add_suggestion">إضافة</string>
     <string name="reject_suggestion">ليس هذا</string>
-    <string name="home_email_context">تحديث عبر البريد</string>
-    <string name="home_tracking_number">رقم التتبع %1$s</string>
-    <string name="home_order_number">الطلب %1$s</string>
 </resources>

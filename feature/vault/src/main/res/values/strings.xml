@@ -38,6 +38,15 @@
     <string name="home_quick_add_hint">Scan paper, import an image, or paste anything worth remembering.</string>
     <string name="home_action_scan">Scan</string>
     <string name="home_action_import">Import</string>
+    <string name="home_action_voice">Voice</string>
+    <string name="home_search_recent">Recent</string>
+    <string name="home_search_close">Close search</string>
+    <string name="home_backup_nudge_title">Protect your vault</string>
+    <string name="home_backup_nudge_body">Your data stays offline. Set up an encrypted backup to prevent data loss.</string>
+    <string name="home_backup_nudge_setup">Setup Backup</string>
+    <string name="home_backup_nudge_dismiss">Dismiss</string>
+    <string name="home_from_calendar">From your Calendar</string>
+    <string name="home_vault_reminder_overline">Vault Reminder</string>
     <string name="home_action_paste">Paste text</string>
     <string name="home_overview">Vault overview</string>
     <string name="home_overview_items">Items</string>
@@ -250,7 +259,4 @@
     <string name="suggested_collections">Suggested collections</string>
     <string name="add_suggestion">Add</string>
     <string name="reject_suggestion">Not this</string>
-    <string name="home_email_context">Email update</string>
-    <string name="home_tracking_number">Tracking %1$s</string>
-    <string name="home_order_number">Order %1$s</string>
 </resources>

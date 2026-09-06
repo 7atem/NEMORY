@@ -4,8 +4,6 @@ import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.ai.llm.gemma.GemmaDownloadEligibility
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
-import com.vaultbrain.core.billing.AdEntitlement
-import com.vaultbrain.core.billing.FeatureGate
 import com.vaultbrain.core.common.model.PersonalCollection
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
@@ -33,20 +31,19 @@ import org.junit.Test
 class HomeViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val repository = mockk<VaultRepository>()
-    private val featureGate = mockk<FeatureGate>()
     private val patternDetector = CapturePatternDetector()
     private val gemmaDownloadEligibility = mockk<GemmaDownloadEligibility>()
     private val gemmaModelManager = mockk<GemmaModelManager>()
     private val gemmaBannerStore = mockk<GemmaBannerStore>(relaxed = true)
     private val externalContextRepository = mockk<ExternalContextRepository>()
     private val vaultReminderManager = mockk<VaultReminderManager>()
+    private val backupNudgeStore = mockk<com.vaultbrain.core.notifications.BackupNudgeStore>(relaxed = true)
 
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
         every { repository.observeRecent(any()) } returns flowOf(emptyList())
         every { repository.observeActive() } returns flowOf(emptyList())
-        every { featureGate.entitlement } returns MutableStateFlow(AdEntitlement.AD_SUPPORTED)
         coEvery { gemmaDownloadEligibility.isPromptEligible() } returns false
         every { gemmaModelManager.status } returns MutableStateFlow(GemmaModelStatus.NOT_DOWNLOADED)
         every { externalContextRepository.observeRecordsBySource(any()) } returns flowOf(emptyList())
@@ -66,9 +63,9 @@ class HomeViewModelTest {
     fun `home works with zero collections`() = runTest(dispatcher) {
         every { repository.observeActiveCollections() } returns flowOf(emptyList())
         val viewModel = HomeViewModel(
-            repository, featureGate, patternDetector,
+            repository, patternDetector,
             gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
-            externalContextRepository, vaultReminderManager
+            externalContextRepository, vaultReminderManager, backupNudgeStore
         )
         val states = mutableListOf<HomeUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }
@@ -91,9 +88,9 @@ class HomeViewModelTest {
             listOf(VaultItem(id = "i1", title = "Receipt"))
         )
         val viewModel = HomeViewModel(
-            repository, featureGate, patternDetector,
+            repository, patternDetector,
             gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
-            externalContextRepository, vaultReminderManager
+            externalContextRepository, vaultReminderManager, backupNudgeStore
         )
         val states = mutableListOf<HomeUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }

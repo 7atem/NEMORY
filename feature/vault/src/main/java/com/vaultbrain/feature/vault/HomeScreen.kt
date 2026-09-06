@@ -60,6 +60,7 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val gemmaBanner by viewModel.gemmaBanner.collectAsState()
+    val backupNudgeVisible by viewModel.backupNudgeVisible.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -115,6 +116,8 @@ fun HomeScreen(
         gemmaBanner = gemmaBanner,
         onGemmaDownloadClick = viewModel::downloadGemmaModel,
         onGemmaBannerDismiss = viewModel::dismissGemmaBanner,
+        backupNudgeVisible = backupNudgeVisible,
+        onBackupNudgeDismiss = viewModel::dismissBackupNudge,
         onOpenEvent = { record ->
             record.deepLinkUri?.let { uri ->
                 runCatching {
@@ -205,7 +208,9 @@ internal fun HomeContent(
     onAddReminder: () -> Unit = {},
     onEditReminder: (VaultReminder) -> Unit = {},
     onSnoozeReminder: (VaultReminder) -> Unit = {},
-    onCompleteReminder: (VaultReminder) -> Unit = {}
+    onCompleteReminder: (VaultReminder) -> Unit = {},
+    backupNudgeVisible: Boolean = true,
+    onBackupNudgeDismiss: () -> Unit = {}
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var searchActive by rememberSaveable { mutableStateOf(false) }
@@ -293,7 +298,7 @@ internal fun HomeContent(
                                                 searchActive = false
                                             }
                                         }) {
-                                            Icon(Icons.Default.Close, contentDescription = "Close search")
+                                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.home_search_close))
                                         }
                                     }
                                 }
@@ -303,12 +308,14 @@ internal fun HomeContent(
                         onExpandedChange = { searchActive = it },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        val filteredItems = if (searchQuery.isEmpty()) {
-                            state.recentItems
-                        } else {
-                            state.activeItems.filter {
-                                it.title.contains(searchQuery, ignoreCase = true) ||
-                                (it.summary ?: "").contains(searchQuery, ignoreCase = true)
+                        val filteredItems = remember(searchQuery, state.recentItems, state.activeItems) {
+                            if (searchQuery.isEmpty()) {
+                                state.recentItems
+                            } else {
+                                state.activeItems.filter {
+                                    it.title.contains(searchQuery, ignoreCase = true) ||
+                                    (it.summary ?: "").contains(searchQuery, ignoreCase = true)
+                                }
                             }
                         }
                         
@@ -319,7 +326,7 @@ internal fun HomeContent(
                         ) {
                             if (searchQuery.isEmpty()) {
                                 item {
-                                    Text("Recent", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(bottom = 8.dp))
+                                    Text(stringResource(R.string.home_search_recent), style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(bottom = 8.dp))
                                 }
                             }
                             items(filteredItems, key = { it.id }) { item ->
@@ -405,8 +412,13 @@ internal fun HomeContent(
                     )
                 }
 
-                item {
-                    BackupNudgeCard(onAction = onSettingsClick)
+                if (backupNudgeVisible) {
+                    item {
+                        BackupNudgeCard(
+                            onAction = onSettingsClick,
+                            onDismiss = onBackupNudgeDismiss
+                        )
+                    }
                 }
 
                 item {
@@ -552,7 +564,7 @@ private fun QuickAddCard(
                     modifier = Modifier.weight(1f)
                 )
                 QuickAction(
-                    label = "Voice",
+                    label = stringResource(R.string.home_action_voice),
                     icon = Icons.Default.Mic,
                     onClick = onVoiceClick,
                     modifier = Modifier.weight(1f)
@@ -646,7 +658,7 @@ private fun OverviewStat(
 }
 
 @Composable
-private fun BackupNudgeCard(onAction: () -> Unit) {
+private fun BackupNudgeCard(onAction: () -> Unit, onDismiss: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onAction),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
@@ -663,22 +675,30 @@ private fun BackupNudgeCard(onAction: () -> Unit) {
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Protect your vault",
+                    text = stringResource(R.string.home_backup_nudge_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
                 Text(
-                    text = "Your data stays offline. Set up an encrypted backup to prevent data loss.",
+                    text = stringResource(R.string.home_backup_nudge_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
             }
             Icon(
                 Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Setup Backup",
+                contentDescription = stringResource(R.string.home_backup_nudge_setup),
                 tint = MaterialTheme.colorScheme.onTertiaryContainer,
                 modifier = Modifier.size(18.dp)
             )
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.home_backup_nudge_dismiss),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
     }
 }
@@ -860,7 +880,7 @@ private fun TemporalContextCard(
 @Composable
 private fun CalendarContextRow(record: ExternalRecord, onOpen: (ExternalRecord) -> Unit) {
     ListItem(
-        overlineContent = { Text("From your Calendar", color = MaterialTheme.colorScheme.primary) },
+        overlineContent = { Text(stringResource(R.string.home_from_calendar), color = MaterialTheme.colorScheme.primary) },
         headlineContent = { Text(record.title ?: stringResource(R.string.home_calendar_event)) },
         supportingContent = { Text(formatContextTime(record.startAt)) },
         leadingContent = { Icon(Icons.Default.Event, contentDescription = null) },
@@ -868,22 +888,6 @@ private fun CalendarContextRow(record: ExternalRecord, onOpen: (ExternalRecord) 
     )
 }
 
-@Composable
-private fun EmailContextRow(record: ExternalRecord, onOpen: (ExternalRecord) -> Unit) {
-    ListItem(
-        overlineContent = { Text("From your Gmail", color = MaterialTheme.colorScheme.secondary) },
-        headlineContent = { Text(record.title ?: stringResource(R.string.home_email_context)) },
-        supportingContent = {
-            Text(
-                record.payload["tracking_number"]?.let { stringResource(R.string.home_tracking_number, it) }
-                    ?: record.payload["order_number"]?.let { stringResource(R.string.home_order_number, it) }
-                    ?: record.description.orEmpty()
-            )
-        },
-        leadingContent = { Icon(Icons.Default.Email, contentDescription = null) },
-        modifier = Modifier.clickable { onOpen(record) }
-    )
-}
 
 @Composable
 private fun ReminderContextRow(
@@ -893,7 +897,7 @@ private fun ReminderContextRow(
     onComplete: (VaultReminder) -> Unit
 ) {
     ListItem(
-        overlineContent = { Text("Vault Reminder", color = MaterialTheme.colorScheme.tertiary) },
+        overlineContent = { Text(stringResource(R.string.home_vault_reminder_overline), color = MaterialTheme.colorScheme.tertiary) },
         headlineContent = { Text(reminder.title) },
         supportingContent = { Text(formatContextTime(reminder.dueAt)) },
         leadingContent = { Icon(Icons.Default.NotificationsActive, contentDescription = null) },
