@@ -57,4 +57,41 @@ class VaultItemIndexMigrationTest {
         }
         db.close()
     }
+
+    @Test
+    fun migration15To16PreservesDataAndCreatesQueueIndices() {
+        helper.createDatabase(databaseName, 15).apply {
+            execSQL(
+                """INSERT INTO vault_items (
+                    id,title,source_type,created_at,updated_at,parsed_metadata,lens_tags,
+                    ai_confidence,extraction_state,enrichment_state,indexing_state,
+                    enrichment_attempt_count,needs_review,topics,entities,tags,suggestions,
+                    is_pinned,is_archived,is_stealth,required_lens_tier
+                ) VALUES (
+                    'item-1','Existing memory','TEXT_PASTE',1,1,'{}','[]',
+                    0.0,'COMPLETE','COMPLETE','COMPLETE',0,0,'[]','[]','[]','[]',0,0,0,'FREE'
+                )"""
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            databaseName,
+            16,
+            true,
+            VaultDatabaseMigrations.MIGRATION_15_16
+        )
+
+        db.query("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'vault_items'").use { cursor ->
+            val indices = generateSequence { if (cursor.moveToNext()) cursor.getString(0) else null }.toList()
+            assertTrue(indices.contains("index_vault_items_enrichment_state"))
+            assertTrue(indices.contains("index_vault_items_indexing_state"))
+            assertTrue(indices.contains("index_vault_items_needs_review"))
+            assertTrue(indices.contains("index_vault_items_expiry_date"))
+        }
+        db.query("SELECT title FROM vault_items WHERE id = 'item-1'").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+        }
+        db.close()
+    }
 }

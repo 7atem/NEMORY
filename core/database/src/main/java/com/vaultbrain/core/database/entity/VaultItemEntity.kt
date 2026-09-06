@@ -22,7 +22,11 @@ import androidx.room.Index
         Index("primary_lens_id"),
         Index("is_archived"),
         Index("is_stealth"),
-        Index("created_at")
+        Index("created_at"),
+        Index("enrichment_state"),
+        Index("indexing_state"),
+        Index("needs_review"),
+        Index("expiry_date")
     ]
 )
 data class VaultItemEntity(

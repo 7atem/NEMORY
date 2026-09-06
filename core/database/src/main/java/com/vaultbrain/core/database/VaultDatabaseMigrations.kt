@@ -47,6 +47,15 @@ object VaultDatabaseMigrations {
         }
     }
 
+    val MIGRATION_15_16: Migration = object : Migration(15, 16) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_items_enrichment_state` ON `vault_items` (`enrichment_state`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_items_indexing_state` ON `vault_items` (`indexing_state`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_items_needs_review` ON `vault_items` (`needs_review`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_vault_items_expiry_date` ON `vault_items` (`expiry_date`)")
+        }
+    }
+
     val MIGRATION_1_2: Migration = object : Migration(1, 2) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL(
@@ -285,6 +294,7 @@ object VaultDatabaseMigrations {
         MIGRATION_11_12,
         MIGRATION_12_13,
         MIGRATION_13_14,
-        MIGRATION_14_15
+        MIGRATION_14_15,
+        MIGRATION_15_16
     )
 }

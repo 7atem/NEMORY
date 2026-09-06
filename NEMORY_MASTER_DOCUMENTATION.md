@@ -5,7 +5,7 @@
 > **Applies to:** Current candidate worktree: Nemory `1.1.2` (`versionCode 15`); verification does not certify unchanged committed HEAD.
 > **Android application ID:** `com.nemory.app`
 > **Repository package namespace:** primarily `com.vaultbrain.*`
-> **Current Room schema:** 15
+> **Current Room schema:** 16
 
 This document is the single detailed reference for the current Nemory product. It
 supersedes the older versioned specifications, implementation plans, assessments,
@@ -441,7 +441,7 @@ Android backup is disabled (`allowBackup=false`), and data extraction rules disa
 platform data extraction. This reduces accidental cloud backup exposure but does not
 replace export and deletion testing.
 
-### 4.2 Room schema 15
+### 4.2 Room schema 16
 
 The database currently includes:
 
@@ -463,6 +463,8 @@ Schema 14 added `vault_reminders`. Its optional foreign keys use `SET NULL` when
 linked vault item, collection, or external record is removed, so the reminder can
 remain as a standalone user record. Schema 15 adds non-unique indices for
 `vault_items.primary_lens_id`, `is_archived`, `is_stealth`, and `created_at`.
+Schema 16 adds indices for `enrichment_state`, `indexing_state`, `needs_review`,
+and `expiry_date`, which back the worker queues and reminder lookups.
 
 Every Room schema change must include:
 

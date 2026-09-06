@@ -182,7 +182,9 @@ consent plus updated privacy and store disclosures.
 `VaultItem` is durable user-saved content; `ExternalRecord` is bounded connector-owned
 context and is never silently promoted to the vault. Room schema v14 contains
 `external_connections`, `external_records`, and `vault_reminders`; v15 adds non-unique
-indices on `vault_items` (`primary_lens_id`, `is_archived`, `is_stealth`, `created_at`).
+indices on `vault_items` (`primary_lens_id`, `is_archived`, `is_stealth`, `created_at`);
+v16 adds indices for the worker queue and reminder columns (`enrichment_state`,
+`indexing_state`, `needs_review`, `expiry_date`).
 All access is decoy-aware.
 
 Calendar is the most complete live connector. It requests `READ_CALENDAR`, lets the
