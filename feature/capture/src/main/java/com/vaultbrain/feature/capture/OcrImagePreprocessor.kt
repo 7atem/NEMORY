@@ -84,10 +84,19 @@ internal suspend fun TextRecognizer.recognizeBestDocument(bitmap: Bitmap): Strin
         }
         var best = candidates.maxBy(OcrImagePreprocessor::qualityScore)
         if (OcrImagePreprocessor.qualityScore(best) < ORIENTATION_RETRY_SCORE) {
-            for (rotation in listOf(90, 180, 270)) {
-                candidates += recognizeOrEmpty(scaledBase, rotation)
-                candidates += recognizeOrEmpty(enhanced, rotation)
+            // The recognizer is thread-safe and both bitmaps are read-only here, so the six
+            // rotation retries can overlap instead of adding up to six serial ML Kit passes.
+            val rotated = coroutineScope {
+                listOf(90, 180, 270)
+                    .flatMap { rotation ->
+                        listOf(
+                            async { recognizeOrEmpty(scaledBase, rotation) },
+                            async { recognizeOrEmpty(enhanced, rotation) }
+                        )
+                    }
+                    .map { it.await() }
             }
+            candidates += rotated
             best = candidates.maxBy(OcrImagePreprocessor::qualityScore)
         }
         best

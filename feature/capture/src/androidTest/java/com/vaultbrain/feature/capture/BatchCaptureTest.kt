@@ -24,6 +24,10 @@ class BatchCaptureTest {
 
         Log.i(TAG, "Found ${images.size} images to process")
 
+        val decodeMs = mutableListOf<Long>()
+        val ocrMs = mutableListOf<Long>()
+        val extractMs = mutableListOf<Long>()
+
         for (imageName in images) {
             if (!imageName.endsWith(".jpg") && !imageName.endsWith(".jpeg") && !imageName.endsWith(".png")) {
                 continue
@@ -31,9 +35,11 @@ class BatchCaptureTest {
 
             Log.i(TAG, "\n=========================================\nPROCESSING: $imageName\n=========================================")
 
+            var start = System.nanoTime()
             val inputStream = assets.open("test_images/Download/$imageName")
             val bitmap = BitmapFactory.decodeStream(inputStream)
             inputStream.close()
+            val decode = (System.nanoTime() - start) / 1_000_000
 
             if (bitmap == null) {
                 Log.e(TAG, "Failed to decode $imageName")
@@ -41,23 +47,46 @@ class BatchCaptureTest {
             }
 
             try {
+                start = System.nanoTime()
                 val recognizedText = runBlocking { recognizer.recognizeBestDocument(bitmap) }
+                val ocr = (System.nanoTime() - start) / 1_000_000
                 Log.i(TAG, "--- OCR RESULT ---")
                 Log.i(TAG, "\n$recognizedText")
 
+                start = System.nanoTime()
                 val extractionResult = extractor.extract(recognizedText)
+                val extract = (System.nanoTime() - start) / 1_000_000
                 Log.i(TAG, "--- EXTRACTION ---")
                 Log.i(TAG, "Tags: ${extractionResult.lensTags}")
                 Log.i(TAG, "Metadata:")
                 extractionResult.metadata.forEach { (key, value) ->
                     Log.i(TAG, "  $key: $value")
                 }
+
+                decodeMs += decode
+                ocrMs += ocr
+                extractMs += extract
+                Log.i(TAG, "TIMING $imageName: decode=${decode}ms ocr=${ocr}ms extract=${extract}ms")
             } catch (e: Exception) {
                 Log.e(TAG, "Error processing $imageName", e)
             } finally {
                 bitmap.recycle()
             }
         }
+
+        logTimingSummary("decode", decodeMs)
+        logTimingSummary("ocr", ocrMs)
+        logTimingSummary("extract", extractMs)
+    }
+
+    private fun logTimingSummary(stage: String, samples: List<Long>) {
+        if (samples.isEmpty()) return
+        val sorted = samples.sorted()
+        Log.i(
+            TAG,
+            "TIMING_SUMMARY $stage: n=${samples.size} avg=${samples.average().toLong()}ms " +
+                "p50=${sorted[sorted.size / 2]}ms max=${sorted.last()}ms"
+        )
     }
 
     companion object {
