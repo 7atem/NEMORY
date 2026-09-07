@@ -36,7 +36,8 @@ class BriefingViewModel @Inject constructor(
     private val repository: VaultRepository,
     private val externalContextRepository: ExternalContextRepository,
     private val vaultReminderManager: VaultReminderManager,
-    private val insightEngine: DeterministicInsightEngine,
+    private val deterministicInsightEngine: DeterministicInsightEngine,
+    private val digestEngine: DigestEngine,
     private val explanationGenerator: BriefingExplanationGenerator
 ) : ViewModel() {
 
@@ -57,8 +58,9 @@ class BriefingViewModel @Inject constructor(
                 // Deterministic computation only — LLM calls run downstream in collectLatest,
                 // so new emissions cancel in-flight generation instead of queuing behind it.
                 val now = System.currentTimeMillis()
-                val insights = insightEngine.generate(items, now)
-                val weekAhead = insightEngine.generateWeekAhead(items, now)
+                val digest = digestEngine.generateDigest(items, externalRecords, now)
+                val insights = digest.items
+                val weekAhead = deterministicInsightEngine.generateWeekAhead(items, now)
                 val today = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).toLocalDate()
                 val startOfDay = today.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 val endOfDay = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()

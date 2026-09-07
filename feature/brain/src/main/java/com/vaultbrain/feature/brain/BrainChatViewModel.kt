@@ -361,12 +361,26 @@ class BrainChatViewModel @Inject constructor(
                     is BrainWriteExecutionResult.Success -> updateWriteAssistant(
                         pending.assistantMessageId,
                         writeSuccessMessage(pending.preview, result.updatedItem),
-                        listOf(result.updatedItem)
+                        listOf(result.updatedItem),
+                        listOf(
+                            com.vaultbrain.feature.brain.model.SuggestedAction(
+                                label = if (containsArabic(pending.preview.originalQuery)) "فتح المستند" else "Open document",
+                                actionId = "OPEN_ITEM",
+                                payload = mapOf("itemId" to result.updatedItem.id)
+                            )
+                        )
                     )
                     is BrainWriteExecutionResult.Failed -> updateWriteAssistant(
                         pending.assistantMessageId,
                         writeIssueMessage(result.issue, pending.preview.originalQuery),
-                        listOf(pending.preview.item)
+                        listOf(pending.preview.item),
+                        listOf(
+                            com.vaultbrain.feature.brain.model.SuggestedAction(
+                                label = if (containsArabic(pending.preview.originalQuery)) "فتح المستند" else "Open document",
+                                actionId = "OPEN_ITEM",
+                                payload = mapOf("itemId" to pending.preview.item.id)
+                            )
+                        )
                     )
                 }
             } catch (cancelled: CancellationException) {
@@ -425,20 +439,39 @@ class BrainChatViewModel @Inject constructor(
     fun dismissCollectionCreation() {
         val pending = _pendingCollectionCreation.value ?: return
         _pendingCollectionCreation.value = null
+        val actions = pending.items.firstOrNull()?.let { topItem ->
+            listOf(
+                com.vaultbrain.feature.brain.model.SuggestedAction(
+                    label = if (containsArabic(pending.originalQuery)) "عرض المستند" else "View document",
+                    actionId = "OPEN_ITEM",
+                    payload = mapOf("itemId" to topItem.id)
+                )
+            )
+        } ?: emptyList()
         updateWriteAssistant(
             pending.assistantMessageId,
             if (containsArabic(pending.originalQuery)) "لم يتم إنشاء المجموعة." else "Collection creation cancelled.",
-            pending.items
+            pending.items,
+            actions
         )
     }
 
-    private fun updateWriteAssistant(messageId: String, text: String, items: List<com.vaultbrain.core.common.model.VaultItem>) {
+    private fun updateWriteAssistant(
+        messageId: String, 
+        text: String, 
+        items: List<com.vaultbrain.core.common.model.VaultItem>,
+        actions: List<com.vaultbrain.feature.brain.model.SuggestedAction> = emptyList()
+    ) {
         var updatedMessage: ChatMessage.Assistant? = null
         _messages.update { current ->
             current.map { message ->
                 if (message.id == messageId && message is ChatMessage.Assistant) {
-                    message.copy(text = text, sources = items, confidence = 1f)
-                        .also { updatedMessage = it }
+                    message.copy(
+                        text = text, 
+                        sources = items, 
+                        confidence = 1f,
+                        suggestedActions = actions
+                    ).also { updatedMessage = it }
                 } else {
                     message
                 }

@@ -207,11 +207,11 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
                     Column {
                         Text(
                             if (isAiCoreEnabled) stringResource(R.string.brain_chat_title)
-                            else "Smart Search"
+                            else "Ask Nemory"
                         )
                         Text(
                             if (isAiCoreEnabled) stringResource(R.string.brain_chat_private)
-                            else "Find exact items in your vault",
+                            else "Chat, Command, or Search",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -797,10 +797,10 @@ private fun AssistantBubble(
                         },
                         label = { Text(action.label) },
                         leadingIcon = {
-                            if (action.actionId == "REMIND_EXPIRY") {
-                                Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
-                            } else if (action.actionId == "ADD_COLLECTION") {
-                                Icon(Icons.Default.Collections, contentDescription = null, modifier = Modifier.size(16.dp))
+                            when (action.actionId) {
+                                "REMIND_EXPIRY" -> Icon(Icons.Default.Notifications, contentDescription = null, modifier = Modifier.size(16.dp))
+                                "ADD_COLLECTION" -> Icon(Icons.Default.Collections, contentDescription = null, modifier = Modifier.size(16.dp))
+                                "OPEN_ITEM" -> Icon(Icons.Default.Description, contentDescription = null, modifier = Modifier.size(16.dp))
                             }
                         }
                     )
@@ -861,12 +861,12 @@ private fun WelcomePanel(
         )
         Text(
             if (isAiCoreEnabled) stringResource(R.string.brain_chat_welcome)
-            else "Welcome to Smart Search", 
+            else "Welcome to Ask Nemory", 
             style = MaterialTheme.typography.headlineSmall
         )
         Text(
             if (isAiCoreEnabled) stringResource(R.string.brain_chat_welcome_body)
-            else "Search your vault by keyword, date, or category.",
+            else "Chat with Nemory to manage your vault or ask questions.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.widthIn(max = 360.dp)

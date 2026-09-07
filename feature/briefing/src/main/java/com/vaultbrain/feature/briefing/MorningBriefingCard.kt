@@ -240,6 +240,7 @@ private fun TodayInsightRow(
                 is TodayInsight.SpendingIncrease -> stringResource(R.string.today_note_spending)
                 is TodayInsight.UpcomingTravel -> stringResource(R.string.today_note_travel)
                 is TodayInsight.MediaBacklog -> stringResource(R.string.today_note_media)
+                is TodayInsight.ActionableExternalInsight -> "Automated radar insight based on a linked account or message."
             }
 
             Surface(
@@ -334,6 +335,7 @@ private fun insightTitle(insight: TodayInsight): String = when (insight) {
         insight.itemCount,
         insight.itemCount
     )
+    is TodayInsight.ActionableExternalInsight -> insight.insightTitle
 }
 
 @Composable
@@ -351,6 +353,7 @@ private fun insightDetail(insight: TodayInsight): String = when (insight) {
     )
     is TodayInsight.UpcomingTravel -> stringResource(R.string.today_date_label, formatDate(insight.eventAt))
     is TodayInsight.MediaBacklog -> stringResource(R.string.today_media_sample, insight.sampleTitle)
+    is TodayInsight.ActionableExternalInsight -> insight.insightBody
 }
 
 private fun insightIcon(insight: TodayInsight): ImageVector = when (insight) {
@@ -359,6 +362,7 @@ private fun insightIcon(insight: TodayInsight): ImageVector = when (insight) {
     is TodayInsight.SpendingIncrease -> Icons.AutoMirrored.Filled.TrendingUp
     is TodayInsight.UpcomingTravel -> Icons.Default.FlightTakeoff
     is TodayInsight.MediaBacklog -> if (insight.isReading) Icons.AutoMirrored.Filled.MenuBook else Icons.Default.Movie
+    is TodayInsight.ActionableExternalInsight -> Icons.Default.AutoAwesome
 }
 
 @Composable
@@ -368,6 +372,7 @@ private fun insightColor(insight: TodayInsight) = when (insight) {
     is TodayInsight.SpendingIncrease -> MaterialTheme.colorScheme.error
     is TodayInsight.UpcomingTravel -> MaterialTheme.colorScheme.primary
     is TodayInsight.MediaBacklog -> MaterialTheme.colorScheme.secondary
+    is TodayInsight.ActionableExternalInsight -> MaterialTheme.colorScheme.primary
 }
 
 private fun formatDate(timestamp: Long): String = DateTimeFormatter

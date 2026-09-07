@@ -63,7 +63,8 @@ class BriefingViewModelTest {
             repository = repository,
             externalContextRepository = externalContextRepository,
             vaultReminderManager = vaultReminderManager,
-            insightEngine = DeterministicInsightEngine(),
+            deterministicInsightEngine = DeterministicInsightEngine(),
+            digestEngine = DigestEngine(DeterministicInsightEngine(), com.vaultbrain.feature.brain.worker.RadarEngine()),
             explanationGenerator = explanationGenerator
         )
         advanceUntilIdle()

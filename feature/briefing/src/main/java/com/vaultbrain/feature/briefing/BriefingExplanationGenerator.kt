@@ -126,6 +126,11 @@ class BriefingExplanationGenerator @Inject constructor(
         } else {
             "$itemCount items remain on the watch or reading list, including $sampleTitle."
         }
+        is TodayInsight.ActionableExternalInsight -> if (arabic) {
+            "$insightTitle: $insightBody"
+        } else {
+            "$insightTitle: $insightBody"
+        }
     }
 
     private fun String.validatedAgainst(fact: String): String? {

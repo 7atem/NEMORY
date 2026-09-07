@@ -75,4 +75,16 @@ sealed interface TodayInsight {
     ) : TodayInsight {
         override val id: String = "media:$primaryItemId"
     }
+
+    data class ActionableExternalInsight(
+        override val primaryItemId: String,
+        val insightTitle: String,
+        val insightBody: String,
+        val insightType: String,
+        override val relatedItemIds: List<String>,
+        override val priority: Int = 85,
+        override val actions: List<InsightAction> = emptyList()
+    ) : TodayInsight {
+        override val id: String = "radar:$primaryItemId"
+    }
 }
