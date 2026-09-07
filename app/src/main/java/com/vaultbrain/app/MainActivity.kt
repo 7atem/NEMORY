@@ -14,9 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
+import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import com.vaultbrain.app.navigation.VaultBrainNavGraph
 import com.vaultbrain.app.ui.theme.VaultBrainTheme
 import com.vaultbrain.core.security.AuthManager
@@ -28,12 +29,11 @@ import androidx.compose.ui.unit.dp
 /**
  * Main activity hosts the Compose navigation graph.
  *
- * [FLAG_SECURE] is applied to all activities to prevent screenshots in the recents
- * overview and by third-party tools.
+ * Screenshot protection and the PIN gate are disabled at the owner's request.
  *
- * Auto-lock: tracks the timestamp when the activity is paused. On resume, if
- * the elapsed time exceeds [AuthManager.autoLockMinutes], the activity navigates
- * back to the auth gate.
+ * Auto-lock: tracks the timestamp when the activity is paused. On resume, if a PIN
+ * is set and the elapsed time exceeds [AuthManager.autoLockMinutes], the activity
+ * restarts. Inert while the PIN gate is disabled (no PIN is ever set).
  */
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
@@ -50,14 +50,12 @@ class MainActivity : FragmentActivity() {
 
     private var pausedAtMillis: Long = 0L
 
+    @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.setFlags(
-            android.view.WindowManager.LayoutParams.FLAG_SECURE,
-            android.view.WindowManager.LayoutParams.FLAG_SECURE
-        )
+        // Screenshot protection is disabled at the owner's request.
 
         setupShortcuts()
         reportShortcutUsage(intent)
@@ -125,6 +123,8 @@ class MainActivity : FragmentActivity() {
                 com.vaultbrain.core.common.preferences.ThemeMode.SYSTEM -> androidx.compose.foundation.isSystemInDarkTheme()
             }
 
+            val windowSize = calculateWindowSizeClass(this@MainActivity)
+
             VaultBrainTheme(darkTheme = isDarkTheme, dynamicColor = dynamicColor) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -132,8 +132,10 @@ class MainActivity : FragmentActivity() {
                 ) {
                     val hasSeenOnboarding = com.vaultbrain.core.common.OnboardingState.hasSeenOnboarding(this@MainActivity)
                     VaultBrainNavGraph(
+                        windowWidthSizeClass = windowSize.widthSizeClass,
                         startDestination = if (hasSeenOnboarding) {
-                            com.vaultbrain.app.navigation.Screen.AuthGate.route
+                            // PIN gate disabled at the owner's request; go straight to Today.
+                            com.vaultbrain.app.navigation.Screen.Home.route
                         } else {
                             com.vaultbrain.app.navigation.Screen.Onboarding.route
                         },
@@ -200,6 +202,7 @@ class MainActivity : FragmentActivity() {
             }
             ACTION_VIEW_EXPIRING -> "${com.vaultbrain.app.navigation.Screen.Search.route}?filter=expiring"
             ACTION_OPEN_SETTINGS -> com.vaultbrain.app.navigation.Screen.Settings.route
+            ACTION_ASK_NEMORY -> com.vaultbrain.app.navigation.Screen.Brain.route
             else -> com.vaultbrain.app.navigation.Screen.Home.route
         }
     }
@@ -236,7 +239,7 @@ class MainActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (pausedAtMillis > 0L && authManager.autoLockMinutes > 0) {
+        if (pausedAtMillis > 0L && authManager.isPinSet && authManager.autoLockMinutes > 0) {
             val elapsedMs = System.currentTimeMillis() - pausedAtMillis
             val thresholdMs = authManager.autoLockMinutes * 60_000L
             if (elapsedMs >= thresholdMs) {
@@ -254,6 +257,7 @@ class MainActivity : FragmentActivity() {
         const val ACTION_VIEW_EXPIRING = "com.nemory.app.ACTION_VIEW_EXPIRING"
         const val ACTION_OPEN_SETTINGS = "com.nemory.app.ACTION_OPEN_SETTINGS"
         const val ACTION_DOWNLOAD_GEMMA_MODEL = "com.nemory.app.ACTION_DOWNLOAD_GEMMA_MODEL"
+        const val ACTION_ASK_NEMORY = "com.nemory.app.ACTION_ASK_NEMORY"
         private const val SHORTCUT_CAPTURE = "shortcut_capture"
         private const val SHORTCUT_EXPIRING = "shortcut_expiring"
     }

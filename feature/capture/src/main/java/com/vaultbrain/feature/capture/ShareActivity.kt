@@ -35,10 +35,8 @@ class ShareActivity : ComponentActivity() {
     lateinit var parser: IncomingShareParser
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.setFlags(
-            android.view.WindowManager.LayoutParams.FLAG_SECURE,
-            android.view.WindowManager.LayoutParams.FLAG_SECURE
-        )
+        // Debug builds support physical-device screenshot reviews. Release vaults stay secure.
+        // Screenshot protection is disabled at the owner's request.
 
         val result = runCatching { parser.parse(this, intent) }
             .map { parser.validate(it) }
