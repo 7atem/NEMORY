@@ -22,6 +22,7 @@ struct ContentView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(isArabic ? "نتيجة الكشف المشترك" : "Shared detection result")
                         .font(.headline)
+                        .accessibilityIdentifier("sharedDetectionHeader")
                     Text(detectorResult)
                         .font(.body)
                         .accessibilityLabel("Detected lenses: \(detectorResult)")
