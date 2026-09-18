@@ -26,15 +26,18 @@ class PersonalContextEngine @Inject constructor(
         val records = repository.observeRecords()
             .map { list ->
                 list.filter { record ->
-                    (query.recordTypes?.let { record.recordType in it } ?: true) &&
+                    !record.isResolved && (record.expiresAt?.let { it > System.currentTimeMillis() } ?: true) &&
+                        (query.recordTypes?.let { record.recordType in it } ?: true) &&
                         (query.sources?.let { record.source in it } ?: true) &&
                         isWithinWindow(record, query) &&
                         (query.text?.takeIf(String::isNotBlank)?.let { text -> matchesText(record, text) } ?: true)
                 }
             }
-            .map { it.take(query.limit) }
+            .map { it.sortedBy { record -> kotlin.math.abs((record.startAt ?: record.dueAt ?: record.createdAt) - System.currentTimeMillis()) }
+                .take(query.limit.coerceIn(0, 30)) }
             .firstOrNull() ?: emptyList()
 
+        if (com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value) return ContextResult()
         val connectors = records.map { it.connectorId }.distinct()
         return ContextResult(
             records = records,

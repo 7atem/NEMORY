@@ -1,6 +1,7 @@
 package com.vaultbrain.core.vectorstore
 
 import android.content.Context
+import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.vectorstore.entity.CollectionEmbedding
 import com.vaultbrain.core.vectorstore.entity.CollectionEmbedding_
 import com.vaultbrain.core.vectorstore.entity.VaultEmbedding
@@ -18,6 +19,7 @@ import com.vaultbrain.core.vectorstore.entity.VaultEmbedding_
  * Note: The ObjectBox database file lives in app-private storage. It is not encrypted by
  * SQLCipher. If desired, additional file-level encryption (e.g., Jetpack Security with
  * encrypted files) can be layered on top; here we rely on Android sandboxing.
+ * All operations are gated by [DecoySessionState] to ensure complete isolation in decoy mode.
  */
 @Singleton
 class VectorStore @Inject constructor(
@@ -44,7 +46,7 @@ class VectorStore @Inject constructor(
      * fixed-size. Mixed dimensions will throw at insert time.
      */
     fun putEmbeddingsForItem(itemId: String, embeddings: List<VaultEmbedding>) {
-        if (embeddings.isEmpty()) return
+        if (DecoySessionState.isDecoy.value || embeddings.isEmpty()) return
         val dimensions = embeddings.mapNotNull { it.embedding?.size }.distinct()
         if (dimensions.size > 1) return
 
@@ -66,6 +68,7 @@ class VectorStore @Inject constructor(
      * Deletes all embeddings associated with [itemId].
      */
     fun deleteEmbeddingsForItem(itemId: String) {
+        if (DecoySessionState.isDecoy.value) return
         runCatching {
             val box = embeddingBox ?: return
             val existing = box.query(VaultEmbedding_.itemId.equal(itemId))
@@ -85,6 +88,7 @@ class VectorStore @Inject constructor(
         topK: Int = 50,
         contentType: String? = null
     ): List<VaultEmbedding> {
+        if (DecoySessionState.isDecoy.value) return emptyList()
         return runCatching {
             val box = embeddingBox ?: return emptyList()
             val nearestNeighborCondition =
@@ -116,6 +120,7 @@ class VectorStore @Inject constructor(
     // ---- Collection embeddings (CollectionVectorStore) ----
 
     override fun putCollectionEmbedding(embedding: CollectionEmbedding) {
+        if (DecoySessionState.isDecoy.value) return
         runCatching {
             val store = boxStore ?: return
             val box = collectionEmbeddingBox ?: return
@@ -130,6 +135,7 @@ class VectorStore @Inject constructor(
     }
 
     override fun deleteCollectionEmbedding(collectionId: String) {
+        if (DecoySessionState.isDecoy.value) return
         runCatching {
             val box = collectionEmbeddingBox ?: return
             val existing = box.query(CollectionEmbedding_.collectionId.equal(collectionId))
@@ -139,36 +145,50 @@ class VectorStore @Inject constructor(
         }
     }
 
-    override fun getCollectionEmbedding(collectionId: String): CollectionEmbedding? = runCatching {
-        val box = collectionEmbeddingBox ?: return null
-        box.query(CollectionEmbedding_.collectionId.equal(collectionId)).build().findFirst()
-    }.getOrNull()
+    override fun getCollectionEmbedding(collectionId: String): CollectionEmbedding? {
+        if (DecoySessionState.isDecoy.value) return null
+        return runCatching {
+            val box = collectionEmbeddingBox ?: return null
+            box.query(CollectionEmbedding_.collectionId.equal(collectionId)).build().findFirst()
+        }.getOrNull()
+    }
 
-    override fun getAllCollectionEmbeddings(): List<CollectionEmbedding> = runCatching {
-        collectionEmbeddingBox?.all ?: emptyList()
-    }.getOrDefault(emptyList())
+    override fun getAllCollectionEmbeddings(): List<CollectionEmbedding> {
+        if (DecoySessionState.isDecoy.value) return emptyList()
+        return runCatching {
+            collectionEmbeddingBox?.all ?: emptyList()
+        }.getOrDefault(emptyList())
+    }
 
-    override fun nearestCollectionNeighbors(queryVector: FloatArray, topK: Int): List<CollectionEmbedding> =
-        runCatching {
+    override fun nearestCollectionNeighbors(queryVector: FloatArray, topK: Int): List<CollectionEmbedding> {
+        if (DecoySessionState.isDecoy.value) return emptyList()
+        return runCatching {
             val box = collectionEmbeddingBox ?: return emptyList()
             box.query(CollectionEmbedding_.embedding.nearestNeighbors(queryVector, topK))
                 .build()
                 .find()
         }.getOrDefault(emptyList())
+    }
 
     /**
      * Number of embeddings currently stored.
      */
-    fun count(): Long = runCatching { embeddingBox?.count() ?: 0L }.getOrDefault(0L)
+    fun count(): Long {
+        if (DecoySessionState.isDecoy.value) return 0L
+        return runCatching { embeddingBox?.count() ?: 0L }.getOrDefault(0L)
+    }
 
     /**
      * True when at least one embedding row exists for [itemId]. Used by the embedding
      * backfill to cheaply skip items that are already indexed.
      */
-    fun hasEmbeddingsForItem(itemId: String): Boolean = runCatching {
-        val box = embeddingBox ?: return false
-        box.query(VaultEmbedding_.itemId.equal(itemId)).build().count() > 0
-    }.getOrDefault(false)
+    fun hasEmbeddingsForItem(itemId: String): Boolean {
+        if (DecoySessionState.isDecoy.value) return false
+        return runCatching {
+            val box = embeddingBox ?: return false
+            box.query(VaultEmbedding_.itemId.equal(itemId)).build().count() > 0
+        }.getOrDefault(false)
+    }
 
     /**
      * Closes the store. Call only when the app is being destroyed.

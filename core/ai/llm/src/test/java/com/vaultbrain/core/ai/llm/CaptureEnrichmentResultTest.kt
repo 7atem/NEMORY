@@ -4,7 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.common.model.Classification
 import com.vaultbrain.core.common.model.EnrichmentState
 import com.vaultbrain.core.common.model.ExperienceId
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.ProactiveAction
 import com.vaultbrain.core.common.model.ProactiveActionResolver
 import com.vaultbrain.core.common.model.VaultItem
@@ -34,15 +34,20 @@ class CaptureEnrichmentResultTest {
     }
 
     @Test
-    fun `parser rejects surrounding prose and unlisted classification`() {
+    fun `parser handles surrounding prose and accepts custom classifications`() {
         val customResult = CaptureEnrichmentResultParser.parse(
             """{"classification":"SECRET","lens":"MEDIA","title":"x","summary":"x"}"""
         )
-        assertThat(customResult).isNull()
+        assertThat(customResult?.classification).isEqualTo(Classification.OTHER)
+        assertThat(customResult?.subtype).isEqualTo("SECRET")
 
         assertThat(CaptureEnrichmentResultParser.parse("not json")).isNull()
-        assertThat(CaptureEnrichmentResultParser.parse("prose {\"classification\":\"OTHER\"}")).isNull()
-        assertThat(CaptureEnrichmentResultParser.parse("```json\n{\"classification\":\"OTHER\"}\n```" )).isNull()
+        
+        val proseResult = CaptureEnrichmentResultParser.parse("prose {\"classification\":\"OTHER\", \"title\": \"x\", \"summary\": \"x\"}")
+        assertThat(proseResult?.classification).isEqualTo(Classification.OTHER)
+        
+        val markdownResult = CaptureEnrichmentResultParser.parse("```json\n{\"classification\":\"CUSTOM\", \"title\": \"x\", \"summary\": \"x\"}\n```" )
+        assertThat(markdownResult?.subtype).isEqualTo("CUSTOM")
     }
 
     @Test
@@ -294,14 +299,16 @@ class CaptureEnrichmentResultTest {
     }
 
     @Test
-    fun `parser ignores custom classification and lens strings without inventing canonical values`() {
+    fun `parser maps custom classification strings as OTHER and resolves subtype`() {
         val result = CaptureEnrichmentResultParser.parse(
             """
                 {"classification":"Workout Routine","lens":"Fitness & Health","title":"Daily Workout","summary":"Push Pull Legs routine","confidence":0.9}
             """.trimIndent()
         )
 
-        assertThat(result).isNull()
+        assertThat(result?.classification).isEqualTo(Classification.OTHER)
+        assertThat(result?.subtype).isEqualTo("Workout Routine")
+        assertThat(result?.systemFacets).containsExactly("FITNESS & HEALTH")
     }
 
     @Test
@@ -312,7 +319,7 @@ class CaptureEnrichmentResultTest {
 
         assertThat(result?.classification).isEqualTo(Classification.PRODUCT_PHOTO)
         assertThat(result?.subtype).isEqualTo("tea package")
-        assertThat(result?.systemFacets).containsExactly(LensId.MONEY)
+        assertThat(result?.systemFacets).containsExactly("SHOPPING", LensId.MONEY).inOrder()
         assertThat(result?.topics).containsExactly("tea", "groceries").inOrder()
         assertThat(result?.entities).containsExactly("Lipton")
         assertThat(result?.metadata).containsEntry("brand", "Lipton")
@@ -350,7 +357,7 @@ class CaptureEnrichmentResultTest {
             """{"classification":"TICKET","subtype":"international train ticket","system_facets":["TRAVEL","MONEY","unknown"],"title":"Eurostar Ticket","summary":"Paris to London ticket.","topics":["rail travel"],"tags":["Eurostar"],"metadata":{"date":"2027-05-02"},"supported_actions":["ADD_TO_CALENDAR","DELETE_VAULT"],"suggestions":["Keep the booking reference available offline"],"confidence":0.9}"""
         )
 
-        assertThat(result?.systemFacets).containsExactly(LensId.TRAVEL, LensId.MONEY)
+        assertThat(result?.systemFacets).containsExactly(LensId.TRAVEL, LensId.MONEY, "UNKNOWN").inOrder()
         assertThat(result?.supportedActions).containsExactly(ProactiveAction.ADD_TO_CALENDAR)
         assertThat(result?.suggestions).containsExactly("Keep the booking reference available offline")
     }

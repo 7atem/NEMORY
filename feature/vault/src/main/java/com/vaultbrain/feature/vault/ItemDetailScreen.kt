@@ -17,6 +17,9 @@ import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import android.os.Environment
 import android.provider.MediaStore
+import android.text.Layout
+import android.text.StaticLayout
+import android.text.TextPaint
 import android.widget.Toast
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -44,6 +47,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -104,7 +108,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.SourceType
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.common.model.PersonalCollection
@@ -158,7 +162,9 @@ fun ItemDetailScreen(
             }
         },
         onDismissCloudConsent = viewModel::dismissCloudConsent,
-        onDismissTranslationMessage = viewModel::clearTranslationMessage
+        onDismissTranslationMessage = viewModel::clearTranslationMessage,
+        onGenerateAiSummary = viewModel::generateAiSummary,
+        onExecuteAction = viewModel::executeAction
     )
 }
 
@@ -190,34 +196,44 @@ private fun exportPdf(context: Context, item: VaultItem) {
         val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
         val page = document.startPage(pageInfo)
         val canvas = page.canvas
-        val paint = Paint()
-        
-        paint.color = Color.BLACK
-        paint.textSize = 24f
-        canvas.drawText("Title: ${item.title}", 50f, 50f, paint)
-        
-        paint.textSize = 16f
-        var y = 100f
-        canvas.drawText("Summary:", 50f, y, paint)
-        y += 20f
-        item.summary?.let { 
-            canvas.drawText(it, 50f, y, paint)
-            y += 40f
+        val contentWidth = 495
+
+        val titlePaint = TextPaint().apply {
+            color = Color.BLACK
+            textSize = 20f
+            isFakeBoldText = true
         }
-        
-        canvas.drawText("OCR Text:", 50f, y, paint)
-        y += 20f
-        item.rawOcrText?.let {
-            val lines = it.split("\n")
-            for(line in lines) {
-                canvas.drawText(line, 50f, y, paint)
-                y += 20f
-                if (y > 800f) break
-            }
+        val bodyPaint = TextPaint().apply {
+            color = Color.BLACK
+            textSize = 12f
         }
-        
+
+        var currentY = 50f
+        fun drawSection(title: String, body: String?, isTitle: Boolean = false) {
+            if (currentY >= 790f || (body.isNullOrBlank() && !isTitle)) return
+            canvas.save()
+            canvas.translate(50f, currentY)
+            val text = if (isTitle) title else "$title\n$body"
+            val paint = if (isTitle) titlePaint else bodyPaint
+            val layout = StaticLayout.Builder.obtain(text, 0, text.length, paint, contentWidth)
+                .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                .setLineSpacing(0f, 1.15f)
+                .build()
+            layout.draw(canvas)
+            canvas.restore()
+            currentY += layout.height + 16f
+        }
+
+        drawSection(context.getString(R.string.detail_pdf_title, item.title), null, isTitle = true)
+        item.summary?.takeIf { it.isNotBlank() }?.let {
+            drawSection(context.getString(R.string.detail_pdf_summary), it)
+        }
+        item.rawOcrText?.takeIf { it.isNotBlank() }?.let {
+            drawSection(context.getString(R.string.detail_pdf_ocr), it)
+        }
+
         document.finishPage(page)
-        
+
         val resolver = context.contentResolver
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, "vault_item_${item.id}.pdf")
@@ -258,7 +274,9 @@ internal fun ItemDetailContent(
     onTranslate: (String) -> Unit,
     onConfirmCloudTranslation: (Boolean) -> Unit,
     onDismissCloudConsent: () -> Unit,
-    onDismissTranslationMessage: () -> Unit
+    onDismissTranslationMessage: () -> Unit,
+    onGenerateAiSummary: () -> Unit = {},
+    onExecuteAction: (com.vaultbrain.core.common.model.ProactiveAction) -> Unit = {}
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -361,14 +379,19 @@ internal fun ItemDetailContent(
         }
 
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .widthIn(max = 900.dp)
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             when {
                 state.isLoading -> {
                     Box(modifier = Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
@@ -439,10 +462,15 @@ internal fun ItemDetailContent(
                             AssistChip(
                                 onClick = onPinToggle,
                                 leadingIcon = { Icon(Icons.Default.PushPin, contentDescription = null) },
-                                label = { Text("Pinned") }
+                                label = { Text(stringResource(R.string.detail_pinned)) }
                             )
                         }
                     }
+
+                    DynamicActionRow(
+                        item = item,
+                        onExecuteAction = onExecuteAction
+                    )
 
                     item.summary?.takeIf { it.isNotBlank() }?.let { summary ->
                         Text(
@@ -484,12 +512,28 @@ internal fun ItemDetailContent(
                     } else if (item.needsReview) {
                         ReviewWarningCard(onEdit = { showEditDialog = true })
                     }
+                    val currentFacts = state.sourceFacts.filter { it.sourceUpdatedAt == item.updatedAt }
+                    if (currentFacts.isNotEmpty()) {
+                        DetailTextCard(
+                            title = stringResource(R.string.detail_source_facts),
+                            text = currentFacts.take(12).joinToString("\n\n") { it.evidence }
+                        )
+                    }
+                    if (currentFacts.isNotEmpty() && state.relatedItems.isNotEmpty()) {
+                        Text(stringResource(R.string.detail_shared_entities), style = MaterialTheme.typography.titleMedium)
+                        state.relatedItems.forEach { related ->
+                            TextButton(onClick = { onOpenItem(related.id) }) { Text(related.title) }
+                        }
+                    }
 
-                    DynamicActionRow(item = item, context = context)
+                    AiActionCard(
+                        state = state,
+                        onGenerateSummary = onGenerateAiSummary
+                    )
 
                     TranslationCard(
                         state = state,
-                        onTranslate = onTranslate
+                        onTranslate = { state.item?.id?.let(onTranslate) }
                     )
 
                     MetadataCard(item = item, onAddReminder = onAddReminder)
@@ -517,12 +561,13 @@ internal fun ItemDetailContent(
             }
         }
     }
+}
 
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete item?") },
-            text = { Text("This action cannot be undone.") },
+            title = { Text(stringResource(R.string.detail_delete_title)) },
+            text = { Text(stringResource(R.string.detail_delete_body)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -530,12 +575,12 @@ internal fun ItemDetailContent(
                         onDelete()
                     }
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.detail_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.detail_cancel))
                 }
             }
         )
@@ -755,47 +800,47 @@ internal fun ItemDetailContent(
                     OutlinedTextField(
                         value = editReminder,
                         onValueChange = { editReminder = it },
-                        label = { Text("Reminder/event date (YYYY-MM-DD)") },
+                        label = { Text(stringResource(R.string.detail_edit_reminder)) },
                         isError = editReminder.isNotBlank() && parseEditableDate(editReminder) == null
                     )
                     OutlinedTextField(
                         value = editRecurring,
                         onValueChange = { editRecurring = it },
-                        label = { Text("Recurrence (for example: every 8 hours)") }
+                        label = { Text(stringResource(R.string.detail_edit_recurrence)) }
                     )
-                    if (LensId.MONEY in editLensTags || LensId.MONEY in editLensTags) {
+                    if (LensId.MONEY in editLensTags) {
                         OutlinedTextField(
                             value = editTargetPrice,
                             onValueChange = { editTargetPrice = it.filter { char -> char.isDigit() || char == '.' } },
-                            label = { Text("Target/monthly price") },
+                            label = { Text(stringResource(R.string.detail_edit_target_price)) },
                             isError = editTargetPrice.isNotBlank() && editTargetPrice.toDoubleOrNull() == null
                         )
-                    }
-                    if (LensId.MONEY in editLensTags) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("Hide as private gift", style = MaterialTheme.typography.bodyLarge)
-                                Text("Hidden from the main vault", style = MaterialTheme.typography.bodySmall)
+                                Text(stringResource(R.string.detail_edit_hide_private_gift), style = MaterialTheme.typography.bodyLarge)
+                                Text(stringResource(R.string.detail_edit_hide_private_gift_desc), style = MaterialTheme.typography.bodySmall)
                             }
+                            val stealthEnabledText = stringResource(R.string.detail_edit_stealth_enabled)
+                            val stealthDisabledText = stringResource(R.string.detail_edit_stealth_disabled)
                             Switch(
                                 checked = editStealth,
                                 onCheckedChange = { editStealth = it },
                                 modifier = Modifier.semantics {
-                                    stateDescription = if (editStealth) "Stealth mode enabled" else "Stealth mode disabled"
+                                    stateDescription = if (editStealth) stealthEnabledText else stealthDisabledText
                                 }
                             )
                         }
                     }
                     if (lensFields.isNotEmpty()) {
-                        Text("Lens workflow", style = MaterialTheme.typography.titleSmall)
-                        lensFields.forEach { (key, label) ->
+                        Text(stringResource(R.string.detail_edit_lens_workflow), style = MaterialTheme.typography.titleSmall)
+                        for ((key, label) in lensFields.entries) {
                             OutlinedTextField(
                                 value = editCustomFields[key].orEmpty(),
-                                onValueChange = { value -> editCustomFields = editCustomFields + (key to value) },
+                                onValueChange = { value -> editCustomFields = editCustomFields + Pair(key, value) },
                                 label = { Text(label) },
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -804,7 +849,7 @@ internal fun ItemDetailContent(
                     OutlinedTextField(
                         value = editMetadata,
                         onValueChange = { editMetadata = it },
-                        label = { Text("Detected metadata (one key=value per line)") },
+                        label = { Text(stringResource(R.string.detail_edit_detected_metadata)) },
                         minLines = 3
                     )
                 }
@@ -823,7 +868,7 @@ internal fun ItemDetailContent(
                             targetPrice = editTargetPrice.toDoubleOrNull(),
                             isStealth = editStealth && LensId.MONEY in editLensTags,
                             parsedMetadata = parseKeyValueLines(editMetadata),
-                            customFields = editCustomFields.mapValues { it.value.trim() }.filterValues(String::isNotEmpty),
+                            customFields = editCustomFields.mapValues { it.value.trim() }.filterValues { it.isNotEmpty() },
                             userClassificationOverride = editClassification
                         )
                     )
@@ -831,10 +876,10 @@ internal fun ItemDetailContent(
                 }, enabled = editTitle.isNotBlank() &&
                     (editExpiry.isBlank() || parseEditableDate(editExpiry) != null) &&
                     (editReminder.isBlank() || parseEditableDate(editReminder) != null)
-                ) { Text("Save") }
+                ) { Text(stringResource(R.string.detail_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { showEditDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showEditDialog = false }) { Text(stringResource(R.string.detail_cancel)) }
             }
         )
     }
@@ -849,6 +894,170 @@ private fun parseEditableDate(value: String): Long? {
     return runCatching {
         LocalDate.parse(value.trim()).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     }.getOrNull()
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun DetailTextCard(title: String, text: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(text = title, style = MaterialTheme.typography.titleSmall)
+            Text(text = text, style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+private fun PossibleDuplicateCard(duplicateTitle: String?, onOpen: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.detail_possible_duplicate), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.error)
+                Text(duplicateTitle ?: stringResource(R.string.detail_possible_duplicate_desc), style = MaterialTheme.typography.bodySmall)
+            }
+            TextButton(onClick = onOpen) { Text(stringResource(R.string.detail_view)) }
+        }
+    }
+}
+
+@Composable
+private fun ReviewWarningCard(onEdit: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.4f))
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(stringResource(R.string.detail_needs_review_confidence), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+            TextButton(onClick = onEdit) { Text(stringResource(R.string.detail_review)) }
+        }
+    }
+}
+
+@Composable
+private fun AiActionCard(
+    state: ItemDetailUiState,
+    onGenerateSummary: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.detail_ai_doc_intelligence), style = MaterialTheme.typography.titleSmall)
+                }
+                if (!state.isGeneratingAiSummary && state.aiSummary == null) {
+                    Button(onClick = onGenerateSummary) { Text(stringResource(R.string.detail_summarize)) }
+                }
+            }
+            if (state.isGeneratingAiSummary) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                    Text(stringResource(R.string.detail_generating_ai_summary), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            state.aiSummary?.let { summary ->
+                Text(text = summary, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TranslationCard(
+    state: ItemDetailUiState,
+    onTranslate: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Icon(Icons.Default.Translate, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
+                    Text(stringResource(R.string.detail_translate), style = MaterialTheme.typography.titleSmall)
+                }
+                if (!state.isTranslating && state.translation == null) {
+                    OutlinedButton(onClick = onTranslate) { Text(stringResource(R.string.detail_translate)) }
+                }
+            }
+            if (state.isTranslating) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                    Text(stringResource(R.string.detail_translating), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            state.translation?.let { translation ->
+                Text(text = translation, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExtractedTextCard(rawOcrText: String) {
+    var expanded by remember { mutableStateOf(false) }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.detail_extracted_text), style = MaterialTheme.typography.titleSmall)
+                TextButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) stringResource(R.string.detail_hide_text) else stringResource(R.string.detail_show_text))
+                }
+            }
+            if (expanded) {
+                Text(
+                    text = rawOcrText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -935,218 +1144,6 @@ private fun SuggestedCollectionsCard(
     }
 }
 
-private fun formatKeyValueLines(values: Map<String, String>): String =
-    values.entries.joinToString("\n") { "${it.key}=${it.value}" }
-
-private fun parseKeyValueLines(value: String): Map<String, String> = value.lineSequence()
-    .mapNotNull { line ->
-        val separator = line.indexOf('=')
-        if (separator <= 0) null else line.substring(0, separator).trim()
-            .takeIf(String::isNotEmpty)?.let { it to line.substring(separator + 1).trim() }
-    }
-    .toMap()
-
-private fun lensFieldDefinitions(lenses: Set<String>): List<Pair<String, String>> = buildList {
-    if (LensId.MONEY in lenses) addAll(listOf("category" to "Expense category", "tax" to "Tax", "swift" to "SWIFT/BIC"))
-    if (LensId.HEALTH in lenses) addAll(listOf("medication" to "Medication", "dosage" to "Dosage", "frequency" to "Frequency", "doctor" to "Doctor", "lab_metric" to "Lab metric", "lab_value" to "Lab value"))
-    if (LensId.TRAVEL in lenses) addAll(listOf("pnr" to "PNR", "flight_number" to "Flight number", "gate" to "Gate", "seat" to "Seat", "hotel" to "Hotel", "trip_id" to "Trip name"))
-    if (LensId.BUREAUCRACY in lenses) addAll(listOf("document_type" to "Document type", "document_number" to "Document number", "mrz" to "MRZ"))
-    if (LensId.MONEY in lenses) addAll(listOf("store" to "Store", "occasion" to "Gift occasion", "product_url" to "Product URL"))
-    if (LensId.BUREAUCRACY in lenses) addAll(listOf("model_number" to "Model number", "serial_number" to "Serial number", "purchase_date" to "Purchase date", "meter_reading" to "Meter reading"))
-    if (LensId.TRAVEL in lenses) addAll(listOf("odometer" to "Odometer", "fuel_liters" to "Fuel liters", "maintenance_type" to "Maintenance", "parking_location" to "Parking location"))
-    if (LensId.MONEY in lenses) addAll(listOf("service_type" to "Service type", "pickup_date" to "Pickup date", "return_by" to "Return by"))
-    if (LensId.MEDIA in lenses) addAll(listOf("media_type" to "Movie, book or course", "status" to "Watch/read status", "provider_url" to "IMDb, Goodreads or course URL"))
-    if (LensId.BUREAUCRACY in lenses) addAll(listOf("scanned_url" to "Scanned URL", "risk_level" to "Risk level", "wifi_ssid" to "Wi-Fi name"))
-    if (LensId.BUREAUCRACY in lenses) addAll(listOf("task_status" to "Task status", "deadline" to "Deadline", "contact" to "Contact", "error_code" to "Error code", "grocery_list" to "Grocery list"))
-}.distinctBy { it.first }
-
-@Composable
-private fun ReviewWarningCard(onEdit: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(Icons.Default.WarningAmber, contentDescription = null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(stringResource(R.string.detail_needs_review), style = MaterialTheme.typography.titleSmall)
-                Text(
-                    stringResource(R.string.detail_needs_review_body),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            }
-            TextButton(onClick = onEdit) { Text("Edit") }
-        }
-    }
-}
-
-@Composable
-private fun PossibleDuplicateCard(
-    duplicateTitle: String?,
-    onOpen: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                Icons.Default.ContentCopy,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer
-            )
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    stringResource(R.string.detail_possible_duplicate),
-                    style = MaterialTheme.typography.titleSmall
-                )
-                Text(
-                    stringResource(
-                        R.string.detail_possible_duplicate_body,
-                        duplicateTitle ?: stringResource(R.string.detail_another_saved_item)
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            }
-            TextButton(onClick = onOpen) {
-                Text(stringResource(R.string.detail_review_duplicate))
-            }
-        }
-    }
-
-}
-
-@Composable
-private fun DetailTextCard(title: String, text: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall)
-            Text(text, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-
-@Composable
-private fun TranslationCard(
-    state: ItemDetailUiState,
-    onTranslate: (String) -> Unit
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Translate, contentDescription = null)
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.detail_translate), style = MaterialTheme.typography.titleSmall)
-                    Text(
-                        stringResource(R.string.detail_translate_body),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = { onTranslate("English") },
-                    enabled = !state.isTranslating
-                ) { Text(stringResource(R.string.detail_translate_english)) }
-                OutlinedButton(
-                    onClick = { onTranslate("Arabic") },
-                    enabled = !state.isTranslating
-                ) { Text(stringResource(R.string.detail_translate_arabic)) }
-            }
-            if (state.isTranslating) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-                    Text(stringResource(R.string.detail_translating))
-                }
-            }
-            state.translation?.let { translation ->
-                Text(
-                    stringResource(
-                        if (state.translationOrigin == AiResponseOrigin.CLOUD_AI) {
-                            R.string.detail_translation_cloud_origin
-                        } else {
-                            R.string.detail_translation_local_origin
-                        }
-                    ),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(translation, style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-    }
-}
-
-@Composable
-private fun ExtractedTextCard(text: String) {
-    var expanded by remember { mutableStateOf(false) }
-    val clipboard = LocalClipboardManager.current
-    val context = androidx.compose.ui.platform.LocalContext.current
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(stringResource(R.string.detail_extracted_text), style = MaterialTheme.typography.titleSmall)
-                Row {
-                    if (expanded) {
-                        IconButton(onClick = {
-                            clipboard.setText(AnnotatedString(text))
-                            Toast.makeText(context, context.getString(R.string.detail_copied), Toast.LENGTH_SHORT).show()
-                        }) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.detail_copy))
-                        }
-                    }
-                    TextButton(onClick = { expanded = !expanded }) {
-                        Text(stringResource(if (expanded) R.string.detail_hide_text else R.string.detail_show_text))
-                        Icon(
-                            if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                            contentDescription = null
-                        )
-                    }
-                }
-            }
-            if (expanded) {
-                Text(text, style = MaterialTheme.typography.bodySmall)
-            } else {
-                Text(
-                    text,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MetadataCard(item: VaultItem, onAddReminder: (String, String, Long) -> Unit) {
@@ -1176,7 +1173,7 @@ private fun MetadataCard(item: VaultItem, onAddReminder: (String, String, Long) 
                 ) {
                     Icon(androidx.compose.material.icons.Icons.Default.NotificationsActive, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Remind me before expiry")
+                    Text(stringResource(R.string.detail_remind_expiry))
                 }
             }
 
@@ -1184,7 +1181,7 @@ private fun MetadataCard(item: VaultItem, onAddReminder: (String, String, Long) 
             if (orderedFields.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Extracted Details",
+                    text = stringResource(R.string.detail_extracted_details),
                     style = MaterialTheme.typography.titleSmall
                 )
                 Column(
@@ -1343,7 +1340,7 @@ private fun ActionButtons(
                 contentDescription = null
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Delete")
+            Text(stringResource(R.string.detail_delete))
         }
     }
 }
@@ -1393,4 +1390,39 @@ private fun ItemDetailContentPreview() {
             onDismissTranslationMessage = {}
         )
     }
+}
+
+private fun formatKeyValueLines(metadata: Map<String, String>): String {
+    return metadata.entries.joinToString("\n") { "${it.key}=${it.value}" }
+}
+
+private fun parseKeyValueLines(text: String): Map<String, String> {
+    return text.lines()
+        .map { it.trim() }
+        .filter { it.contains("=") }
+        .associate {
+            val parts = it.split("=", limit = 2)
+            parts[0].trim() to parts[1].trim()
+        }
+}
+
+private fun lensFieldDefinitions(lensTags: Set<String>): Map<String, String> {
+    val fields = mutableMapOf<String, String>()
+    if (lensTags.contains(LensId.MONEY)) {
+        fields["merchant"] = "Merchant / Vendor"
+        fields["amount"] = "Amount"
+    }
+    if (lensTags.contains(LensId.HEALTH)) {
+        fields["doctor"] = "Doctor / Clinic"
+        fields["prescription"] = "Prescription Details"
+    }
+    if (lensTags.contains(LensId.TRAVEL)) {
+        fields["destination"] = "Destination"
+        fields["confirmation_code"] = "Confirmation Code"
+    }
+    if (lensTags.contains(LensId.BUREAUCRACY)) {
+        fields["document_number"] = "Document Number"
+        fields["issuer"] = "Issuing Authority"
+    }
+    return fields
 }

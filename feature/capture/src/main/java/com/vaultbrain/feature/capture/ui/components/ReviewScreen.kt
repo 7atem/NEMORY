@@ -98,8 +98,7 @@ fun ReviewScreen(
     onOnDeviceAiDownload: () -> Unit = {}
 ) {
     val haptic = LocalHapticFeedback.current
-    var swipeOffset by remember { mutableStateOf(0f) }
-    val animatedSwipeOffset by animateFloatAsState(targetValue = swipeOffset, label = "swipeOffset")
+    var showDiscardDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -185,7 +184,7 @@ fun ReviewScreen(
                         )
                     }
                 }
-                TextButton(onClick = onDiscard) {
+                TextButton(onClick = { showDiscardDialog = true }) {
                     Text(stringResource(R.string.feature_capture_discard))
                 }
             }
@@ -194,27 +193,7 @@ fun ReviewScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp)
-                    .offset { IntOffset(animatedSwipeOffset.roundToInt(), 0) }
-                    .pointerInput(Unit) {
-                        detectHorizontalDragGestures(
-                            onDragEnd = {
-                                if (swipeOffset > 250f && draft.title.isNotBlank()) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    onSave()
-                                    swipeOffset = 0f
-                                } else if (swipeOffset < -250f) {
-                                    onDiscard()
-                                    swipeOffset = 0f
-                                } else {
-                                    swipeOffset = 0f
-                                }
-                            },
-                            onHorizontalDrag = { _, dragAmount ->
-                                swipeOffset += dragAmount
-                            }
-                        )
-                    },
+                    .padding(horizontal = 20.dp),
                 shape = MaterialTheme.shapes.extraLarge,
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
@@ -256,6 +235,14 @@ fun ReviewScreen(
                             modifier = Modifier.fillMaxWidth(),
                             textStyle = MaterialTheme.typography.titleMedium
                         )
+                        val ocrText = draft.rawOcrText
+                        if (ocrText.isNullOrBlank() || ocrText.trim().length < 20) {
+                            Text(
+                                stringResource(R.string.feature_capture_arabic_ocr_notice),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -285,7 +272,7 @@ fun ReviewScreen(
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = "AI Key Highlights",
+                                text = stringResource(R.string.feature_capture_ai_highlights),
                                 style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Bold
@@ -377,7 +364,7 @@ fun ReviewScreen(
 
             // Expandable Sections
             Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                ExpandableSection(title = "Summary & Notes") {
+                ExpandableSection(title = stringResource(R.string.feature_capture_summary_notes)) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
                             value = draft.summary.orEmpty(),
@@ -402,6 +389,29 @@ fun ReviewScreen(
             
             Spacer(Modifier.height(32.dp))
         }
+    }
+
+    if (showDiscardDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showDiscardDialog = false },
+            title = { Text(stringResource(R.string.feature_capture_discard_confirm_title)) },
+            text = { Text(stringResource(R.string.feature_capture_discard_confirm_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDiscardDialog = false
+                        onDiscard()
+                    }
+                ) {
+                    Text(stringResource(R.string.feature_capture_discard_confirm), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardDialog = false }) {
+                    Text(stringResource(R.string.feature_capture_cancel))
+                }
+            }
+        )
     }
 }
 

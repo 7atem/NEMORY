@@ -1,6 +1,6 @@
 package com.vaultbrain.core.ai.heuristics.experience
 
-import com.vaultbrain.core.ai.heuristics.KeywordDictionary
+import com.vaultbrain.shared.intelligence.KeywordDictionary
 import com.vaultbrain.core.common.model.ExperienceId
 
 /**

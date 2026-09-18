@@ -153,6 +153,7 @@ class VaultReminderWorker @AssistedInject constructor(
 
     @SuppressLint("MissingPermission")
     private suspend fun postNotification(reminder: VaultReminderEntity): Boolean {
+        if (DecoySessionState.isDecoy.value) return false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(applicationContext, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
@@ -161,7 +162,8 @@ class VaultReminderWorker @AssistedInject constructor(
         ensureChannel()
         val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
-            .setContentTitle(reminder.title)
+            .setContentTitle(applicationContext.getString(R.string.alert_private_title))
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentText(applicationContext.getString(R.string.vault_reminder_due))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(contentIntent(reminder))
@@ -194,11 +196,11 @@ class VaultReminderWorker @AssistedInject constructor(
             reminder.vaultItemId != null -> Intent(
                 Intent.ACTION_VIEW,
                 "nemory://item/${android.net.Uri.encode(reminder.vaultItemId)}".toUri()
-            )
+            ).setPackage(applicationContext.packageName)
             reminder.personalCollectionId != null -> Intent(
                 Intent.ACTION_VIEW,
                 "nemory://collection/${android.net.Uri.encode(reminder.personalCollectionId)}".toUri()
-            )
+            ).setPackage(applicationContext.packageName)
             else -> Intent().setClassName(applicationContext.packageName, "com.vaultbrain.app.MainActivity")
         }.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         return PendingIntent.getActivity(

@@ -51,13 +51,20 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         PersonalCollectionSuggestionEntity::class,
         ExternalRecordEntity::class,
         ExternalConnectionEntity::class,
-        VaultReminderEntity::class
+        VaultReminderEntity::class,
+        com.vaultbrain.core.database.entity.DerivedFactEntity::class,
+        com.vaultbrain.core.database.entity.KnowledgeEntityEntity::class,
+        com.vaultbrain.core.database.entity.ItemEntityCrossRef::class,
+        com.vaultbrain.core.database.entity.RelationshipEntity::class
     ],
-    version = 16,
+    version = 20,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
 abstract class VaultDatabase : RoomDatabase() {
+    abstract fun knowledgeGraphDao(): com.vaultbrain.core.database.dao.KnowledgeGraphDao
+
+    abstract fun derivedFactDao(): com.vaultbrain.core.database.dao.DerivedFactDao
 
     abstract fun vaultItemDao(): VaultItemDao
 

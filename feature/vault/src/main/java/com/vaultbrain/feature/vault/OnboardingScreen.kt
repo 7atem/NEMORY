@@ -37,9 +37,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import kotlin.math.absoluteValue
 import kotlinx.coroutines.launch
 
@@ -82,6 +84,7 @@ fun OnboardingScreen(
                 }
                 // Calculate page offset for parallax effect
                 val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
+                val rtlMultiplier = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
                 
                 Column(
                     modifier = Modifier.fillMaxSize(),
@@ -93,7 +96,7 @@ fun OnboardingScreen(
                             .size(200.dp)
                             .graphicsLayer {
                                 // Parallax and fade effect
-                                translationX = pageOffset * 200f
+                                translationX = pageOffset * 200f * rtlMultiplier
                                 alpha = 1f - pageOffset
                                 scaleX = 1f - (pageOffset * 0.2f)
                                 scaleY = 1f - (pageOffset * 0.2f)
@@ -121,7 +124,7 @@ fun OnboardingScreen(
                         modifier = Modifier
                             .padding(horizontal = 16.dp)
                             .graphicsLayer {
-                                translationX = pageOffset * 100f
+                                translationX = pageOffset * 100f * rtlMultiplier
                                 alpha = 1f - pageOffset
                             }
                     )
@@ -136,7 +139,7 @@ fun OnboardingScreen(
                         modifier = Modifier
                             .padding(horizontal = 32.dp)
                             .graphicsLayer {
-                                translationX = pageOffset * 50f
+                                translationX = pageOffset * 50f * rtlMultiplier
                                 alpha = 1f - pageOffset
                             }
                     )
@@ -179,7 +182,7 @@ fun OnboardingScreen(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            if (gemmaStatus == GemmaModelStatus.READY) {
+                            if (gemmaStatus == OnDeviceModelStatus.READY) {
                                 Button(
                                     onClick = onOnboardingComplete,
                                     modifier = Modifier.fillMaxWidth().height(56.dp)
@@ -189,8 +192,8 @@ fun OnboardingScreen(
                             } else {
                                 Button(
                                     onClick = viewModel::downloadModel,
-                                    enabled = gemmaStatus == GemmaModelStatus.NOT_DOWNLOADED ||
-                                        gemmaStatus == GemmaModelStatus.ERROR,
+                                    enabled = gemmaStatus == OnDeviceModelStatus.NOT_DOWNLOADED ||
+                                        gemmaStatus == OnDeviceModelStatus.ERROR,
                                     modifier = Modifier.fillMaxWidth().height(56.dp)
                                 ) {
                                     Text(stringResource(R.string.onboarding_model_download))
@@ -230,14 +233,14 @@ fun OnboardingScreen(
 }
 
 @Composable
-private fun ModelDownloadPage(status: GemmaModelStatus) {
+private fun ModelDownloadPage(status: OnDeviceModelStatus) {
     Column(
         modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = if (status == GemmaModelStatus.READY) Icons.Default.CheckCircle else Icons.Default.AutoAwesome,
+            imageVector = if (status == OnDeviceModelStatus.READY) Icons.Default.CheckCircle else Icons.Default.AutoAwesome,
             contentDescription = null,
             modifier = Modifier.size(120.dp),
             tint = MaterialTheme.colorScheme.primary
@@ -245,7 +248,7 @@ private fun ModelDownloadPage(status: GemmaModelStatus) {
         Spacer(modifier = Modifier.height(32.dp))
         Text(
             text = stringResource(
-                if (status == GemmaModelStatus.READY) R.string.onboarding_model_ready
+                if (status == OnDeviceModelStatus.READY) R.string.onboarding_model_ready
                 else R.string.onboarding_model_title
             ),
             style = MaterialTheme.typography.headlineMedium,
@@ -259,17 +262,10 @@ private fun ModelDownloadPage(status: GemmaModelStatus) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(modifier = Modifier.height(16.dp))
-        if (status == GemmaModelStatus.QUEUED) {
-            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.onboarding_model_queued),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else if (status is GemmaModelStatus.DOWNLOADING) {
+        if (status is OnDeviceModelStatus.DOWNLOADING) {
+            val progressVal = status.progress / 100f
             LinearProgressIndicator(
-                progress = { status.progress / 100f },
+                progress = { progressVal },
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -278,14 +274,14 @@ private fun ModelDownloadPage(status: GemmaModelStatus) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        } else if (status == GemmaModelStatus.ERROR) {
+        } else if (status == OnDeviceModelStatus.ERROR) {
             Text(
                 text = stringResource(R.string.onboarding_model_error),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.error
             )
-        } else if (status != GemmaModelStatus.READY) {
+        } else if (status != OnDeviceModelStatus.READY) {
             Text(
                 text = stringResource(R.string.onboarding_model_trust),
                 style = MaterialTheme.typography.bodyMedium,

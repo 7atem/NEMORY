@@ -18,6 +18,7 @@
     <string name="feature_capture_suggested_lenses">العدسات المقترحة</string>
     <string name="feature_capture_review_title">مراجعة وحفظ</string>
     <string name="feature_capture_review_hint">تحقق من التفاصيل المهمة قبل الحفظ. التعرّف التلقائي على النص لا يدعم الحروف العربية وقد يفوّت النص الصغير.</string>
+    <string name="feature_capture_arabic_ocr_notice">التعرّف التلقائي على النصوص مخصص للغات اللاتينية. أضف عنواناً وملاحظات بالعربية لسهولة البحث.</string>
     <string name="feature_capture_ready">جاهز للحفظ</string>
     <string name="feature_capture_check">يُنصح بمراجعة سريعة</string>
     <string name="feature_capture_ready_body">وجد Nemory تطابقًا قويًا، ويمكنك تعديل أي تفصيل أدناه.</string>
@@ -92,4 +93,25 @@
     <string name="feature_capture_entities">الأشخاص والأشياء</string>
     <string name="feature_capture_tags">الوسوم</string>
     <string name="feature_capture_suggestions">اقتراحات</string>
+    <string name="feature_capture_view_original">عرض الأصل</string>
+    <string name="feature_capture_reset_zoom">إعادة ضبط التكبير</string>
+    <string name="feature_capture_close_preview">إغلاق المعاينة</string>
+    <string name="feature_capture_zoom_hint">باعد بين إصبعيك للتكبير واسحب لفحص المستند.</string>
+    <string name="feature_capture_verify_details">راجع التفاصيل المستخرجة وقارنها بالأصل قبل الحفظ.</string>
+    <string name="feature_capture_ai_highlights">أبرز النقاط المستخرجة</string>
+    <string name="feature_capture_summary_notes">الملخص والملاحظات</string>
+    <string name="feature_capture_discard_confirm_title">إلغاء الالتقاط؟</string>
+    <string name="feature_capture_discard_confirm_body">هل أنت متأكد من إلغاء هذا المستند؟ ستفقد جميع التفاصيل المستخرجة.</string>
+    <string name="feature_capture_discard_confirm">إلغاء</string>
+    <string name="feature_capture_cancel">تراجع</string>
+    <string name="feature_capture_saved_success">تم الحفظ بنجاح!</string>
+    <string name="feature_capture_reminder_prompt_title">هل تحتاج إلى تذكير لهذه الرحلة؟</string>
+    <string name="feature_capture_reminder_prompt_body">قمنا بجدولة تنبيه تلقائي قبل الموعد.</string>
+    <string name="feature_capture_got_it">حسناً</string>
+    <string name="feature_capture_suggested_followups">إجراءات المتابعة المقترحة:</string>
+    <string name="feature_capture_done">تم</string>
+    <string name="feature_capture_camera_perm_req_title">مطلوب إذن الكاميرا</string>
+    <string name="feature_capture_camera_perm_req_body">يرجى منح إذن الكاميرا في الإعدادات لالتقاط الصور، أو اختيار صورة من المعرض.</string>
+    <string name="feature_capture_open_settings">فتح الإعدادات</string>
+    <string name="feature_capture_pick_from_gallery">اختيار من المعرض</string>
 </resources>

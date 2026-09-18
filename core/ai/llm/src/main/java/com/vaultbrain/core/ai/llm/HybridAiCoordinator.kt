@@ -134,6 +134,28 @@ class HybridAiCoordinator @Inject constructor(
         }
     }
 
+    suspend fun generateStream(request: HybridAiRequest): kotlinx.coroutines.flow.Flow<HybridAiResult> = kotlinx.coroutines.flow.flow {
+        if (localClient.isAvailable()) {
+            var accumulatedText = ""
+            var emittedAnyChunk = false
+            try {
+                localClient.generateStream(request.prompt).collect { chunk ->
+                    accumulatedText += chunk
+                    emittedAnyChunk = true
+                    emit(HybridAiResult.Success(accumulatedText, AiResponseOrigin.ON_DEVICE_AI))
+                }
+                if (emittedAnyChunk && accumulatedText.isNotBlank()) {
+                    return@flow
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (t: Throwable) {
+                android.util.Log.w("HybridAiCoordinator", "Local streaming generation failed, falling back", t)
+            }
+        }
+        emit(generate(request))
+    }
+
     private suspend fun generateSafely(block: suspend () -> String?): String? = try {
         block()
     } catch (cancelled: CancellationException) {

@@ -1,5 +1,7 @@
 package com.vaultbrain.sync.gmail
 
+import kotlinx.coroutines.sync.withLock
+
 import com.vaultbrain.core.common.model.external.ConnectionState
 import com.vaultbrain.core.common.model.external.ConnectorCapability
 import com.vaultbrain.core.common.model.external.ExternalRecordType
@@ -9,6 +11,7 @@ import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.integrations.connector.ExternalConnector
 import com.vaultbrain.core.integrations.model.*
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository
+import com.vaultbrain.core.notifications.UnifiedAlertManager
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,7 +20,8 @@ import javax.inject.Singleton
 class GmailConnector @Inject constructor(
     private val dataSource: GmailDataSource,
     private val parser: GmailParser,
-    private val repository: ExternalContextRepository
+    private val repository: ExternalContextRepository,
+    private val alertManager: UnifiedAlertManager
 ) : ExternalConnector {
     override val connectorId = CONNECTOR_ID
     override val displayName = "Gmail"
@@ -45,10 +49,10 @@ class GmailConnector @Inject constructor(
         )
     }
 
-    override suspend fun connect(accountId: String?): Result<ConnectionRecord> =
-        dataSource.authorize(accountId).map { authorizedAccount ->
-            connection(authorizedAccount, ConnectionState.CONNECTED).also { repository.upsertConnection(it) }
-        }
+    override suspend fun connect(accountId: String?): Result<ConnectionRecord> = runCatching {
+        val authorizedAccount = dataSource.authorize(accountId).getOrThrow()
+        connection(authorizedAccount, ConnectionState.CONNECTED).also { repository.upsertConnection(it) }
+    }
 
     override suspend fun disconnect(connection: ConnectionRecord): Result<Unit> = runCatching {
         dataSource.revoke(connection.accountId).getOrThrow()
@@ -57,16 +61,23 @@ class GmailConnector @Inject constructor(
     }
 
     override suspend fun sync(connection: ConnectionRecord, request: SyncRequest): Result<SyncResult> {
+        return com.vaultbrain.core.integrations.google.GoogleSyncGate.mutex.withLock {
+            syncLocked(connection, request)
+        }.onFailure { if (it is kotlinx.coroutines.CancellationException) throw it }
+    }
+
+    private suspend fun syncLocked(connection: ConnectionRecord, request: SyncRequest): Result<SyncResult> {
         if (DecoySessionState.isDecoy.value) return Result.success(emptySync(connection.accountId))
         return runCatching {
             val now = System.currentTimeMillis()
             val existing = repository.getRecordsForConnection(CONNECTOR_ID, connection.accountId)
                 .associateBy(ExternalRecord::externalId)
-            val rows = dataSource.messages(connection.accountId, now - LOOKBACK_MS, MAX_MESSAGES_PER_SYNC)
-                .distinctBy(GmailMessageRow::id)
+            val page = dataSource.page(connection.accountId, now - LOOKBACK_MS, MAX_MESSAGES_PER_SYNC, connection.metadataJson)
+            val rows = page.messages.distinctBy(GmailMessageRow::id)
             var added = 0
             var updated = 0
             rows.forEach { row ->
+                if (DecoySessionState.isDecoy.value || repository.getConnection(CONNECTOR_ID, connection.accountId)?.state != ConnectionState.CONNECTED) return@runCatching emptySync(connection.accountId)
                 val normalized = normalize(connection.accountId, row)
                 val prior = existing[normalized.externalId]
                 // Keep user-managed state (resolved/seen) across re-syncs.
@@ -75,9 +86,17 @@ class GmailConnector @Inject constructor(
                 } ?: normalized
                 if (prior != null) updated++ else added++
                 repository.upsertRecord(record)
+
             }
+            if (DecoySessionState.isDecoy.value || repository.getConnection(CONNECTOR_ID, connection.accountId)?.state != ConnectionState.CONNECTED) {
+                return@runCatching emptySync(connection.accountId)
+            }
+            page.deletedIds.forEach { repository.deleteRecord(CONNECTOR_ID, connection.accountId, it) }
+            repository.deleteExpired()
+            repository.upsertConnection(connection.copy(metadataJson = page.cursor, lastSyncAt = now, lastError = null,
+                updatedAt = now))
             repository.updateLastSync(CONNECTOR_ID, connection.accountId, now)
-            SyncResult(CONNECTOR_ID, connection.accountId, true, added, updated, 0)
+            SyncResult(CONNECTOR_ID, connection.accountId, true, added, updated, page.deletedIds.size)
         }
     }
 
@@ -125,10 +144,10 @@ class GmailConnector @Inject constructor(
                 parsed.totalAmount?.let { put("total", it.toString()) }
                 parsed.currency?.let { put("currency", it) }
             },
-            deepLinkUri = "https://mail.google.com/mail/u/0/#all/${row.threadId}",
+            deepLinkUri = "https://mail.google.com/mail/?authuser=${com.vaultbrain.core.integrations.google.GoogleDeviceApi.encode(accountId)}#all/${row.threadId}",
             hash = listOf(row.subject, safeBody, row.receivedAt).joinToString("|").hashCode().toString(),
             createdAt = row.receivedAt,
-            updatedAt = System.currentTimeMillis(),
+            updatedAt = row.receivedAt,
             expiresAt = row.receivedAt + RETENTION_MS
         )
     }

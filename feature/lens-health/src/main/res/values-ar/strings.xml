@@ -23,4 +23,9 @@
     <string name="health_items_title">السجلات الصحية</string>
     <string name="health_item_expiry">تنتهي في: %1$s</string>
     <string name="health_lens_view_subtitle">عرض لخزنتك — يمكن أن تظهر العناصر في أكثر من عدسة.</string>
+    <string name="health_empty_message">لا توجد سجلات صحية بعد</string>
+    <string name="health_section_recent">الأخيرة</string>
+    <string name="health_section_older">الأقدم</string>
+    <string name="health_vitals_trend">مؤشرات العلامات الحيوية</string>
+    <string name="health_vitals_insufficient">لا توجد بيانات كافية لمؤشرات العلامات الحيوية</string>
 </resources>

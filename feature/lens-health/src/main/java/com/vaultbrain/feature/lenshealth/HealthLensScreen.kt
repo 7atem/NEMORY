@@ -40,9 +40,6 @@ import java.util.Locale
 import com.vaultbrain.core.common.ui.SharedItemCard
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.LargeTopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 
 import androidx.compose.foundation.background
 
@@ -77,113 +74,103 @@ fun HealthLensScreen(
     val recentItems = items.filter { (now - it.createdAt) <= 7 * 24 * 60 * 60 * 1000L }
     val olderItems = items.filter { (now - it.createdAt) > 7 * 24 * 60 * 60 * 1000L }
 
-    Scaffold(
-        topBar = {
-            LargeTopAppBar(
-                title = { Text("🏥 Health (${items.size})") }
-            )
-        },
+    LazyColumn(
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxSize()
-    ) { paddingValues ->
-        LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.health_lens_view_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            item {
-                MedicalIdCard()
+    ) {
+        item {
+            Text(
+                text = stringResource(R.string.health_lens_view_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        item {
+            MedicalIdCard()
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            HealthStatCard(
+                totalCount = items.size,
+                alertCount = alertCount,
+                expiringSoonCount = expiringSoonCount,
+                prescriptionCount = prescriptionCount,
+                nextDoseDate = nextDose,
+                labTrendCount = labResults.size
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (labResults.isNotEmpty()) {
+                LabTrendCard(results = labResults)
                 Spacer(modifier = Modifier.height(16.dp))
-
-                HealthStatCard(
-                    totalCount = items.size,
-                    alertCount = alertCount,
-                    expiringSoonCount = expiringSoonCount,
-                    prescriptionCount = prescriptionCount,
-                    nextDoseDate = nextDose,
-                    labTrendCount = labResults.size
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                if (labResults.isNotEmpty()) {
-                    LabTrendCard(results = labResults)
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
-                Text(
-                    text = stringResource(R.string.health_quick_add_title),
-                    style = MaterialTheme.typography.labelLarge
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    HealthQuickAddChip(label = stringResource(R.string.health_quick_add_prescription), onClick = onQuickAdd)
-                    HealthQuickAddChip(label = stringResource(R.string.health_quick_add_test), onClick = onQuickAdd)
-                    HealthQuickAddChip(label = stringResource(R.string.health_quick_add_insurance), onClick = onQuickAdd)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.health_items_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
             }
 
-            if (items.isEmpty()) {
-                item {
-                    androidx.compose.material3.Text(
-                        text = "No health items yet", modifier = Modifier.fillMaxWidth().padding(32.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        
+            Text(
+                text = stringResource(R.string.health_quick_add_title),
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                HealthQuickAddChip(label = stringResource(R.string.health_quick_add_prescription), onClick = onQuickAdd)
+                HealthQuickAddChip(label = stringResource(R.string.health_quick_add_test), onClick = onQuickAdd)
+                HealthQuickAddChip(label = stringResource(R.string.health_quick_add_insurance), onClick = onQuickAdd)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = stringResource(R.string.health_items_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        if (items.isEmpty()) {
+            item {
+                Text(
+                    text = stringResource(R.string.health_empty_message),
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        } else {
+            if (recentItems.isNotEmpty()) {
+                stickyHeader {
+                    Text(
+                        text = stringResource(R.string.health_section_recent),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(vertical = 8.dp)
                     )
                 }
-            } else {
-                if (recentItems.isNotEmpty()) {
-                    stickyHeader {
-                        Text(
-                            text = "Recent",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(vertical = 8.dp)
-                        )
-                    }
-                    items(recentItems, key = { it.id }) { item ->
-                        HealthItemCard(item = item, onClick = { onItemClick(item) })
-                    }
+                items(recentItems, key = { it.id }) { item ->
+                    HealthItemCard(item = item, onClick = { onItemClick(item) })
                 }
-                
-                if (olderItems.isNotEmpty()) {
-                    stickyHeader {
-                        Text(
-                            text = "Older",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(vertical = 8.dp)
-                        )
-                    }
-                    items(olderItems, key = { it.id }) { item ->
-                        HealthItemCard(item = item, onClick = { onItemClick(item) })
-                    }
+            }
+            
+            if (olderItems.isNotEmpty()) {
+                stickyHeader {
+                    Text(
+                        text = stringResource(R.string.health_section_older),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(vertical = 8.dp)
+                    )
+                }
+                items(olderItems, key = { it.id }) { item ->
+                    HealthItemCard(item = item, onClick = { onItemClick(item) })
                 }
             }
         }
@@ -276,7 +263,7 @@ private fun LabTrendCard(results: List<VaultItem>) {
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Icon(Icons.Default.Timeline, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("Not enough data for Vitals Trend", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.health_vitals_insufficient), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         return
@@ -298,7 +285,7 @@ private fun LabTrendCard(results: List<VaultItem>) {
         ) {
             Icon(Icons.Default.Timeline, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Column(modifier = Modifier.weight(1f)) {
-                Text("Vitals Trend", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.health_vitals_trend), style = MaterialTheme.typography.titleSmall)
                 Spacer(Modifier.height(8.dp))
                 Sparkline(
                     data = normalizedData,

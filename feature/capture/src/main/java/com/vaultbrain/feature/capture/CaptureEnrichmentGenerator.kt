@@ -36,9 +36,9 @@ class CaptureEnrichmentGenerator @Inject constructor(
     ): CaptureEnrichmentResult? = try {
         val prompt = CaptureEnrichmentPrompt.build(evidence)
         val raw = if (image == null) {
-            llmClient.generate(prompt)
+            llmClient.generateForTask(prompt, com.vaultbrain.core.ai.llm.ReasoningBudget.FAST)
         } else {
-            llmClient.generate(prompt, image)
+            llmClient.generateForTask(prompt, image, com.vaultbrain.core.ai.llm.ReasoningBudget.FAST)
         }
         CaptureEnrichmentResultParser.parse(raw)
     } catch (cancelled: CancellationException) {

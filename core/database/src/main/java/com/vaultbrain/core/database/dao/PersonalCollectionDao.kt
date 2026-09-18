@@ -63,6 +63,17 @@ interface PersonalCollectionDao {
     @Query("SELECT * FROM personal_collections WHERE archived_at IS NULL")
     suspend fun getActiveEntities(): List<PersonalCollectionEntity>
 
+    /** One-shot list of active (non-archived) collections with pre-computed item counts. */
+    @Query("""
+        SELECT c.*, COUNT(m.item_id) AS item_count
+        FROM personal_collections c
+        LEFT JOIN personal_collection_memberships m ON m.collection_id = c.id
+        WHERE c.archived_at IS NULL
+        GROUP BY c.id
+        ORDER BY c.is_pinned DESC, c.updated_at DESC, c.name COLLATE NOCASE ASC
+    """)
+    suspend fun getActiveRows(): List<PersonalCollectionRow>
+
     /** All collection ids, including archived — used to reconcile ObjectBox embeddings. */
     @Query("SELECT id FROM personal_collections")
     suspend fun getAllCollectionIds(): List<String>

@@ -8,9 +8,9 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.vaultbrain.core.ai.heuristics.HeuristicExtractor
 import com.vaultbrain.core.ai.llm.CapturePromptEvidence
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
-import com.vaultbrain.core.ai.llm.GemmaLlmClient
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelManager
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
+import com.vaultbrain.core.ai.llm.QwenLlmClient
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -27,7 +27,7 @@ class GemmaBatchCaptureTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         Log.i(TAG, "Files Dir: ${context.filesDir.absolutePath}")
 
-        val gemmaManager = GemmaModelManager(context)
+        val gemmaManager = OnDeviceModelManager(context)
         Log.i(TAG, "Gemma initial status: ${gemmaManager.status.value}")
 
         // Wait up to 60 seconds for status to become READY (since hash verification takes ~25 seconds)
@@ -35,19 +35,19 @@ class GemmaBatchCaptureTest {
             withTimeout(60_000) {
                 gemmaManager.status.first {
                     Log.i(TAG, "Status observed: $it")
-                    it == GemmaModelStatus.READY || it == GemmaModelStatus.ERROR
+                    it == OnDeviceModelStatus.READY || it == OnDeviceModelStatus.ERROR
                 }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Timed out waiting for Gemma initialization")
         }
 
-        if (gemmaManager.status.value != GemmaModelStatus.READY) {
+        if (gemmaManager.status.value != OnDeviceModelStatus.READY) {
             Log.e(TAG, "Failed to initialize Gemma. Exiting test.")
             return@runBlocking
         }
 
-        val gemmaClient = GemmaLlmClient(context, gemmaManager)
+        val gemmaClient = QwenLlmClient(context, gemmaManager)
         val generator = CaptureEnrichmentGenerator(gemmaClient)
 
         // Warm up Gemma

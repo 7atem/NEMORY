@@ -41,6 +41,10 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.workmanager.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.compiler.work)
 
     // Hilt
     implementation(libs.hilt.android)

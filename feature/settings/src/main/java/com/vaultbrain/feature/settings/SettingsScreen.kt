@@ -67,8 +67,8 @@ import com.vaultbrain.core.security.BiometricPromptHelper
 import com.vaultbrain.feature.settings.viewmodel.SettingsUiState
 import com.vaultbrain.feature.settings.viewmodel.SettingsViewModel
 
-import com.vaultbrain.core.ai.llm.OnDeviceModelStatus
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.OnDeviceModelStatus as PrivateAiStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus as GemmaModelStatus
 
 import com.vaultbrain.core.common.model.Classification
 import androidx.compose.ui.res.stringResource
@@ -78,6 +78,7 @@ import androidx.compose.ui.res.stringResource
 fun SettingsScreen(
     onBack: () -> Unit,
     onConnectionsClick: () -> Unit = {},
+    onPrivacyScoreClick: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -161,7 +162,7 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -181,7 +182,7 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            PrivacyDashboardSection()
+            PrivacyDashboardSection(onPrivacyScoreClick = onPrivacyScoreClick)
             
             GeneralSection(
                 lensAccess = uiState.lensAccess,
@@ -256,24 +257,24 @@ fun SettingsScreen(
 
 @Composable
 private fun PrivateAiSection(
-    status: OnDeviceModelStatus,
+    status: PrivateAiStatus,
     onPrepare: () -> Unit
 ) {
     val title = when (status) {
-        OnDeviceModelStatus.READY -> stringResource(R.string.settings_private_ai_ready)
-        OnDeviceModelStatus.DOWNLOADING -> stringResource(R.string.settings_private_ai_preparing)
-        OnDeviceModelStatus.DOWNLOADABLE -> stringResource(R.string.settings_private_ai_available)
-        OnDeviceModelStatus.UNAVAILABLE -> stringResource(R.string.settings_private_ai_unavailable)
-        OnDeviceModelStatus.UNKNOWN,
-        OnDeviceModelStatus.ERROR -> stringResource(R.string.settings_private_ai_checking)
+        PrivateAiStatus.READY -> stringResource(R.string.settings_private_ai_ready)
+        PrivateAiStatus.DOWNLOADING -> stringResource(R.string.settings_private_ai_preparing)
+        PrivateAiStatus.DOWNLOADABLE -> stringResource(R.string.settings_private_ai_available)
+        PrivateAiStatus.UNAVAILABLE -> stringResource(R.string.settings_private_ai_unavailable)
+        PrivateAiStatus.UNKNOWN,
+        PrivateAiStatus.ERROR -> stringResource(R.string.settings_private_ai_checking)
     }
     val body = when (status) {
-        OnDeviceModelStatus.READY -> stringResource(R.string.settings_private_ai_ready_body)
-        OnDeviceModelStatus.DOWNLOADING -> stringResource(R.string.settings_private_ai_preparing_body)
-        OnDeviceModelStatus.DOWNLOADABLE -> stringResource(R.string.settings_private_ai_available_body)
-        OnDeviceModelStatus.UNAVAILABLE -> stringResource(R.string.settings_private_ai_unavailable_body)
-        OnDeviceModelStatus.UNKNOWN,
-        OnDeviceModelStatus.ERROR -> stringResource(R.string.settings_private_ai_checking_body)
+        PrivateAiStatus.READY -> stringResource(R.string.settings_private_ai_ready_body)
+        PrivateAiStatus.DOWNLOADING -> stringResource(R.string.settings_private_ai_preparing_body)
+        PrivateAiStatus.DOWNLOADABLE -> stringResource(R.string.settings_private_ai_available_body)
+        PrivateAiStatus.UNAVAILABLE -> stringResource(R.string.settings_private_ai_unavailable_body)
+        PrivateAiStatus.UNKNOWN,
+        PrivateAiStatus.ERROR -> stringResource(R.string.settings_private_ai_checking_body)
     }
     SettingsCard(title = stringResource(R.string.settings_private_ai), icon = Icons.Default.AutoAwesome) {
         Text(title, style = MaterialTheme.typography.titleMedium)
@@ -283,13 +284,13 @@ private fun PrivateAiSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp)
         )
-        if (status == OnDeviceModelStatus.DOWNLOADING) {
+        if (status == PrivateAiStatus.DOWNLOADING) {
             LinearProgressIndicator(modifier = Modifier.fillMaxWidth().padding(top = 12.dp))
         }
         if (status in setOf(
-                OnDeviceModelStatus.DOWNLOADABLE,
-                OnDeviceModelStatus.UNKNOWN,
-                OnDeviceModelStatus.ERROR
+                PrivateAiStatus.DOWNLOADABLE,
+                PrivateAiStatus.UNKNOWN,
+                PrivateAiStatus.ERROR
             )
         ) {
             TextButton(onClick = onPrepare, modifier = Modifier.fillMaxWidth()) {
@@ -313,7 +314,7 @@ private fun GemmaModelSection(
     val title = when (status) {
         GemmaModelStatus.NOT_SUPPORTED -> stringResource(R.string.settings_gemma_not_supported)
         GemmaModelStatus.NOT_DOWNLOADED -> stringResource(R.string.settings_gemma_not_downloaded)
-        GemmaModelStatus.QUEUED -> stringResource(R.string.settings_gemma_queued)
+        GemmaModelStatus.QUEUED,
         is GemmaModelStatus.DOWNLOADING -> stringResource(R.string.settings_gemma_downloading)
         GemmaModelStatus.READY -> stringResource(R.string.settings_gemma_ready)
         GemmaModelStatus.ERROR -> stringResource(R.string.settings_gemma_error)
@@ -321,7 +322,7 @@ private fun GemmaModelSection(
     val body = when (status) {
         GemmaModelStatus.NOT_SUPPORTED -> stringResource(R.string.settings_gemma_not_supported_body)
         GemmaModelStatus.NOT_DOWNLOADED -> stringResource(R.string.settings_gemma_not_downloaded_body)
-        GemmaModelStatus.QUEUED -> stringResource(R.string.settings_gemma_queued_body)
+        GemmaModelStatus.QUEUED,
         is GemmaModelStatus.DOWNLOADING -> stringResource(R.string.settings_gemma_downloading_body)
         GemmaModelStatus.READY -> stringResource(R.string.settings_gemma_ready_body)
         GemmaModelStatus.ERROR -> stringResource(R.string.settings_gemma_error_body)
@@ -334,13 +335,10 @@ private fun GemmaModelSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp)
         )
-        if (status == GemmaModelStatus.QUEUED) {
+        if (status is GemmaModelStatus.DOWNLOADING) {
+            val progressVal = status.progress / 100f
             LinearProgressIndicator(
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
-            )
-        } else if (status is GemmaModelStatus.DOWNLOADING) {
-            LinearProgressIndicator(
-                progress = { status.progress / 100f },
+                progress = { progressVal },
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
             )
         }
@@ -455,26 +453,14 @@ private fun Classification.cloudCategoryLabel(): String = stringResource(
 )
 
 @Composable
-private fun PrivacyDashboardSection() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Privacy & Security Dashboard", style = MaterialTheme.typography.titleMedium)
+private fun PrivacyDashboardSection(onPrivacyScoreClick: () -> Unit = {}) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.privacy_overview_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.privacy_local_ai), style = MaterialTheme.typography.bodySmall)
+            TextButton(onClick = onPrivacyScoreClick, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.privacy_overview_title))
             }
-            Text("0 bytes sent to the cloud", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
-            Text("Your vault runs entirely on this device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            HorizontalDivider()
-            DashboardRow(icon = Icons.Default.Storage, label = "Storage", detail = "Local SQLCipher encrypted")
-            DashboardRow(icon = Icons.Default.Psychology, label = "AI Extraction", detail = "On-device ML Kit / Gemma")
-            DashboardRow(icon = Icons.Default.CloudOff, label = "Network", detail = "Offline-first")
         }
     }
 }
@@ -503,32 +489,38 @@ private fun GeneralSection(
     var helpVisible by remember { mutableStateOf(false) }
     var privacyVisible by remember { mutableStateOf(false) }
 
-    SettingsCard(title = "General", icon = Icons.Default.Settings) {
-        Text("Lenses", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(vertical = 8.dp))
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val versionName = remember {
+        runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
+            .getOrNull() ?: "1.1.2"
+    }
+
+    SettingsCard(title = stringResource(R.string.settings_general), icon = Icons.Default.Settings) {
+        Text(stringResource(R.string.settings_lenses), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(vertical = 8.dp))
         lensAccess.forEach { (name, _) ->
             ListItem(
                 headlineContent = { Text(name) },
-                supportingContent = { Text("Enabled for everyone") },
+                supportingContent = { Text(stringResource(R.string.settings_enabled_for_everyone)) },
                 leadingContent = { Icon(Icons.Default.Storage, contentDescription = null) }
             )
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
         SettingsSwitch(
-            label = "Enable affiliate links",
+            label = stringResource(R.string.settings_affiliate_links),
             checked = affiliateEnabled,
             onCheckedChange = onAffiliateToggle
         )
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
         TextButton(onClick = { helpVisible = true }, modifier = Modifier.fillMaxWidth()) {
-            Text("Help & support")
+            Text(stringResource(R.string.settings_help_support))
         }
         TextButton(onClick = { privacyVisible = true }, modifier = Modifier.fillMaxWidth()) {
-            Text("Privacy policy")
+            Text(stringResource(R.string.settings_privacy_policy))
         }
         Text(
-            text = "Nemory v1.0.0",
+            text = stringResource(R.string.settings_version, versionName),
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(top = 8.dp)
         )
@@ -537,22 +529,22 @@ private fun GeneralSection(
     if (helpVisible) {
         AlertDialog(
             onDismissRequest = { helpVisible = false },
-            title = { Text("Help & support") },
+            title = { Text(stringResource(R.string.settings_help_support)) },
             text = {
-                Text("Capture with the camera, import images or PDFs, paste text, or use voice. Review every item before saving, then edit its lens-specific fields from the item page. Cloud sync is intentionally unavailable in this build.")
+                Text(stringResource(R.string.settings_help_support_desc))
             },
-            confirmButton = { TextButton(onClick = { helpVisible = false }) { Text("Done") } }
+            confirmButton = { TextButton(onClick = { helpVisible = false }) { Text(stringResource(R.string.settings_done)) } }
         )
     }
 
     if (privacyVisible) {
         AlertDialog(
             onDismissRequest = { privacyVisible = false },
-            title = { Text("Privacy summary") },
+            title = { Text(stringResource(R.string.settings_privacy_summary)) },
             text = {
-                Text("Vault items and imported media stay in app-private storage on this device. On-device OCR and analysis process captures locally. Cloud and Gmail integrations are disabled in this build. Exporting or sharing an item sends only the content you explicitly choose.")
+                Text(stringResource(R.string.settings_privacy_summary_desc))
             },
-            confirmButton = { TextButton(onClick = { privacyVisible = false }) { Text("Done") } }
+            confirmButton = { TextButton(onClick = { privacyVisible = false }) { Text(stringResource(R.string.settings_done)) } }
         )
     }
 }
@@ -566,10 +558,16 @@ private fun SecuritySection(
     onAutoLockChange: (Int) -> Unit,
     onToggleAuditLog: () -> Unit
 ) {
-    val autoLockOptions = listOf(0 to "Never", 1 to "1 minute", 2 to "2 minutes", 5 to "5 minutes", 15 to "15 minutes")
+    val autoLockOptions = listOf(
+        0 to stringResource(R.string.settings_lock_never),
+        1 to stringResource(R.string.settings_lock_1m),
+        2 to stringResource(R.string.settings_lock_2m),
+        5 to stringResource(R.string.settings_lock_5m),
+        15 to stringResource(R.string.settings_lock_15m)
+    )
     var expanded by remember { mutableStateOf(false) }
 
-    SettingsCard(title = "Security", icon = Icons.Default.Security) {
+    SettingsCard(title = stringResource(R.string.settings_security), icon = Icons.Default.Security) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -578,15 +576,19 @@ private fun SecuritySection(
         ) {
             Icon(
                 imageVector = Icons.Default.Shield,
-                contentDescription = "Security Health",
+                contentDescription = stringResource(R.string.settings_security_health),
                 tint = if (state.biometricEnabled || state.pinSet) Color(0xFF4CAF50) else Color(0xFFF44336),
                 modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column {
-                Text("Security Health", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.settings_security_health), style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = if (state.biometricEnabled || state.pinSet) "Protected" else "At Risk - Set up PIN or Biometrics",
+                    text = if (state.biometricEnabled || state.pinSet) {
+                        stringResource(R.string.settings_security_protected)
+                    } else {
+                        stringResource(R.string.settings_security_at_risk)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -596,20 +598,20 @@ private fun SecuritySection(
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         SettingsSwitch(
-            label = "Enable biometric unlock",
+            label = stringResource(R.string.settings_biometric_enable),
             checked = state.biometricEnabled,
             onCheckedChange = onToggleBiometric
         )
 
         TextButton(onClick = onSetPin, modifier = Modifier.fillMaxWidth()) {
-            Text(if (state.pinSet) "Change PIN" else "Set PIN")
+            Text(if (state.pinSet) stringResource(R.string.settings_pin_change) else stringResource(R.string.settings_pin_set))
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Auto-lock after", modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.settings_auto_lock_after), modifier = Modifier.weight(1f))
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -641,7 +643,7 @@ private fun SecuritySection(
         }
 
         TextButton(onClick = onToggleAuditLog, modifier = Modifier.fillMaxWidth()) {
-            Text(if (state.showAuditLog) "Hide audit log" else "View audit log (last 50)")
+            Text(if (state.showAuditLog) stringResource(R.string.settings_audit_log_hide) else stringResource(R.string.settings_audit_log_view))
         }
 
         if (state.showAuditLog) {
@@ -664,19 +666,26 @@ private fun DataManagementSection(
     onExportBackup: () -> Unit,
     onImportBackup: () -> Unit
 ) {
-    SettingsCard(title = "Data Management", icon = Icons.Default.Storage) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val storageUsedFormatted = remember {
+        runCatching {
+            var totalBytes = 0L
+            context.filesDir?.walkTopDown()?.forEach { if (it.isFile) totalBytes += it.length() }
+            context.cacheDir?.walkTopDown()?.forEach { if (it.isFile) totalBytes += it.length() }
+            android.text.format.Formatter.formatFileSize(context, totalBytes)
+        }.getOrDefault("—")
+    }
+
+    SettingsCard(title = stringResource(R.string.settings_data_management), icon = Icons.Default.Storage) {
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Storage Usage", style = MaterialTheme.typography.bodyMedium)
-                Text("1.2 GB used", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.settings_storage_usage), style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    stringResource(R.string.settings_storage_used, storageUsedFormatted),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { 0.4f },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(8.dp)
-            )
         }
         
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -700,7 +709,7 @@ private fun DataManagementSection(
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         SettingsSwitch(
-            label = "Google Drive backup",
+            label = stringResource(R.string.settings_google_drive_backup),
             checked = state.driveBackupEnabled,
             onCheckedChange = onDriveToggle,
             enabled = false
@@ -712,7 +721,7 @@ private fun DataManagementSection(
             enabled = false
         )
         Text(
-            "Cloud integrations remain off until OAuth and production API credentials are configured.",
+            stringResource(R.string.settings_cloud_disclaimer),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -751,19 +760,19 @@ private fun AppearanceSection(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val themeOptions = listOf(
-        com.vaultbrain.core.common.preferences.ThemeMode.SYSTEM to "System Default",
-        com.vaultbrain.core.common.preferences.ThemeMode.LIGHT to "Light",
-        com.vaultbrain.core.common.preferences.ThemeMode.DARK to "Dark"
+        com.vaultbrain.core.common.preferences.ThemeMode.SYSTEM to stringResource(R.string.settings_theme_system),
+        com.vaultbrain.core.common.preferences.ThemeMode.LIGHT to stringResource(R.string.settings_theme_light),
+        com.vaultbrain.core.common.preferences.ThemeMode.DARK to stringResource(R.string.settings_theme_dark)
     )
 
-    SettingsCard(title = "Appearance", icon = Icons.Default.Palette) {
+    SettingsCard(title = stringResource(R.string.settings_appearance), icon = Icons.Default.Palette) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Theme", modifier = Modifier.weight(1f))
+            Text(stringResource(R.string.settings_theme), modifier = Modifier.weight(1f))
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }

@@ -87,15 +87,15 @@ class TieredLlmClientSelectorTest {
     ) : LlmClient {
         var generateCalls = 0
 
-        override suspend fun generate(prompt: String): String? {
+        override suspend fun generate(prompt: String, creative: Boolean): String? {
             generateCalls++
             return "$name: $prompt"
         }
 
-        override suspend fun generate(prompt: String, image: LlmImageInput): String? =
+        override suspend fun generate(prompt: String, image: LlmImageInput, creative: Boolean): String? =
             if (imageInput) "$name-image: $prompt" else null
 
-        override fun generateStream(prompt: String): Flow<String> =
+        override fun generateStream(prompt: String, creative: Boolean): Flow<String> =
             if (available) flowOf("$name: $prompt") else emptyFlow()
 
         override fun isAvailable(): Boolean = available

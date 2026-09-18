@@ -9,7 +9,7 @@ import com.vaultbrain.core.ai.heuristics.HeuristicExtractor
 import com.vaultbrain.core.ai.heuristics.experience.ExperienceParserRegistry
 import com.vaultbrain.core.ai.llm.LlmClient
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import com.vaultbrain.core.ai.vision.VisionAnalyzer
 import com.vaultbrain.core.common.UserExperienceFrequency
 import com.vaultbrain.core.common.model.Classification
@@ -34,7 +34,7 @@ class CaptureViewModelTest {
     private val captureEnrichmentGenerator = mockk<CaptureEnrichmentGenerator>()
     private val llmClient = mockk<LlmClient>()
     private val gemmaModelManager = mockk<GemmaModelManager> {
-        every { status } returns MutableStateFlow(GemmaModelStatus.NOT_DOWNLOADED)
+        every { status } returns MutableStateFlow(OnDeviceModelStatus.NOT_DOWNLOADED)
     }
     private val context = mockk<Context>()
 

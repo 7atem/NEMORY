@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.llm
 
 import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject

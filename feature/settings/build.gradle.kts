@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.play.services.auth)
     implementation(libs.workmanager.runtime.ktx)
 
     // Compose

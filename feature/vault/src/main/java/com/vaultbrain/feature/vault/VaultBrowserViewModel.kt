@@ -149,6 +149,9 @@ class VaultBrowserViewModel @Inject constructor(
                 filterCounts = counts
             )
         }
+    }.combine(searchQuery) { state, currentQuery ->
+        // Keep the editor synchronous; debounce only the database search above.
+        state.copy(searchQuery = currentQuery)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -276,6 +279,8 @@ class VaultBrowserViewModel @Inject constructor(
                 item.isMoneyDocument() &&
                     (intent.range?.let { item.createdAt in it.from..it.to } ?: true)
             }
+            is QueryIntent.MissingDocuments -> items
+            is QueryIntent.DocumentReplacementChains -> items
             null -> items
         }
 

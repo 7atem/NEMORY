@@ -80,9 +80,9 @@ fun AuthGateScreen(
             if (biometricHelper.canAuthenticate(activity)) {
                 biometricHelper.showPrompt(
                     activity = activity,
-                    title = "Unlock Nemory",
-                    subtitle = "Use biometrics to access your vault",
-                    negativeButtonText = "Use PIN",
+                    title = context.getString(R.string.auth_unlock_title),
+                    subtitle = context.getString(R.string.auth_unlock_subtitle),
+                    negativeButtonText = context.getString(R.string.auth_use_pin),
                     onSuccess = { viewModel.onBiometricSuccess() },
                     onError = { _, _ -> /* user cancelled, show PIN form */ }
                 )
@@ -152,7 +152,7 @@ fun AuthGateScreen(
                     )
 
                     Text(
-                        text = "Your on-device chief of staff",
+                        text = stringResource(R.string.auth_tagline),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -174,9 +174,9 @@ fun AuthGateScreen(
                         if (activity != null && biometricHelper.canAuthenticate(activity)) {
                             biometricHelper.showPrompt(
                                 activity = activity,
-                                title = "Unlock Nemory",
-                                subtitle = "Use biometrics to access your vault",
-                                negativeButtonText = "Use PIN",
+                                title = context.getString(R.string.auth_unlock_title),
+                                subtitle = context.getString(R.string.auth_unlock_subtitle),
+                                negativeButtonText = context.getString(R.string.auth_use_pin),
                                 onSuccess = { viewModel.onBiometricSuccess() },
                                 onError = { _, _ -> }
                             )
@@ -203,7 +203,14 @@ private fun PinEntryForm(
     ) {
         OutlinedTextField(
             value = pin,
-            onValueChange = { if (it.length <= 8 && it.all(Char::isDigit)) pin = it },
+            onValueChange = {
+                if (it.length <= 8 && it.all(Char::isDigit)) {
+                    pin = it
+                    if (it.length == 4) {
+                        onPinSubmit(it)
+                    }
+                }
+            },
             label = { Text(stringResource(R.string.auth_enter_pin)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
@@ -248,7 +255,7 @@ private fun PinEntryForm(
             ) {
                 Icon(
                     imageVector = Icons.Default.Fingerprint,
-                    contentDescription = "Use biometrics",
+                    contentDescription = stringResource(R.string.auth_use_biometrics),
                     modifier = Modifier.size(32.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -261,6 +268,7 @@ private fun PinEntryForm(
 private fun FirstTimePinSetup(
     onPinCreated: (String) -> Unit
 ) {
+    val context = LocalContext.current
     var pin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var step by remember { androidx.compose.runtime.mutableIntStateOf(1) }
@@ -277,7 +285,7 @@ private fun FirstTimePinSetup(
         )
 
         Text(
-            text = "At least 4 digits. This PIN protects your entire vault.",
+            text = stringResource(R.string.auth_pin_requirement),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
@@ -292,7 +300,7 @@ private fun FirstTimePinSetup(
                     if (step == 1) pin = it else confirmPin = it
                 }
             },
-            label = { Text(if (step == 1) "New PIN" else "Confirm PIN") },
+            label = { Text(if (step == 1) stringResource(R.string.auth_new_pin) else stringResource(R.string.auth_confirm_pin)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.NumberPassword,
@@ -306,7 +314,7 @@ private fun FirstTimePinSetup(
                         if (confirmPin == pin) {
                             onPinCreated(pin)
                         } else {
-                            error = "PINs don't match. Try again."
+                            error = context.getString(R.string.auth_pin_mismatch)
                             confirmPin = ""
                         }
                     }
@@ -332,7 +340,7 @@ private fun FirstTimePinSetup(
                     if (confirmPin == pin) {
                         onPinCreated(pin)
                     } else {
-                        error = "PINs don't match. Try again."
+                        error = context.getString(R.string.auth_pin_mismatch)
                         confirmPin = ""
                     }
                 }
@@ -343,7 +351,7 @@ private fun FirstTimePinSetup(
                 containerColor = MaterialTheme.colorScheme.primary
             )
         ) {
-            Text(if (step == 1) "Continue" else "Create PIN & Unlock")
+            Text(if (step == 1) stringResource(R.string.auth_continue) else stringResource(R.string.auth_create_unlock))
         }
 
         if (step == 2) {
@@ -352,7 +360,7 @@ private fun FirstTimePinSetup(
                 onClick = { step = 1; confirmPin = ""; error = null },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Back")
+                Text(stringResource(R.string.detail_back))
             }
         }
     }

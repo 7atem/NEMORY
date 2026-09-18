@@ -3,7 +3,7 @@ package com.vaultbrain.feature.vault
 import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.ai.llm.gemma.GemmaDownloadEligibility
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import com.vaultbrain.core.common.model.PersonalCollection
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
@@ -11,6 +11,7 @@ import com.vaultbrain.core.notifications.GemmaBannerStore
 import com.vaultbrain.core.notifications.VaultReminderManager
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,7 @@ class HomeViewModelTest {
     private val externalContextRepository = mockk<ExternalContextRepository>()
     private val vaultReminderManager = mockk<VaultReminderManager>()
     private val backupNudgeStore = mockk<com.vaultbrain.core.notifications.BackupNudgeStore>(relaxed = true)
+    private val actionExecutor = mockk<com.vaultbrain.core.integrations.action.ActionExecutor>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -45,14 +47,46 @@ class HomeViewModelTest {
         every { repository.observeRecent(any()) } returns flowOf(emptyList())
         every { repository.observeActive() } returns flowOf(emptyList())
         coEvery { gemmaDownloadEligibility.isPromptEligible() } returns false
-        every { gemmaModelManager.status } returns MutableStateFlow(GemmaModelStatus.NOT_DOWNLOADED)
+        every { gemmaModelManager.status } returns MutableStateFlow(OnDeviceModelStatus.NOT_DOWNLOADED)
         every { externalContextRepository.observeRecordsBySource(any()) } returns flowOf(emptyList())
+        every { externalContextRepository.observeRecords() } returns flowOf(emptyList())
         every { vaultReminderManager.observeActive() } returns flowOf(emptyList())
     }
 
     @After
     fun tearDown() {
+        com.vaultbrain.core.common.security.DecoySessionState.setDecoyMode(false)
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `insights follow changed data and model readiness without waiting six hours`() = runTest(dispatcher) {
+        every { repository.observeActiveCollections() } returns flowOf(emptyList())
+        val items = MutableStateFlow(listOf(VaultItem(id = "1", title = "Old title")))
+        every { repository.observeActive() } returns items
+        val status = MutableStateFlow<OnDeviceModelStatus>(OnDeviceModelStatus.NOT_DOWNLOADED)
+        every { gemmaModelManager.status } returns status
+        val intelligence = mockk<com.vaultbrain.core.ai.rag.DailyIntelligence>()
+        coEvery { intelligence.select(any(), any(), any()) } answers {
+            firstArg<List<VaultItem>>().map {
+                com.vaultbrain.core.ai.rag.DailyInsight(it.id, it.title, it.title, it.updatedAt)
+            }
+        }
+        val viewModel = HomeViewModel(repository, patternDetector, gemmaDownloadEligibility,
+            gemmaModelManager, gemmaBannerStore, externalContextRepository, vaultReminderManager,
+            backupNudgeStore, actionExecutor, intelligence)
+        advanceUntilIdle()
+        assertThat(viewModel.dailyInsights.value.single().title).isEqualTo("Old title")
+        items.value = listOf(items.value.single().copy(title = "Changed title"))
+        advanceUntilIdle()
+        assertThat(viewModel.dailyInsights.value.single().title).isEqualTo("Changed title")
+        status.value = OnDeviceModelStatus.READY
+        advanceUntilIdle()
+        coVerify(exactly = 3) { intelligence.select(any(), any(), any()) }
+        com.vaultbrain.core.common.security.DecoySessionState.setDecoyMode(true)
+        advanceUntilIdle()
+        assertThat(viewModel.dailyInsights.value).isEmpty()
+        coVerify(exactly = 3) { intelligence.select(any(), any(), any()) }
     }
 
     private fun collection(id: String, name: String) = PersonalCollection(
@@ -65,7 +99,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             repository, patternDetector,
             gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
-            externalContextRepository, vaultReminderManager, backupNudgeStore
+            externalContextRepository, vaultReminderManager, backupNudgeStore, actionExecutor
         )
         val states = mutableListOf<HomeUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }
@@ -90,7 +124,7 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             repository, patternDetector,
             gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
-            externalContextRepository, vaultReminderManager, backupNudgeStore
+            externalContextRepository, vaultReminderManager, backupNudgeStore, actionExecutor
         )
         val states = mutableListOf<HomeUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }

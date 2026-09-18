@@ -2,6 +2,9 @@ package com.vaultbrain.feature.vault.home
 
 import com.vaultbrain.core.common.model.VaultReminder
 import com.vaultbrain.core.integrations.model.ExternalRecord
+import com.vaultbrain.core.common.model.ProactiveAction
+import com.vaultbrain.core.common.model.ProactiveActionResolver
+import com.vaultbrain.core.common.model.VaultItem
 
 /** A document with an approaching expiry/alert date, surfaced in "Needs attention". */
 data class ExpiringDocument(
@@ -15,10 +18,12 @@ data class AttentionItem(
     val id: String,
     val kind: Kind,
     val title: String,
+    val subtitle: String? = null,
     val dueAt: Long?,
-    val targetId: String?
+    val targetId: String?,
+    val proactiveAction: ProactiveAction? = null
 ) {
-    enum class Kind { REMINDER, EVENT, EXPIRING, REVIEW }
+    enum class Kind { REMINDER, EVENT, EXPIRING, REVIEW, GMAIL, PROACTIVE_ACTION }
 }
 
 /**
@@ -29,7 +34,9 @@ data class AttentionItem(
 fun buildAttentionItems(
     todayReminders: List<VaultReminder>,
     todayEvents: List<ExternalRecord>,
+    todayGmail: List<ExternalRecord> = emptyList(),
     expiringDocuments: List<ExpiringDocument>,
+    recentDocuments: List<VaultItem> = emptyList(),
     needsReviewCount: Int,
     maxItems: Int = 5
 ): List<AttentionItem> {
@@ -51,7 +58,28 @@ fun buildAttentionItems(
                     id = "event:${record.externalId}",
                     kind = AttentionItem.Kind.EVENT,
                     title = record.title.orEmpty(),
-                    dueAt = record.startAt,
+                    dueAt = record.startAt ?: record.createdAt, // fallback to createdAt if startAt is null
+                    targetId = record.externalId
+                )
+            )
+        }
+        todayGmail.forEach { record ->
+            val merchant = record.payload["merchant"] ?: record.title?.substringBefore(" ") ?: "Email"
+            val total = record.payload["total"]
+            val currency = record.payload["currency"] ?: ""
+            val track = record.payload["tracking_number"]
+            val subtitle = when {
+                track != null -> "Arriving soon"
+                total != null -> "$currency $total due".trim()
+                else -> "Needs your attention"
+            }
+            add(
+                AttentionItem(
+                    id = "gmail:${record.externalId}",
+                    kind = AttentionItem.Kind.GMAIL,
+                    title = merchant.take(25),
+                    subtitle = subtitle,
+                    dueAt = record.createdAt,
                     targetId = record.externalId
                 )
             )
@@ -67,8 +95,26 @@ fun buildAttentionItems(
                 )
             )
         }
-    }.sortedBy { it.dueAt ?: Long.MAX_VALUE }
-
+        recentDocuments.forEach { doc ->
+            val actions = ProactiveActionResolver.resolve(doc)
+            actions.forEach { action ->
+                add(
+                    AttentionItem(
+                        id = "action:${doc.id}:${action.code}",
+                        kind = AttentionItem.Kind.PROACTIVE_ACTION,
+                        title = doc.title,
+                        subtitle = "AI Suggestion",
+                        dueAt = doc.createdAt,
+                        targetId = doc.id,
+                        proactiveAction = action
+                    )
+                )
+            }
+        }
+    }.sortedWith(
+        compareByDescending<AttentionItem> { it.kind == AttentionItem.Kind.PROACTIVE_ACTION }
+            .thenBy { it.dueAt ?: 0L }
+    )
     val review = if (needsReviewCount > 0) {
         listOf(AttentionItem(id = "review", kind = AttentionItem.Kind.REVIEW, title = "", dueAt = null, targetId = null))
     } else {

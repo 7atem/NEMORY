@@ -7,8 +7,12 @@ interface GmailDataSource {
     suspend fun authorize(accountId: String?): Result<String>
     suspend fun revoke(accountId: String): Result<Unit>
     suspend fun messages(accountId: String, newerThan: Long, limit: Int): List<GmailMessageRow>
+    suspend fun page(accountId: String, newerThan: Long, limit: Int, cursor: String?): GmailSyncPage =
+        GmailSyncPage(messages(accountId, newerThan, limit))
     fun open(uri: String): Boolean
 }
+
+data class GmailSyncPage(val messages: List<GmailMessageRow>, val deletedIds: Set<String> = emptySet(), val cursor: String? = null)
 
 data class GmailMessageRow(
     val id: String,

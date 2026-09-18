@@ -14,9 +14,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import com.vaultbrain.core.common.ui.getGridSpacing
+import com.vaultbrain.core.common.ui.getHorizontalPadding
+import com.vaultbrain.core.common.ui.RevealingAnimatedVisibility
+import com.vaultbrain.core.common.ui.standardExitAnimation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -25,6 +31,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.ViewAgenda
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.SelectAll
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material3.AlertDialog
@@ -51,14 +59,18 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -77,12 +89,13 @@ fun VaultBrowserScreen(
     onItemClick: (String) -> Unit,
     initialFilter: String? = null,
     initialQuery: String? = null,
+    windowWidthSizeClass: WindowWidthSizeClass = WindowWidthSizeClass.Compact,
     viewModel: VaultBrowserViewModel = hiltViewModel()
 ) {
     LaunchedEffect(initialFilter, initialQuery) {
         viewModel.setInitialState(initialFilter, initialQuery)
     }
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val deletedMessage = stringResource(R.string.browser_item_deleted)
@@ -90,6 +103,7 @@ fun VaultBrowserScreen(
 
     VaultBrowserContent(
         state = state,
+        windowWidthSizeClass = windowWidthSizeClass,
         onQueryChange = viewModel::onQueryChange,
         onFilterSelected = viewModel::onFilterSelected,
         onCollectionSelected = viewModel::onCollectionSelected,
@@ -120,6 +134,7 @@ fun VaultBrowserScreen(
 @Composable
 internal fun VaultBrowserContent(
     state: VaultBrowserUiState,
+    windowWidthSizeClass: WindowWidthSizeClass = WindowWidthSizeClass.Compact,
     onQueryChange: (String) -> Unit,
     onFilterSelected: (BrowserFilter) -> Unit,
     onCollectionSelected: (String?) -> Unit,
@@ -136,26 +151,36 @@ internal fun VaultBrowserContent(
 ) {
     var showSortMenu by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var isTimelineView by rememberSaveable { mutableStateOf(false) }
+
+    val groupedItems = remember(state.items, androidx.compose.ui.platform.LocalConfiguration.current.locales.toLanguageTags()) {
+        state.items.groupBy { item ->
+            val date = java.time.Instant.ofEpochMilli(item.createdAt)
+                .atZone(java.time.ZoneId.systemDefault())
+                .toLocalDate()
+            date.format(java.time.format.DateTimeFormatter.ofPattern("LLLL yyyy", java.util.Locale.getDefault()))
+        }
+    }
 
     Scaffold(
         topBar = {
             if (state.isSelectionMode) {
                 TopAppBar(
-                    title = { Text("${state.selectedItemIds.size} Selected") },
+                    title = { Text(stringResource(R.string.browser_selected_count, state.selectedItemIds.size)) },
                     navigationIcon = {
                         IconButton(onClick = onClearSelection) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.browser_clear_selection))
                         }
                     },
                     actions = {
                         IconButton(onClick = onSelectAll) {
-                            Icon(Icons.Default.SelectAll, contentDescription = "Select all")
+                            Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.browser_select_all))
                         }
                         IconButton(onClick = onPinSelected) {
-                            Icon(Icons.Default.PushPin, contentDescription = "Pin")
+                            Icon(Icons.Default.PushPin, contentDescription = stringResource(R.string.browser_pin_selection))
                         }
                         IconButton(onClick = { showDeleteConfirmation = true }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.browser_delete))
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
@@ -181,14 +206,11 @@ internal fun VaultBrowserContent(
                     },
                     navigationIcon = {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.browser_back))
                         }
                     },
                 )
             }
-        },
-        bottomBar = {
-            com.vaultbrain.feature.vault.components.BannerAd()
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
@@ -196,6 +218,8 @@ internal fun VaultBrowserContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .wrapContentWidth(Alignment.CenterHorizontally)
+                .widthIn(max = 1000.dp)
         ) {
             // Search Bar
             OutlinedTextField(
@@ -209,7 +233,7 @@ internal fun VaultBrowserContent(
                 trailingIcon = {
                     if (state.searchQuery.isNotEmpty()) {
                         IconButton(onClick = { onQueryChange("") }) {
-                            Icon(Icons.Default.Close, contentDescription = "Clear search")
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.browser_clear_search))
                         }
                     }
                 },
@@ -260,19 +284,26 @@ internal fun VaultBrowserContent(
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Box {
-                    AssistChip(
-                        onClick = { showSortMenu = true },
-                        label = { Text(stringResource(R.string.browser_sort, stringResource(state.sortOrder.labelRes))) },
-                        leadingIcon = {
-                            Icon(
-                                Icons.AutoMirrored.Filled.Sort,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    )
-                    DropdownMenu(
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { isTimelineView = !isTimelineView }) {
+                        Icon(
+                            if (isTimelineView) Icons.AutoMirrored.Filled.ViewList else Icons.Default.ViewAgenda,
+                            contentDescription = stringResource(R.string.browser_toggle_view)
+                        )
+                    }
+                    Box {
+                        AssistChip(
+                            onClick = { showSortMenu = true },
+                            label = { Text(stringResource(R.string.browser_sort, stringResource(state.sortOrder.labelRes))) },
+                            leadingIcon = {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Sort,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
+                        DropdownMenu(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false }
                     ) {
@@ -286,6 +317,7 @@ internal fun VaultBrowserContent(
                             )
                         }
                     }
+                }
                 }
             }
 
@@ -310,18 +342,49 @@ internal fun VaultBrowserContent(
                     } else null,
                     onAction = {
                         onQueryChange("")
+                        onCollectionSelected(null)
                         onFilterSelected(BrowserFilter.ALL)
                     }
                 )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(state.items, key = { it.id }) { item ->
+                    if (isTimelineView) {
+                        groupedItems.forEach { (monthYear, itemsForMonth) ->
+                            item(key = monthYear) {
+                                Text(
+                                    text = monthYear,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                                )
+                            }
+                            items(itemsForMonth, key = { it.id }) { item ->
+                                val isSelected = state.selectedItemIds.contains(item.id)
+
+                                SwipeableSelectableVaultItem(
+                                    item = item,
+                                    isSelected = isSelected,
+                                    isSelectionMode = state.isSelectionMode,
+                                    onClick = {
+                                        if (state.isSelectionMode) {
+                                            onToggleSelection(item.id)
+                                        } else {
+                                            onItemClick(item.id)
+                                        }
+                                    },
+                                    onLongClick = { onToggleSelection(item.id) },
+                                    onDelete = { onDeleteItem(item) }
+                                )
+                            }
+                        }
+                    } else {
+                        items(state.items, key = { it.id }) { item ->
                             val isSelected = state.selectedItemIds.contains(item.id)
-                            
+
                             SwipeableSelectableVaultItem(
                                 item = item,
                                 isSelected = isSelected,
@@ -336,6 +399,7 @@ internal fun VaultBrowserContent(
                                 onLongClick = { onToggleSelection(item.id) },
                                 onDelete = { onDeleteItem(item) }
                             )
+                        }
                     }
                 }
             }
@@ -394,6 +458,7 @@ private fun SwipeableSelectableVaultItem(
     SwipeToDismissBox(
         state = dismissState,
         enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = !isSelectionMode,
         backgroundContent = {
             val color = when (dismissState.targetValue) {
                 SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer
@@ -410,7 +475,7 @@ private fun SwipeableSelectableVaultItem(
                 if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
+                        contentDescription = stringResource(R.string.browser_delete),
                         tint = MaterialTheme.colorScheme.onErrorContainer
                     )
                 }
@@ -421,22 +486,20 @@ private fun SwipeableSelectableVaultItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
-                .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = onLongClick
-                )
+                .semantics { selected = isSelected }
         ) {
             VaultItemCard(
                 item = item,
-                onClick = onClick // Inner click will be handled by combinedClickable
+                onClick = onClick,
+                onLongClick = onLongClick
             )
-            
+
             if (isSelectionMode) {
                 Box(
                     modifier = Modifier
                         .matchParentSize()
                         .background(
-                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f) 
+                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
                             else Color.Transparent
                         )
                         .padding(8.dp),
@@ -445,7 +508,7 @@ private fun SwipeableSelectableVaultItem(
                     if (isSelected) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
-                            contentDescription = "Selected",
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )

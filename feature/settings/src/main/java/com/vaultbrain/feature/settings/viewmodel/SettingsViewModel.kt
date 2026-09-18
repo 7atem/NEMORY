@@ -13,10 +13,10 @@ import com.vaultbrain.core.database.entity.AuditLogEntity
 import com.vaultbrain.core.security.AuthManager
 import com.vaultbrain.sync.drive.DriveBackupManager
 import com.vaultbrain.core.ai.llm.AiCapabilityManager
-import com.vaultbrain.core.ai.llm.OnDeviceModelStatus
+import com.vaultbrain.core.ai.llm.OnDeviceModelStatus as PrivateAiStatus
 import com.vaultbrain.core.ai.llm.CloudConsentStore
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus as GemmaModelStatus
 import com.vaultbrain.core.common.model.Classification
 import com.vaultbrain.core.billing.AdEntitlement
 import com.vaultbrain.core.billing.BillingManager
@@ -52,7 +52,7 @@ data class SettingsUiState(
     val lensAccess: Map<String, Boolean> = emptyMap(),
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val dynamicColor: Boolean = false,
-    val privateAiStatus: OnDeviceModelStatus = OnDeviceModelStatus.UNKNOWN,
+    val privateAiStatus: PrivateAiStatus = PrivateAiStatus.UNKNOWN,
     val cloudOptInCategories: Set<Classification> = emptySet(),
     val adEntitlement: AdEntitlement = AdEntitlement.AD_SUPPORTED,
     val removeAdsPrice: String? = null,
@@ -94,8 +94,8 @@ class SettingsViewModel @Inject constructor(
             decoyPinSet = authManager.isDecoyPinSet,
             driveBackupEnabled = false,
             lensAccess = buildMap {
-                com.vaultbrain.core.common.model.LensId.FREE_LENSES.forEach { put(it, featureGate.canAccessLens(it)) }
-                com.vaultbrain.core.common.model.LensId.PRO_LENSES.forEach { put(it, featureGate.canAccessLens(it)) }
+                com.vaultbrain.shared.domain.LensId.FREE_LENSES.forEach { put(it, featureGate.canAccessLens(it)) }
+                com.vaultbrain.shared.domain.LensId.PRO_LENSES.forEach { put(it, featureGate.canAccessLens(it)) }
             },
             themeMode = com.vaultbrain.core.common.preferences.AppearancePreferences.themeMode.value,
             dynamicColor = com.vaultbrain.core.common.preferences.AppearancePreferences.dynamicColor.value
@@ -121,7 +121,7 @@ class SettingsViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val status = runCatching { aiCapabilityManager.refresh().modelStatus }
-                .getOrElse { OnDeviceModelStatus.ERROR }
+                .getOrElse { PrivateAiStatus.ERROR }
             _uiState.value = _uiState.value.copy(privateAiStatus = status)
         }
         viewModelScope.launch {
@@ -264,9 +264,9 @@ class SettingsViewModel @Inject constructor(
 
     fun preparePrivateAi() {
         if (_uiState.value.privateAiStatus !in setOf(
-                OnDeviceModelStatus.DOWNLOADABLE,
-                OnDeviceModelStatus.ERROR,
-                OnDeviceModelStatus.UNKNOWN
+                PrivateAiStatus.DOWNLOADABLE,
+                PrivateAiStatus.ERROR,
+                PrivateAiStatus.UNKNOWN
             )
         ) return
         viewModelScope.launch {

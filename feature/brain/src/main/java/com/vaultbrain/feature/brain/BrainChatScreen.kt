@@ -15,8 +15,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.layout.ContentScale
-import coil.compose.AsyncImage
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,7 +25,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.Collections
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Notifications
@@ -43,9 +40,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
@@ -69,7 +64,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -160,19 +155,20 @@ private fun parseMarkdown(text: String): AnnotatedString {
 fun BrainChatScreen(onSourceClick: (String) -> Unit = {}, 
     onBack: () -> Unit,
     viewModel: BrainChatViewModel = hiltViewModel()
-) {    val isAiCoreEnabled by viewModel.isAiCoreEnabled.collectAsState()
-    val messages by viewModel.messages.collectAsState()
-    val input by viewModel.input.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val isStreaming by viewModel.isStreaming.collectAsState()
-    val suggestions by viewModel.suggestions.collectAsState()
-    val cloudConsent by viewModel.cloudConsent.collectAsState()
-    val cloudMessage by viewModel.cloudMessage.collectAsState()
-    val pendingWrite by viewModel.pendingWrite.collectAsState()
-    val pendingCollectionCreation by viewModel.pendingCollectionCreation.collectAsState()
-    val pendingCollectionTarget by viewModel.pendingCollectionTarget.collectAsState()
-    val activeCollections by viewModel.activeCollections.collectAsState()
-    val attachedImageUri by viewModel.attachedImageUri.collectAsState()
+) {    val isAiCoreEnabled by viewModel.isAiCoreEnabled.collectAsStateWithLifecycle()
+    val messages by viewModel.messages.collectAsStateWithLifecycle()
+    val input by viewModel.input.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val isStreaming by viewModel.isStreaming.collectAsStateWithLifecycle()
+    val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
+    val isDeepResearch by viewModel.isDeepResearch.collectAsStateWithLifecycle()
+    val cloudConsent by viewModel.cloudConsent.collectAsStateWithLifecycle()
+    val cloudMessage by viewModel.cloudMessage.collectAsStateWithLifecycle()
+    val pendingWrite by viewModel.pendingWrite.collectAsStateWithLifecycle()
+    val agentProposals by viewModel.agentProposals.collectAsStateWithLifecycle()
+    val pendingCollectionCreation by viewModel.pendingCollectionCreation.collectAsStateWithLifecycle()
+    val pendingCollectionTarget by viewModel.pendingCollectionTarget.collectAsStateWithLifecycle()
+    val activeCollections by viewModel.activeCollections.collectAsStateWithLifecycle()
     
     // Convert suggestion to just keyword if not conversational
     val suggestionQueries = suggestions.map { 
@@ -194,9 +190,14 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
         }
     }
 
-    LaunchedEffect(messages.size) {
+    val lastMessageText = messages.lastOrNull()?.let { (it as? ChatMessage.Assistant)?.text }
+    LaunchedEffect(messages.size, isStreaming, lastMessageText?.length) {
         if (messages.isNotEmpty()) {
-            listState.animateScrollToItem(messages.lastIndex)
+            val isNearBottom = !listState.canScrollForward ||
+                (listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0) >= messages.lastIndex - 1
+            if (isNearBottom || messages.size == 1) {
+                listState.animateScrollToItem(messages.lastIndex)
+            }
         }
     }
 
@@ -207,11 +208,11 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
                     Column {
                         Text(
                             if (isAiCoreEnabled) stringResource(R.string.brain_chat_title)
-                            else "Ask Nemory"
+                            else stringResource(R.string.brain_chat_title_standard)
                         )
                         Text(
                             if (isAiCoreEnabled) stringResource(R.string.brain_chat_private)
-                            else "Chat, Command, or Search",
+                            else stringResource(R.string.brain_chat_subtitle_standard),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -221,11 +222,17 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.brain_chat_back)
                         )
                     }
                 },
                 actions = {
+                    androidx.compose.material3.FilterChip(
+                        selected = isDeepResearch,
+                        onClick = { viewModel.toggleDeepResearch() },
+                        label = { Text(stringResource(R.string.brain_chat_deep_filter)) },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
                     if (messages.isNotEmpty()) {
                         IconButton(onClick = { showClearDialog = true }, enabled = !interactionBlocked) {
                             Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.brain_chat_clear))
@@ -235,27 +242,34 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
             )
         },
         bottomBar = {
-            ChatInputBar(
-                input = input,
-                attachedImageUri = attachedImageUri,
-                isLoading = interactionBlocked,
-                onInputChanged = viewModel::onInputChanged,
-                onImageAttached = viewModel::onImageAttached,
-                onSend = { viewModel.sendQuery(input) },
-                onSuggestedQuery = { viewModel.sendQuery(it) },
-                suggestions = suggestionQueries,
-                isAiCoreEnabled = isAiCoreEnabled,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                ChatInputBar(
+                    input = input,
+                    isLoading = interactionBlocked,
+                    onInputChanged = viewModel::onInputChanged,
+                    onSend = { viewModel.sendQuery(input) },
+                    onSuggestedQuery = { viewModel.sendQuery(it) },
+                    suggestions = suggestionQueries,
+                    isAiCoreEnabled = isAiCoreEnabled,
+                    modifier = Modifier
+                        .widthIn(max = 840.dp)
+                        .fillMaxWidth()
+                )
+            }
         }
     ) { paddingValues ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
         ) {
             LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .widthIn(max = 840.dp),
                     contentPadding = PaddingValues(
                         top = paddingValues.calculateTopPadding() + 16.dp,
                         bottom = paddingValues.calculateBottomPadding() + 16.dp,
@@ -288,6 +302,49 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
                                 onRetry = viewModel::retryQuery,
                                 onSuggestedAction = viewModel::onSuggestedAction
                             )
+                            if (pendingWrite?.assistantMessageId == message.id) {
+                                PendingWriteCard(
+                                    pending = pendingWrite!!,
+                                    isLoading = isLoading,
+                                    onConfirm = {
+                                        val needsNotificationPermission =
+                                            pendingWrite!!.preview.action is BrainWriteAction.SetReminder &&
+                                                android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                                                androidx.core.content.ContextCompat.checkSelfPermission(
+                                                    context,
+                                                    android.Manifest.permission.POST_NOTIFICATIONS
+                                                ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                                        if (needsNotificationPermission) {
+                                            notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                        } else {
+                                            viewModel.confirmWriteAction()
+                                        }
+                                    },
+                                    onDismiss = { viewModel.dismissWriteAction() },
+                                    modifier = Modifier.padding(top = 8.dp)
+                                )
+                            }
+                        }
+                    }
+                    items(agentProposals.size, key = { agentProposals[it].id }) { index ->
+                        val pending = agentProposals[index]
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(stringResource(R.string.brain_agent_proposal), style = MaterialTheme.typography.titleMedium)
+                                val details = when (val proposal = pending.proposal) {
+                                    is com.vaultbrain.core.ai.rag.LocalAgent.ActionProposal.Reminder -> stringResource(R.string.brain_agent_reminder, proposal.title, proposal.date)
+                                    is com.vaultbrain.core.ai.rag.LocalAgent.ActionProposal.CalendarEvent -> stringResource(R.string.brain_agent_calendar, proposal.title, proposal.start, proposal.end, proposal.notes)
+                                    is com.vaultbrain.core.ai.rag.LocalAgent.ActionProposal.MetadataUpdate -> "${pending.source?.title.orEmpty()}\n${proposal.key}: ${proposal.value}"
+                                    is com.vaultbrain.core.ai.rag.LocalAgent.ActionProposal.CollectionMembership -> pending.source?.title.orEmpty()
+                                }
+                                Text(details)
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Button(onClick = { viewModel.confirmAgentProposal(pending.id) }, enabled = !isLoading) {
+                                        Text(stringResource(R.string.brain_agent_confirm))
+                                    }
+                                    TextButton(onClick = { viewModel.dismissAgentProposal(pending.id) }) { Text(stringResource(R.string.brain_agent_dismiss)) }
+                                }
+                            }
                         }
                     }
                     if (isLoading) {
@@ -322,89 +379,21 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
         )
     }
 
-    pendingWrite?.let { pending ->
-        val actionDescription = when (val action = pending.preview.action) {
-            BrainWriteAction.Pin -> stringResource(R.string.brain_write_pin_description)
-            BrainWriteAction.Unpin -> stringResource(R.string.brain_write_unpin_description)
-            BrainWriteAction.Archive -> stringResource(R.string.brain_write_archive_description)
-            BrainWriteAction.Restore -> stringResource(R.string.brain_write_restore_description)
-            is BrainWriteAction.SetReminder -> stringResource(
-                R.string.brain_write_reminder_description,
-                DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
-                    .format(Date(action.triggerAt))
-            )
-            BrainWriteAction.ClearReminder ->
-                stringResource(R.string.brain_write_clear_reminder_description)
-            is BrainWriteAction.MarkMediaCompleted -> stringResource(
-                when (action.kind) {
-                    MediaCompletionKind.WATCHED -> R.string.brain_write_watched_description
-                    MediaCompletionKind.FINISHED -> R.string.brain_write_read_description
-                }
-            )
-        }
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissWriteAction() },
-            title = { Text(stringResource(R.string.brain_write_confirm_title)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text(
-                        pending.preview.item.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(actionDescription)
-                    Text(
-                        stringResource(R.string.brain_write_confirm_safety),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    enabled = !isLoading,
-                    onClick = {
-                        val needsNotificationPermission =
-                            pending.preview.action is BrainWriteAction.SetReminder &&
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                                ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.POST_NOTIFICATIONS
-                                ) != PackageManager.PERMISSION_GRANTED
-                        if (needsNotificationPermission) {
-                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        } else {
-                            viewModel.confirmWriteAction()
-                        }
-                    }
-                ) {
-                    Text(stringResource(R.string.brain_write_confirm))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    enabled = !isLoading,
-                    onClick = { viewModel.dismissWriteAction() }
-                ) {
-                    Text(stringResource(R.string.brain_chat_cancel))
-                }
-            }
-        )
-    }
+    
 
     pendingCollectionCreation?.let { pending ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissCollectionCreation() },
-            title = { Text("Create Collection") },
+            title = { Text(stringResource(R.string.brain_collection_create_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        "Create new collection “${pending.name}” with ${pending.items.size} items?",
+                        stringResource(R.string.brain_collection_create_confirm, pending.name, pending.items.size),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        "The selected items will be organized into this collection.",
+                        stringResource(R.string.brain_collection_create_body),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Text(
@@ -416,7 +405,7 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
             },
             confirmButton = {
                 Button(onClick = { viewModel.confirmCollectionCreation() }) {
-                    Text("Create")
+                    Text(stringResource(R.string.brain_collection_create_action))
                 }
             },
             dismissButton = {
@@ -430,11 +419,11 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
     pendingCollectionTarget?.let { target ->
         AlertDialog(
             onDismissRequest = { viewModel.dismissCollectionTarget() },
-            title = { Text("Add to Collection") },
+            title = { Text(stringResource(R.string.brain_collection_add_title)) },
             text = {
                 if (activeCollections.isEmpty()) {
                     Text(
-                        "No collections yet. Create one from the Vault tab first.",
+                        stringResource(R.string.brain_collection_empty_message),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 } else {
@@ -558,7 +547,7 @@ private fun ChatBubble(
     modifier: Modifier = Modifier
 ) {
     when (message) {
-        is ChatMessage.User -> UserBubble(text = message.text, imageUri = message.imageUri, modifier = modifier)
+        is ChatMessage.User -> UserBubble(text = message.text, modifier = modifier)
         is ChatMessage.Assistant -> AssistantBubble(
             text = message.text,
             sources = message.sources,
@@ -580,7 +569,7 @@ private fun ChatBubble(
 }
 
 @Composable
-private fun UserBubble(text: String, imageUri: String? = null, modifier: Modifier = Modifier) {
+private fun UserBubble(text: String, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.End
@@ -591,21 +580,9 @@ private fun UserBubble(text: String, imageUri: String? = null, modifier: Modifie
                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer
             ),
             shape = RoundedCornerShape(20.dp, 4.dp, 20.dp, 20.dp),
-            modifier = Modifier.widthIn(max = 280.dp)
+            modifier = Modifier.widthIn(min = 80.dp, max = 560.dp)
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
-                if (imageUri != null) {
-                    AsyncImage(
-                        model = imageUri,
-                        contentDescription = "Attached image",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 200.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    )
-                    if (text.isNotBlank()) Spacer(Modifier.height(8.dp))
-                }
                 if (text.isNotBlank()) {
                     Text(
                         text = text,
@@ -625,30 +602,7 @@ fun TypewriterText(
     charDelayMs: Long = 20L,
     content: @Composable (visibleText: String) -> Unit
 ) {
-    var visibleLength by remember { mutableIntStateOf(0) }
-    val targetLength = fullText.length
-
-    LaunchedEffect(fullText, isStreaming) {
-        if (isStreaming) {
-            // During streaming, always show the full text as it arrives chunk by chunk
-            visibleLength = targetLength
-        } else if (visibleLength < targetLength) {
-            // After streaming completes or for non-streamed messages, animate remaining chars
-            while (visibleLength < targetLength) {
-                delay(charDelayMs)
-                visibleLength = (visibleLength + 1).coerceAtMost(targetLength)
-            }
-        }
-    }
-
-    // Reset when text changes significantly (new message)
-    LaunchedEffect(fullText.hashCode()) {
-        if (visibleLength > targetLength) {
-            visibleLength = 0
-        }
-    }
-
-    content(fullText.take(visibleLength))
+    content(fullText)
 }
 
 @Composable
@@ -665,7 +619,7 @@ private fun StreamingIndicator(modifier: Modifier = Modifier) {
         label = "dotsAnimation"
     )
     Text(
-        text = "Generating" + ".".repeat(dotCount),
+        text = stringResource(R.string.brain_chat_generating) + ".".repeat(dotCount),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = modifier.padding(start = 16.dp, top = 4.dp, bottom = 8.dp)
@@ -705,7 +659,7 @@ private fun AssistantBubble(
                 else MaterialTheme.colorScheme.onSecondaryContainer
             ),
             shape = RoundedCornerShape(4.dp, 20.dp, 20.dp, 20.dp),
-            modifier = Modifier.widthIn(max = 320.dp)
+            modifier = Modifier.widthIn(min = 120.dp, max = 760.dp)
         ) {
             Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 evidence?.let { result ->
@@ -1032,10 +986,8 @@ private fun AssistantLoadingBubble(modifier: Modifier = Modifier) {
 @Composable
 private fun ChatInputBar(
     input: String,
-    attachedImageUri: String?,
     isLoading: Boolean,
     onInputChanged: (String) -> Unit,
-    onImageAttached: (String?) -> Unit,
     onSend: () -> Unit,
     onSuggestedQuery: (String) -> Unit,
     suggestions: List<String>,
@@ -1044,9 +996,6 @@ private fun ChatInputBar(
 ) {
     var showSuggestions by remember { mutableStateOf(true) }
     var showVoiceDialog by remember { mutableStateOf(false) }
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        onImageAttached(uri?.toString())
-    }
 
     if (showVoiceDialog) {
         OnDeviceVoiceCaptureDialog(
@@ -1087,41 +1036,10 @@ private fun ChatInputBar(
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            if (attachedImageUri != null) {
-                Box(modifier = Modifier.padding(bottom = 8.dp)) {
-                    AsyncImage(
-                        model = attachedImageUri,
-                        contentDescription = "Attached image",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    )
-                    IconButton(
-                        onClick = { onImageAttached(null) },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .size(24.dp)
-                            .padding(2.dp)
-                    ) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear image", tint = MaterialTheme.colorScheme.onSurface)
-                    }
-                }
-            }
-
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = { launcher.launch("image/*") },
-                    enabled = !isLoading
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.AddPhotoAlternate,
-                        contentDescription = "Attach image"
-                    )
-                }
                 IconButton(
                     onClick = { showVoiceDialog = true },
                     enabled = !isLoading
@@ -1145,12 +1063,12 @@ private fun ChatInputBar(
                     maxLines = 4,
                     shape = MaterialTheme.shapes.extraLarge,
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    keyboardActions = KeyboardActions(onSend = { if ((input.isNotBlank() || attachedImageUri != null) && !isLoading) onSend() })
+                    keyboardActions = KeyboardActions(onSend = { if (input.isNotBlank() && !isLoading) onSend() })
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(
                     onClick = onSend,
-                    enabled = (input.isNotBlank() || attachedImageUri != null) && !isLoading
+                    enabled = input.isNotBlank() && !isLoading
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Send,
@@ -1173,3 +1091,74 @@ private val BrainSuggestion.queryRes: Int
         BrainSuggestion.MEDIA -> R.string.brain_suggestion_media
         BrainSuggestion.HEALTH -> R.string.brain_suggestion_health
     }
+
+@Composable
+fun PendingWriteCard(
+    pending: BrainPendingWrite,
+    isLoading: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val actionDescription = when (val action = pending.preview.action) {
+        BrainWriteAction.Pin -> stringResource(R.string.brain_write_pin_description)
+        BrainWriteAction.Unpin -> stringResource(R.string.brain_write_unpin_description)
+        BrainWriteAction.Archive -> stringResource(R.string.brain_write_archive_description)
+        BrainWriteAction.Restore -> stringResource(R.string.brain_write_restore_description)
+        is BrainWriteAction.SetReminder -> stringResource(
+            R.string.brain_write_reminder_description,
+            java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT)
+                .format(java.util.Date(action.triggerAt))
+        )
+        BrainWriteAction.ClearReminder -> stringResource(R.string.brain_write_clear_reminder_description)
+        is BrainWriteAction.MarkMediaCompleted -> stringResource(
+            when (action.kind) {
+                com.vaultbrain.feature.brain.MediaCompletionKind.WATCHED -> R.string.brain_write_watched_description
+                com.vaultbrain.feature.brain.MediaCompletionKind.FINISHED -> R.string.brain_write_read_description
+            }
+        )
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(12.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                stringResource(R.string.brain_write_confirm_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                pending.preview.item.title,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(actionDescription, style = MaterialTheme.typography.bodyMedium)
+            
+            Row(
+                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                androidx.compose.material3.TextButton(
+                    onClick = onDismiss,
+                    enabled = !isLoading,
+                    modifier = Modifier.padding(end = 8.dp)
+                ) {
+                    Text(stringResource(R.string.brain_chat_cancel))
+                }
+                Button(
+                    onClick = onConfirm,
+                    enabled = !isLoading
+                ) {
+                    Text(stringResource(R.string.brain_write_confirm))
+                }
+            }
+        }
+    }
+}

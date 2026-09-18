@@ -14,6 +14,7 @@ import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.common.model.PersonalCollection
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.notifications.UnifiedAlertManager
+import com.vaultbrain.core.integrations.action.ActionExecutor
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,6 +28,8 @@ import javax.inject.Inject
  * UI state for the item detail screen.
  */
 data class ItemDetailUiState(
+    val relatedItems: List<VaultItem> = emptyList(),
+    val sourceFacts: List<com.vaultbrain.core.database.entity.DerivedFactEntity> = emptyList(),
     val item: VaultItem? = null,
     val possibleDuplicateTitle: String? = null,
     val isLoading: Boolean = true,
@@ -38,7 +41,11 @@ data class ItemDetailUiState(
     val translationMessage: TranslationMessage? = null,
     val activeCollections: List<PersonalCollection> = emptyList(),
     val itemCollections: List<PersonalCollection> = emptyList(),
-    val suggestedCollections: List<com.vaultbrain.core.common.model.PersonalCollectionSuggestion> = emptyList()
+    val suggestedCollections: List<com.vaultbrain.core.common.model.PersonalCollectionSuggestion> = emptyList(),
+    val isGeneratingAiSummary: Boolean = false,
+    val aiSummary: String? = null,
+    val aiSummaryOrigin: AiResponseOrigin? = null,
+    val proactiveActions: List<com.vaultbrain.core.common.model.ProactiveAction> = emptyList()
 )
 
 enum class TranslationMessage {
@@ -54,25 +61,51 @@ class ItemDetailViewModel @Inject constructor(
     private val alertManager: UnifiedAlertManager,
     private val hybridAiCoordinator: HybridAiCoordinator,
     private val cloudConsentStore: CloudConsentStore,
-    private val vaultReminderManager: com.vaultbrain.core.notifications.VaultReminderManager
+    private val vaultReminderManager: com.vaultbrain.core.notifications.VaultReminderManager,
+    private val actionExecutor: ActionExecutor,
+    private val knowledge: com.vaultbrain.core.database.repository.KnowledgeRepository? = null
 ) : ViewModel() {
+
+    fun executeAction(action: com.vaultbrain.core.common.model.ProactiveAction) {
+        val item = _uiState.value.item ?: return
+        viewModelScope.launch {
+            actionExecutor.execute(action, item)
+        }
+    }
 
     private val _uiState = MutableStateFlow(ItemDetailUiState())
     val uiState: StateFlow<ItemDetailUiState> = _uiState.asStateFlow()
     private var collectionsJob: Job? = null
+    private var loadJob: Job? = null
+
+    init {
+        viewModelScope.launch {
+            com.vaultbrain.core.common.security.DecoySessionState.isDecoy.collect { decoy ->
+                if (decoy) {
+                    loadJob?.cancel()
+                    collectionsJob?.cancel()
+                    _uiState.value = ItemDetailUiState(isLoading = false)
+                }
+            }
+        }
+    }
 
     fun loadItem(itemId: String) {
+        loadJob?.cancel()
         collectionsJob?.cancel()
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             _uiState.value = ItemDetailUiState(isLoading = true)
             val item = repository.getById(itemId)
             val duplicateTitle = item?.possibleDuplicateOfItemId
                 ?.let { repository.getById(it) }
                 ?.title
             _uiState.value = ItemDetailUiState(
+                relatedItems = knowledge?.related(itemId).orEmpty(),
+                sourceFacts = knowledge?.facts(itemId).orEmpty(),
                 item = item,
                 possibleDuplicateTitle = duplicateTitle,
-                isLoading = false
+                isLoading = false,
+                proactiveActions = item?.let { com.vaultbrain.core.common.model.ProactiveActionResolver.resolve(it) } ?: emptyList()
             )
             if (item != null) {
                 collectionsJob = viewModelScope.launch {
@@ -84,6 +117,10 @@ class ItemDetailViewModel @Inject constructor(
                         Triple(active, memberships, suggestions)
                     }.collect { (active, memberships, suggestions) ->
                         _uiState.value = _uiState.value.copy(
+                            sourceFacts = if (com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value)
+                                emptyList() else _uiState.value.sourceFacts,
+                            relatedItems = if (com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value)
+                                emptyList() else _uiState.value.relatedItems,
                             activeCollections = active,
                             itemCollections = memberships,
                             suggestedCollections = suggestions
@@ -159,7 +196,7 @@ class ItemDetailViewModel @Inject constructor(
     }
 
     fun updateItem(edited: VaultItem) {
-        if (_uiState.value.item == null) return
+        if (_uiState.value.item?.id != edited.id || edited.title.isBlank() || com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value) return
         viewModelScope.launch {
             val updated = edited.copy(
                 title = edited.title.trim(),
@@ -173,7 +210,11 @@ class ItemDetailViewModel @Inject constructor(
             )
             repository.save(updated)
             alertManager.scheduleAlerts(updated)
-            _uiState.value = _uiState.value.copy(item = updated, possibleDuplicateTitle = null)
+            _uiState.value = _uiState.value.copy(
+                item = updated, 
+                possibleDuplicateTitle = null,
+                proactiveActions = com.vaultbrain.core.common.model.ProactiveActionResolver.resolve(updated)
+            )
         }
     }
 
@@ -247,6 +288,41 @@ class ItemDetailViewModel @Inject constructor(
 
     fun clearTranslationMessage() {
         _uiState.value = _uiState.value.copy(translationMessage = null)
+    }
+
+    fun generateAiSummary() {
+        val item = _uiState.value.item ?: return
+        val sharedText = translationSource(item)
+        if (sharedText.isBlank() || _uiState.value.isGeneratingAiSummary) return
+
+        _uiState.value = _uiState.value.copy(isGeneratingAiSummary = true)
+        viewModelScope.launch {
+            val prompt = if (java.util.Locale.getDefault().language.startsWith("ar")) {
+                "اكتب ملخصاً تنفيذاً مركزاً وموجزاً (2-3 جمل) باللغة العربية لهذا المستند الخزني:\n\n$sharedText"
+            } else {
+                "Provide a clear, concise executive summary (2-3 sentences) for this vault document:\n\n$sharedText"
+            }
+            val result = hybridAiCoordinator.generate(
+                HybridAiRequest(
+                    item = item,
+                    operation = CloudAiOperation.EXPLAIN_RETRIEVED_EVIDENCE,
+                    prompt = prompt,
+                    sharedTextPreview = sharedText,
+                    privacyMode = AiPrivacyMode.SMART_HYBRID
+                )
+            )
+            _uiState.value = when (result) {
+                is HybridAiResult.Success -> _uiState.value.copy(
+                    isGeneratingAiSummary = false,
+                    aiSummary = result.text,
+                    aiSummaryOrigin = result.origin
+                )
+                else -> _uiState.value.copy(
+                    isGeneratingAiSummary = false,
+                    aiSummary = null
+                )
+            }
+        }
     }
 
     private fun translationSource(item: VaultItem): String = listOfNotNull(

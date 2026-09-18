@@ -53,4 +53,15 @@
     <string name="brain_suggestion_recurring_spend">Which subscriptions increased?</string>
     <string name="brain_suggestion_media">What is on my watchlist or reading list?</string>
     <string name="brain_suggestion_health">Find my health documents</string>
+    <string name="brain_chat_title_standard">Ask Nemory</string>
+    <string name="brain_chat_subtitle_standard">Chat, Command, or Search</string>
+    <string name="brain_chat_generating">Generating</string>
+    <string name="brain_chat_deep_filter">Deep</string>
+    <string name="brain_collection_create_title">Create Collection</string>
+    <string name="brain_collection_create_confirm">Create new collection “%1$s” with %2$d items?</string>
+    <string name="brain_collection_create_body">The selected items will be organized into this collection.</string>
+    <string name="brain_collection_create_action">Create</string>
+    <string name="brain_collection_add_title">Add to Collection</string>
+    <string name="brain_collection_empty_message">No collections yet. Create one from the Vault tab first.</string>
+    <string name="brain_chat_back">Back</string>
 </resources>

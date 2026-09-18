@@ -54,7 +54,7 @@ class NanoPromptClient @Inject constructor(
         }
     }
 
-    override suspend fun generate(prompt: String): String? {
+    override suspend fun generate(prompt: String, creative: Boolean): String? {
         if (prompt.isBlank()) return null
         warmup()
         if (!ensureReady()) return null
@@ -62,7 +62,7 @@ class NanoPromptClient @Inject constructor(
     }
 
     /** Attempts one image request. The caller owns an honest OCR-only fallback prompt. */
-    override suspend fun generate(prompt: String, image: LlmImageInput): String? {
+    override suspend fun generate(prompt: String, image: LlmImageInput, creative: Boolean): String? {
         if (prompt.isBlank()) return null
         warmup()
         if (!ensureReady()) return null
@@ -79,7 +79,7 @@ class NanoPromptClient @Inject constructor(
         }
     }
 
-    override fun generateStream(prompt: String): Flow<String> {
+    override fun generateStream(prompt: String, creative: Boolean): Flow<String> {
         if (prompt.isBlank()) return emptyFlow()
         return flow {
             warmup()

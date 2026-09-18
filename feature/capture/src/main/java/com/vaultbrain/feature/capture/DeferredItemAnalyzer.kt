@@ -95,7 +95,8 @@ class DeferredItemAnalyzer @Inject constructor(
                 scoredLabels = vision?.scoredLabels.orEmpty(),
                 barcodes = vision?.barcodes.orEmpty(),
                 neuralClassification = vision?.documentClassification,
-                neuralConfidence = vision?.documentClassificationConfidence ?: 0f
+                neuralConfidence = vision?.documentClassificationConfidence ?: 0f,
+                previewBitmap = preview
             )
         } finally {
             pages.forEach(Bitmap::recycle)
@@ -111,7 +112,8 @@ class DeferredItemAnalyzer @Inject constructor(
         scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel> = emptyList(),
         barcodes: List<String>,
         neuralClassification: com.vaultbrain.core.common.model.Classification? = null,
-        neuralConfidence: Float = 0f
+        neuralConfidence: Float = 0f,
+        previewBitmap: Bitmap? = null
     ): VaultItem {
         val heuristic = heuristicExtractor.extract(
             text = buildString {
@@ -161,7 +163,8 @@ class DeferredItemAnalyzer @Inject constructor(
             ocrText = ocrText,
             objects = objects,
             scoredLabels = scoredLabels,
-            barcodes = barcodes
+            barcodes = barcodes,
+            previewBitmap = previewBitmap
         )
     }
 
@@ -175,8 +178,16 @@ class DeferredItemAnalyzer @Inject constructor(
         ocrText: String,
         objects: List<String>,
         scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel>,
-        barcodes: List<String>
+        barcodes: List<String>,
+        previewBitmap: Bitmap? = null
     ): VaultItem = try {
+        val llmImage = previewBitmap
+            ?.takeIf { captureEnrichmentGenerator.supportsImageInput() }
+            ?.let { bitmap ->
+                val stream = java.io.ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
+                com.vaultbrain.core.ai.llm.LlmImageInput.fromEncodedBytes(stream.toByteArray())
+            }
         withTimeoutOrNull(LLM_ENRICHMENT_TIMEOUT_MS) {
             captureEnrichmentGenerator.generate(
                 evidence = CapturePromptEvidence(
@@ -188,7 +199,7 @@ class DeferredItemAnalyzer @Inject constructor(
                     systemFacetHints = item.lensTags,
                     existingMetadata = item.parsedMetadata
                 ),
-                image = null
+                image = llmImage
             )?.applyTo(item, replaceHeuristicContent = true)
         } ?: item
     } catch (cancelled: CancellationException) {

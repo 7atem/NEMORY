@@ -16,4 +16,10 @@
     <string name="money_item_recurring">Recurring</string>
     <string name="money_export_csv">Export CSV</string>
     <string name="money_lens_view_subtitle">View over your vault — items can appear in multiple lenses.</string>
+    <string name="money_empty_message">No finance or shopping items yet</string>
+    <string name="money_section_recent">Recent</string>
+    <string name="money_section_older">Older</string>
+    <string name="money_iban_validator">IBAN Validator</string>
+    <string name="money_trial_expiring_title">Trial expiring soon!</string>
+    <string name="money_trial_expiring_message">Cancel %1$s in %2$d days to avoid charges</string>
 </resources>

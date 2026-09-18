@@ -32,7 +32,7 @@ class OnnxLlmClient @Inject constructor(
     /**
      * Executes offline local SLM generation over the prompt context.
      */
-    override suspend fun generate(prompt: String): String? = withContext(Dispatchers.Default) {
+    override suspend fun generate(prompt: String, creative: Boolean): String? = withContext(Dispatchers.Default) {
         if (!isAvailable()) return@withContext null
 
         runCatching {
@@ -40,7 +40,7 @@ class OnnxLlmClient @Inject constructor(
         }.getOrNull()
     }
 
-    override fun generateStream(prompt: String): kotlinx.coroutines.flow.Flow<String> = kotlinx.coroutines.flow.flow {
+    override fun generateStream(prompt: String, creative: Boolean): kotlinx.coroutines.flow.Flow<String> = kotlinx.coroutines.flow.flow {
         val fullResponse = generate(prompt) ?: return@flow
         val words = fullResponse.split(" ")
         for (word in words) {

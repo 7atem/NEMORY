@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="detail_source_facts">Evidence from this document</string>
+    <string name="detail_shared_entities">Documents with matching entities</string>
+    <string name="daily_intelligence_title">From your documents</string>
     <string name="home_today">Today</string>
     <string name="home_upcoming">Upcoming</string>
     <string name="home_today_empty">Nothing scheduled for today.</string>
@@ -24,7 +27,7 @@
     <string name="vault_enter_pin">Enter Master PIN</string>
     <string name="vault_unlock_biometric">Unlock with Biometrics</string>
 
-    <string name="home_recently_dumped">Recently Dumped</string>
+    <string name="home_recently_dumped">Recently saved</string>
     <string name="home_empty_recent">No items recently dumped.</string>
     <string name="home_scan_first_document">Scan Document</string>
     <string name="home_active_lenses">Smart spaces</string>
@@ -212,7 +215,7 @@
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_model_title">Smarter organization, still private</string>
-    <string name="onboarding_model_body">Download the optional on-device AI model for smarter titles, categories, details, and highlights on phones without Gemini Nano. The download is about 530 MB.</string>
+    <string name="onboarding_model_body">Download the optional on-device AI model for smarter titles, categories, details, and highlights on phones without Gemini Nano. The download is about 1.6 GB.</string>
     <string name="onboarding_model_trust">Processing stays on this device and works offline after the one-time download.</string>
     <string name="onboarding_model_download">Download on-device AI</string>
     <string name="onboarding_model_later">Maybe later</string>
@@ -226,6 +229,19 @@
     <string name="gemma_banner_queued">Preparing the download and waiting for a network connection…</string>
     <string name="gemma_banner_download">Download on-device AI</string>
     <string name="gemma_banner_dismiss">Dismiss</string>
+
+    <string name="model_prompt_dialog_title">Enhance Nemory with On-Device AI</string>
+    <string name="model_prompt_dialog_subtitle">Download the on-device multimodal model (~1.6 GB) for maximum accuracy and features while keeping 100% privacy.</string>
+    <string name="model_prompt_feature_1_title">Multimodal Vision &amp; Extraction</string>
+    <string name="model_prompt_feature_1_desc">Smarter document analysis, instant OCR, chart parsing, and layout understanding.</string>
+    <string name="model_prompt_feature_2_title">Automatic Organization &amp; Titles</string>
+    <string name="model_prompt_feature_2_desc">Generates accurate titles, smart categories, expiry dates, and key item highlights.</string>
+    <string name="model_prompt_feature_3_title">Visual Vault Search &amp; Q&amp;A</string>
+    <string name="model_prompt_feature_3_desc">Ask complex questions about your saved receipts, images, and notes in Brain chat.</string>
+    <string name="model_prompt_feature_4_title">100% Offline &amp; Private</string>
+    <string name="model_prompt_feature_4_desc">Runs locally on your device hardware with zero data uploaded to the cloud.</string>
+    <string name="model_prompt_download_action">Download AI Model (~1.6 GB)</string>
+    <string name="model_prompt_later_action">Maybe Later</string>
     <string name="collections_title">Your collections</string>
     <string name="collections_intro">Keep related memories together using your own names.</string>
     <string name="collections_archived_intro">Archived collections keep their items and can be restored.</string>
@@ -264,4 +280,47 @@
     <string name="suggested_collections">Suggested collections</string>
     <string name="add_suggestion">Add</string>
     <string name="reject_suggestion">Not this</string>
+    <string name="home_from_gmail">From Gmail</string>
+    <string name="browser_selected_count">%1$d selected</string>
+    <string name="browser_clear_selection">Clear selection</string>
+    <string name="browser_select_all">Select all</string>
+    <string name="browser_pin_selection">Pin selected items</string>
+    <string name="browser_back">Back</string>
+    <string name="browser_clear_search">Clear search</string>
+    <string name="browser_toggle_view">Switch list or timeline view</string>
+
+    <string name="home_collection_prompt">Create a collection</string>
+    <string name="home_collection_prompt_body">%1$d items saved this week. Keep related items together.</string>
+    <string name="home_proactive_insights_title">Daily Insights</string>
+    <string name="detail_pdf_title">Title: %1$s</string>
+    <string name="detail_pdf_summary">Summary:</string>
+    <string name="detail_pdf_ocr">Extracted Text:</string>
+    <string name="collections_smart_suggestions">Smart Suggestions</string>
+    <string name="collections_all_items">All Items</string>
+    <string name="collections_add_items_confirm">Add (%1$d)</string>
+    <string name="fab_voice">Voice</string>
+    <string name="fab_paste">Paste</string>
+    <string name="fab_import">Import</string>
+    <string name="fab_scan">Scan</string>
+    <string name="fab_expand">Expand actions</string>
+    <string name="fab_collapse">Close actions</string>
+    <string name="auth_unlock_title">Unlock Nemory</string>
+    <string name="auth_unlock_subtitle">Use biometrics to access your vault</string>
+    <string name="auth_use_pin">Use PIN</string>
+    <string name="auth_tagline">Your on-device chief of staff</string>
+    <string name="detail_possible_duplicate_desc">Similar item detected in vault</string>
+    <string name="detail_view">View</string>
+    <string name="detail_needs_review_confidence">Needs Review: Low extraction confidence</string>
+    <string name="detail_review">Review</string>
+    <string name="detail_ai_doc_intelligence">AI Document Intelligence</string>
+    <string name="detail_summarize">Summarize</string>
+    <string name="detail_generating_ai_summary">Generating on-device AI summary…</string>
+    <string name="detail_remind_expiry">Remind me before expiry</string>
+    <string name="detail_extracted_details">Extracted Details</string>
+    <string name="auth_pin_requirement">At least 4 digits. This PIN protects your entire vault.</string>
+    <string name="auth_new_pin">New PIN</string>
+    <string name="auth_pin_mismatch">PINs don\'t match. Try again.</string>
+    <string name="auth_continue">Continue</string>
+    <string name="auth_create_unlock">Create PIN &amp; Unlock</string>
+    <string name="auth_use_biometrics">Use biometrics</string>
 </resources>

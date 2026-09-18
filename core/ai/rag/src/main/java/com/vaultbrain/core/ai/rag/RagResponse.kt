@@ -10,8 +10,10 @@ import com.vaultbrain.core.integrations.model.ExternalRecord
  */
 data class RagResponse(
     val answer: String? = null,
+    val status: String? = null,
     val sources: List<VaultItem> = emptyList(),
     val externalSources: List<ExternalRecord> = emptyList(),
+    val proposals: List<LocalAgent.ActionProposal> = emptyList(),
     val confidence: Float = 0f,
     val evidence: RagEvidence? = null,
     val responseOrigin: AiResponseOrigin? = null,
@@ -31,7 +33,9 @@ enum class RagEvidenceKind {
     TRIP_BRIEFING,
     RECURRING_SPEND,
     MEDIA_BACKLOG,
-    FILTERED_ITEMS
+    FILTERED_ITEMS,
+    MISSING_DOCUMENTS,
+    REPLACEMENT_CHAIN
 }
 
 /** Authoritative Kotlin-computed result rendered before any explanatory prose. */

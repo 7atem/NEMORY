@@ -1,7 +1,8 @@
 package com.vaultbrain.core.ai.heuristics
 
 import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
+import com.vaultbrain.shared.intelligence.KeywordDictionary
 import com.vaultbrain.core.common.model.ScoredLabel
 import com.vaultbrain.core.common.metadata.MetadataFieldType
 import com.vaultbrain.core.common.metadata.MetadataValueNormalizer
@@ -247,10 +248,18 @@ class HeuristicExtractor @Inject constructor() {
             UTILITY_PATTERN.containsMatchIn(lower) -> Classification.UTILITY_BILL
             CRYPTO_TX_PATTERN.containsMatchIn(lower) || WALLET_ADDRESS_PATTERN.containsMatchIn(lower) -> Classification.CRYPTO_TRANSACTION
             lower.contains("bank statement") || (lower.contains("account") && lower.contains("balance") && lower.containsAny("statement", "period")) -> Classification.BANK_STATEMENT
+            lower.containsAny(
+                "birth certificate", "certification of birth", "vital records", "record of birth",
+                "شهادة ميلاد"
+            ) -> Classification.IDENTITY_DOCUMENT
+            lower.containsAny(
+                "parking violation", "parking ticket", "notice of violation", "traffic citation",
+                "citation #", "citation no"
+            ) -> Classification.GENERAL_DOCUMENT
             lower.containsAny("transcript", "academic record", "diploma", "degree certificate") -> Classification.ACADEMIC_RECORD
             lower.containsAny("passport", "جواز سفر", "رقم الجواز") || lowerVision.contains("passport") -> Classification.PASSPORT
             lower.containsAny(
-                "identity card", "id card", "national id", "national identity", "driver license",
+                "identity card", "identification card", "id card", "national id", "national identity", "driver license",
                 "driver's license", "driving licence", "residence card", "بطاقة هوية",
                 "بطاقة رقم قومي", "الرقم القومي", "رخصة قيادة"
             ) || lowerVision.containsAny("identity card", "id card", "driver license") ->
@@ -428,16 +437,13 @@ class HeuristicExtractor @Inject constructor() {
     ): Map<String, String> {
         val extracted = buildMap<String, String> {
             dates.firstOrNull()?.let { put("date", it) }
-            val explicitTotalMatch = EXPLICIT_TOTAL_PATTERN.find(text)
-            if (explicitTotalMatch != null) {
-                val rawTotal = explicitTotalMatch.groupValues[2]
-                MetadataValueNormalizer.normalize("total", rawTotal, MetadataFieldType.DECIMAL)?.let { put("total", it) } ?: put("total", rawTotal)
-            } else {
-                // Don't unconditionally grab the biggest number for total
-            }
+            // Don't unconditionally grab the biggest number for total
+            findBestTotal(text)?.let { put("total", it) }
             currencies.firstOrNull()?.let { put("currency", it) }
             emails.firstOrNull()?.let { put("email", it) }
-            if (classification == Classification.BUSINESS_CARD || classification == Classification.INVOICE) phones.firstOrNull()?.let { put("phone", it) }
+            if (classification == Classification.BUSINESS_CARD || classification == Classification.INVOICE) {
+                phones.firstOrNull(::isPlausiblePhone)?.let { put("phone", it) }
+            }
             urls.firstOrNull()?.let { put("url", it) }
             iban.firstOrNull()?.let { put("iban", it) }
             
@@ -458,17 +464,14 @@ class HeuristicExtractor @Inject constructor() {
                 Classification.RECEIPT, Classification.INVOICE -> {
                     val receiptFields = ReceiptFieldExtractor.extract(text)
                     val merchant = receiptFields.merchant
-                        ?: text.lineSequence().firstOrNull { it.isNotBlank() }?.take(80)?.trim()
+                        ?: text.lineSequence()
+                            .map { it.trim() }
+                            .firstOrNull { it.isNotBlank() && !GENERIC_DOC_HEADER.containsMatchIn(it) }
+                            ?.take(80)
                     merchant?.let { put("merchant", it) }
                     TAX_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("tax", it) }
                     PAYMENT_METHOD_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("card_last4", it) }
-                    REF_NUMBER_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("reference_number", it) }
-                    val lineItems = RECEIPT_LINE_PATTERN.findAll(text)
-                        .map { it.value.trim() }
-                        .filterNot { it.contains("total", true) || it.contains("tax", true) }
-                        .take(20)
-                        .toList()
-                    if (lineItems.isNotEmpty()) put("items", lineItems.joinToString(" | "))
+                    REF_NUMBER_PATTERN.find(text)?.groupValues?.getOrNull(1)?.takeIf(::isUsableValue)?.let { put("reference_number", it) }
                     if (classification == Classification.RECEIPT) {
                         PURCHASE_DATE_PATTERN.find(text)?.groupValues?.getOrNull(1)
                             ?.let { put("purchase_date", it) }
@@ -477,7 +480,7 @@ class HeuristicExtractor @Inject constructor() {
                         DUE_DATE_PATTERN.find(text)?.groupValues?.getOrNull(1)
                             ?.let { put("due_date", it) }
                         INVOICE_NUMBER_PATTERN.find(text)?.groupValues?.getOrNull(1)
-                            ?.let { put("invoice_number", it) }
+                            ?.takeIf(::isUsableValue)?.let { put("invoice_number", it) }
                     }
                     // Structured receipt fields fill in anything the generic patterns missed.
                     receiptFields.metadata.forEach { (key, value) ->
@@ -490,7 +493,9 @@ class HeuristicExtractor @Inject constructor() {
                     DOCTOR_PATTERN.find(text)?.value?.let { put("doctor", it.trim()) }
                     REFILL_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("refills", it) }
                     dates.firstOrNull()?.let { put("prescription_date", it) }
-                    PATIENT_NAME_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("patient_name", it.trim()) }
+                    (PATIENT_NAME_PATTERN.find(text)?.groupValues?.getOrNull(1)?.trim()?.takeIf(::isUsableValue)
+                        ?: valueAfterLabel(text, PATIENT_LINE_LABEL, NAME_VALUE_PATTERN))
+                        ?.let { put("patient_name", it) }
                     
                     val medications = MEDICATION_PATTERN.findAll(text)
                         .map { it.value.trim() }
@@ -524,15 +529,19 @@ class HeuristicExtractor @Inject constructor() {
                         if (gender.isNotEmpty()) put("gender", gender)
                         put("expiry_date", "$expYear-${expRaw.substring(2, 4)}-${expRaw.substring(4, 6)}")
                     } else {
-                        PASSPORT_NUMBER_PATTERN.find(text)?.groupValues?.getOrNull(1)?.replace(" ", "")?.let { put("document_number", it) }
+                        (PASSPORT_NUMBER_PATTERN.find(text)?.groupValues?.getOrNull(1)?.replace(" ", "")?.takeIf(::isUsableValue)
+                            ?: findLabeledDocumentNumber(text))
+                            ?.let { put("document_number", it) }
                         DOB_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("dob", it) }
                     }
                     put("document_type", "passport")
                 }
                 Classification.IDENTITY_DOCUMENT -> {
-                    ID_NAME_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("name", it.trim()) }
+                    (ID_NAME_PATTERN.find(text)?.groupValues?.getOrNull(1)?.trim()?.takeIf(::isUsableValue)
+                        ?: valueAfterLabel(text, ID_NAME_LINE_LABEL, NAME_VALUE_PATTERN))
+                        ?.let { put("name", it) }
                     IDENTITY_NUMBER_PATTERN.find(text)?.groupValues?.getOrNull(1)?.replace(" ", "")
-                        ?.let { put("document_number", it) }
+                        ?.takeIf(::isUsableValue)?.let { put("document_number", it) }
                     DOB_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("dob", it) }
                     put("document_type", inferIdentityDocumentType(text))
                 }
@@ -540,17 +549,22 @@ class HeuristicExtractor @Inject constructor() {
                     put("document_type", "credit_card")
                 }
                 Classification.TICKET -> {
-                    PNR_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("pnr", it.replace(" ", "")) }
-                    PASSENGER_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("passenger", it.trim()) }
-                    FLIGHT_PATTERN.find(text)?.value?.let { put("flight_number", it.replace(" ", "")) }
-                    GATE_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("gate", it) }
-                    SEAT_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("seat", it) }
+                    PNR_PATTERN.find(text)?.groupValues?.getOrNull(1)?.takeIf(::isUsableValue)?.let { put("pnr", it.replace(" ", "")) }
+                    (PASSENGER_PATTERN.find(text)?.groupValues?.getOrNull(1)?.trim()?.takeIf(::isUsableValue)
+                        ?: valueAfterLabel(text, PASSENGER_LINE_LABEL, NAME_VALUE_PATTERN))
+                        ?.let { put("passenger", it) }
+                    findFlightNumber(text)?.let { put("flight_number", it) }
+                    GATE_PATTERN.find(text)?.groupValues?.getOrNull(1)?.takeIf(::isUsableValue)?.let { put("gate", it) }
+                    SEAT_PATTERN.find(text)?.groupValues?.getOrNull(1)?.takeIf(::isUsableValue)?.let { put("seat", it) }
                     TIME_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("time", it) }
                     dates.firstOrNull()?.let { put("date", it) }
                 }
                 Classification.HOTEL -> {
-                    PNR_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("confirmation", it.replace(" ", "")) }
-                    PASSENGER_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("name", it.trim()) }
+                    PNR_PATTERN.find(text)?.groupValues?.getOrNull(1)?.takeIf(::isUsableValue)?.let { put("confirmation", it.replace(" ", "")) }
+                    (PASSENGER_PATTERN.find(text)?.groupValues?.getOrNull(1)?.trim()?.takeIf(::isUsableValue)
+                        ?: valueAfterLabel(text, PASSENGER_LINE_LABEL, NAME_VALUE_PATTERN)
+                        ?: GUEST_NAME_PATTERN.find(text)?.groupValues?.getOrNull(1)?.trim()?.takeIf(::isUsableValue))
+                        ?.let { put("name", it) }
                     CHECK_IN_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("check_in", it) }
                     CHECK_OUT_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("check_out", it) }
                 }
@@ -593,7 +607,7 @@ class HeuristicExtractor @Inject constructor() {
 
             PICKUP_CODE_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("pickup_code", it) }
             RETURN_BY_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("return_by", it) }
-            EXPIRY_DATE_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { 
+            (EXPIRY_DATE_PATTERN.find(text)?.groupValues?.getOrNull(1) ?: findWrittenExpiry(text))?.let { 
                 if (it.contains("/") && it.length <= 5) {
                     val parts = it.split("/")
                     if (parts.size == 2) {
@@ -615,10 +629,108 @@ class HeuristicExtractor @Inject constructor() {
             LAB_REFERENCE_RANGE_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("reference_range", it) }
             VIN_PATTERN.findAll(text).map { it.value }.firstOrNull { isValidVin(it) }?.let { put("vin", it) }
             MIDDLE_EAST_PLATE_PATTERN.find(text)?.groupValues?.getOrNull(1)?.let { put("license_plate", it) }
-            PLATE_PATTERN.find(text)?.groupValues?.getOrNull(1)?.trim()?.let { put("plate", it) }
+            PLATE_PATTERN.find(text)?.groupValues?.getOrNull(1)?.trim()
+                ?.takeIf { value -> isUsableValue(value) && value.any(Char::isDigit) }?.let { put("plate", it) }
             EGYPTIAN_ID_PATTERN.find(text)?.value?.let { put("national_id", it) }
         }
         return MetadataValueNormalizer.normalizeTypedValues(extracted)
+    }
+
+    /**
+     * Label-aware total selection. Every line carrying a total-like label contributes its
+     * trailing amount; the strongest label rank wins in document order. Accounting-context
+     * lines (subtotal, previous balance, change, tendered, tax) are never eligible, and the
+     * amount must look like money (decimal cents or a currency marker on the same line), so
+     * chart axes, counters, and serial numbers cannot win.
+     */
+    private fun findBestTotal(text: String): String? {
+        var best: String? = null
+        var bestRank = Int.MAX_VALUE
+        text.lineSequence().forEach { line ->
+            val lower = line.lowercase().trim()
+            if (lower.isEmpty()) return@forEach
+            if (NEGATIVE_TOTAL_LABELS.any(lower::contains)) return@forEach
+            val rank = when {
+                STRONG_TOTAL_LABELS.any(lower::contains) -> 0
+                TOTAL_WORD.containsMatchIn(lower) -> 1
+                else -> return@forEach
+            }
+            if (rank >= bestRank) return@forEach
+            val amount = AMOUNT_PATTERN.findAll(line).lastOrNull()?.value ?: return@forEach
+            val moneyShape = amount.contains('.') || amount.contains(',') || CURRENCY_PATTERN.containsMatchIn(line)
+            if (!moneyShape) return@forEach
+            val normalized = MetadataValueNormalizer.normalize("total", amount, MetadataFieldType.DECIMAL)
+                ?: return@forEach
+            best = normalized
+            bestRank = rank
+        }
+        return best
+    }
+
+    /** A value mined after a label must not itself be (only) label vocabulary. */
+    private fun isUsableValue(value: String): Boolean {
+        val words = value.trim().lowercase().split(WHITESPACE_PATTERN).filter { it.isNotBlank() }
+        return words.isNotEmpty() && words.any { it !in LABEL_STOPWORDS }
+    }
+
+    /** When a labeled line carries no usable value, look at the following lines. */
+    private fun valueAfterLabel(text: String, labelRegex: Regex, valueRegex: Regex): String? {
+        val lines = text.lines()
+        val index = lines.indexOfFirst { labelRegex.containsMatchIn(it) }
+        if (index < 0) return null
+        return (listOf(lines[index]) + lines.drop(index + 1).take(2)).firstNotNullOfOrNull { line ->
+            valueRegex.find(line.trim())?.value?.takeIf(::isUsableValue)
+        }
+    }
+
+    private fun isPlausiblePhone(value: String): Boolean {
+        if (ZIP_CODE_PATTERN.matches(value)) return false
+        val digits = value.count(Char::isDigit)
+        if (digits !in 7..15) return false
+        val hasStructure = value.any { it == ' ' || it == '-' || it == '(' || it == '+' }
+        return hasStructure || digits >= 10
+    }
+
+    /** IATA-shaped flight codes: month abbreviations and barcode noise are not flights. */
+    private fun findFlightNumber(text: String): String? {
+        fun wellFormed(code: String): Boolean {
+            val letters = code.takeWhile(Char::isLetter)
+            val digits = code.dropWhile(Char::isLetter)
+            return letters.length in 2..3 && letters !in FLIGHT_MONTH_TOKENS &&
+                digits.length in 1..4 && digits.all(Char::isDigit)
+        }
+        val labelled = text.lineSequence().filter { it.contains("flight", true) }.toList()
+        fun codesIn(lines: List<String>) = lines.flatMap { line ->
+            FLIGHT_PATTERN.findAll(line).map { it.value.replace(" ", "") }
+        }.filter(::wellFormed).distinct()
+        val candidates = codesIn(labelled).ifEmpty { codesIn(text.lines()) }
+        // Prefer realistic codes (2+ digits) in document order.
+        return candidates.sortedBy { if (it.dropWhile(Char::isLetter).length >= 2) 0 else 1 }.firstOrNull()
+    }
+
+    /** Expiry dates written as "13 MAR 27", "13 MAR /MARS 27", or "29 NOV2019". */
+    private fun findWrittenExpiry(text: String): String? {
+        val lines = text.lines()
+        val labelIndex = lines.indexOfFirst { EXPIRY_LABEL_PATTERN.containsMatchIn(it) }
+        if (labelIndex < 0) return null
+        val searchSpace = (listOf(lines[labelIndex]) + lines.drop(labelIndex + 1).take(2)).joinToString(" ")
+        val match = WRITTEN_COMPACT_DATE.find(searchSpace) ?: return null
+        val day = match.groupValues[1].toIntOrNull() ?: return null
+        val month = MONTH_CODES[match.groupValues[2].uppercase()] ?: return null
+        val year = match.groupValues[3].let { if (it.length == 2) "20" + it else it }
+        return "%04d-%02d-%02d".format(year.toInt(), month, day)
+    }
+
+    /** Passport/document number printed on or right after its label line. */
+    private fun findLabeledDocumentNumber(text: String): String? {
+        val lines = text.lines()
+        val index = lines.indexOfFirst { DOC_NUMBER_LABEL_PATTERN.containsMatchIn(it) }
+        if (index < 0) return null
+        return (listOf(lines[index]) + lines.drop(index + 1).take(2)).firstNotNullOfOrNull { line ->
+            DOC_NUMBER_TOKEN.findAll(line)
+                .map { it.value }
+                .firstOrNull { it !in DOC_NUMBER_REJECT && it.toSet().size > 1 }
+        }
     }
 
     private fun inferIdentityDocumentType(text: String): String {
@@ -642,7 +754,7 @@ class HeuristicExtractor @Inject constructor() {
         val tags = mutableSetOf<String>()
         
         when (classification) {
-            Classification.RECEIPT, Classification.INVOICE, Classification.PRODUCT_PHOTO, Classification.MENU_PHOTO, Classification.BANK_STATEMENT, Classification.CREDIT_CARD -> tags += LensId.MONEY
+            Classification.RECEIPT, Classification.INVOICE, Classification.PRODUCT_PHOTO, Classification.MENU_PHOTO, Classification.BANK_STATEMENT, Classification.CREDIT_CARD, Classification.UTILITY_BILL -> tags += LensId.MONEY
             Classification.PRESCRIPTION, Classification.LAB_RESULT -> tags += LensId.HEALTH
             Classification.TICKET, Classification.HOTEL, Classification.SERIAL_PLATE -> tags += LensId.TRAVEL
             Classification.PASSPORT, Classification.IDENTITY_DOCUMENT, Classification.BUSINESS_CARD, Classification.WARRANTY_CARD -> tags += LensId.BUREAUCRACY
@@ -652,7 +764,8 @@ class HeuristicExtractor @Inject constructor() {
         
         tags.addAll(KeywordDictionary.detectHierarchy(text).keys)
         if (lower.containsAny("warranty", "guarantee", "appliance", "user manual", "serial number", "model number")) tags += LensId.BUREAUCRACY
-        if (lower.contains("car") || lower.contains("vehicle") || lower.contains("fuel") || lowerVision.contains("car") || lowerVision.contains("vehicle") || lowerVision.contains("tire")) tags += LensId.TRAVEL
+        if (CAR_WORD.containsMatchIn(lower) || lower.contains("vehicle") || lower.contains("fuel") || lowerVision.contains("car") || lowerVision.contains("vehicle") || lowerVision.contains("tire")) tags += LensId.TRAVEL
+        if (lower.containsAny("violation", "citation", "fine", "penalty")) tags += LensId.MONEY
         if (lower.containsAny("movie", "film", "book", "podcast", "watchlist", "course") || lowerVision.containsAny("poster", "film", "art")) tags += LensId.MEDIA
         if (lower.containsAny("task", "todo", "to-do", "deadline", "meeting", "project", "action item")) tags += LensId.BUREAUCRACY
         if (lower.containsAny("dry clean", "laundry", "pickup code", "pickup ticket", "repair order", "service order", "return window", "return by")) tags += LensId.MONEY
@@ -831,7 +944,6 @@ class HeuristicExtractor @Inject constructor() {
         private val CHECK_OUT_PATTERN =
             """(?i)(?:check[ -]?out|departure|المغادرة)[\s:#*-]*(\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4})""".toRegex()
         private val TAX_PATTERN = """(?i)\b(?:tax|vat)[\s:$]*([0-9][0-9,.]*)""".toRegex()
-        private val RECEIPT_LINE_PATTERN = """(?m)^\s*.+?\s+[0-9][0-9,.]*\s*(?:EGP|USD|EUR|SAR|AED)?\s*$""".toRegex(RegexOption.IGNORE_CASE)
         private val PASSPORT_NUMBER_PATTERN =
             """(?im)(?:passport\s*(?:no|number)?|document\s*(?:no|number)?)[\s:#-]*((?=[A-Z0-9 ]*\d)[A-Z0-9][A-Z0-9 ]{4,16})\s*$""".toRegex()
         private val IDENTITY_NUMBER_PATTERN =
@@ -910,7 +1022,42 @@ class HeuristicExtractor @Inject constructor() {
             "\\b[A-Z]{2}\\d{2}(?:\\s?[A-Z\\d]{4}){3,7}(?:\\s?[A-Z\\d]{1,4})?\\b".toRegex(RegexOption.IGNORE_CASE)
 
         // Memory-optimized shared regexes
-        private val EXPLICIT_TOTAL_PATTERN = "(?i)(?:t[o0]tal|amount due|sum|balance|price)[\\s\\:]*([^\\d\\n\\r]{0,3})([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?|[0-9]+[.,][0-9]{2})".toRegex()
+        private val TOTAL_WORD = "(?i)\\bt[o0]tal\\b".toRegex()
+        private val STRONG_TOTAL_LABELS = setOf(
+            "grand total", "total due", "total amount due", "amount due", "total amount",
+            "pay this amount", "amount to pay", "balance due", "total price"
+        )
+        private val NEGATIVE_TOTAL_LABELS = setOf(
+            "subtotal", "sub total", "sub-total", "previous balance", "past due",
+            "balance forward", "payments received", "payment received", "change due",
+            "change", "tendered", "tend", "tax", "vat", "gst", "price to compare"
+        )
+        private val LABEL_STOPWORDS = setOf(
+            "of", "the", "a", "an", "name", "date", "dates", "number", "no", "state",
+            "plate", "passenger", "passanger", "information", "address", "location",
+            "from", "to", "total", "mr", "mrs", "ms", "dr", "value", "type", "code", "id"
+        )
+        private val ZIP_CODE_PATTERN = "\\d{5}-\\d{4}".toRegex()
+        private val CAR_WORD = "(?i)\\bcar\\b".toRegex()
+        private val GENERIC_DOC_HEADER = "(?i)^\\s*(?:invoice|receipt|bill|sale)\\b".toRegex()
+        private val NAME_VALUE_PATTERN = "^[A-Z][A-Za-z.\u0027-]+(?:\\s+[A-Z][A-Za-z.\u0027-]+){1,2}".toRegex()
+        private val PASSENGER_LINE_LABEL = "(?i)pass(?:e|a)nger|\\bname\\b".toRegex()
+        private val PATIENT_LINE_LABEL = "(?i)patient\\s*name".toRegex()
+        private val ID_NAME_LINE_LABEL = "(?i)\\b(?:name|surname|given name)\\b".toRegex()
+        private val GUEST_NAME_PATTERN = "(?i)\\b(?:guest|dear)\\s+(?:mr\\.?|mrs\\.?|ms\\.?)?\\s*([A-Z][A-Za-z.\u0027-]+(?:\\s+[A-Z][A-Za-z.\u0027-]+){0,2})".toRegex()
+        private val FLIGHT_MONTH_TOKENS = setOf(
+            "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
+        )
+        private val EXPIRY_LABEL_PATTERN = "(?i)expiry|expires|expiration|exp\\b|valid\\s+(?:until|thru)".toRegex()
+        private val WRITTEN_COMPACT_DATE =
+            "(\\d{1,2})\\s*(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*(?:\\s*/\\s*[A-Z]*)?\\s*(\\d{2,4})".toRegex(RegexOption.IGNORE_CASE)
+        private val MONTH_CODES = mapOf(
+            "JAN" to 1, "FEB" to 2, "MAR" to 3, "APR" to 4, "MAY" to 5, "JUN" to 6,
+            "JUL" to 7, "AUG" to 8, "SEP" to 9, "OCT" to 10, "NOV" to 11, "DEC" to 12
+        )
+        private val DOC_NUMBER_LABEL_PATTERN = "(?i)passport\\s*(?:card\\s*)?(?:no|number)|document\\s*(?:no|number)".toRegex()
+        private val DOC_NUMBER_TOKEN = "\\b(?=[A-Z0-9]*\\d)[A-Z0-9]{6,12}\\b".toRegex()
+        private val DOC_NUMBER_REJECT = setOf("GBR", "USA", "CAN", "AUS", "FRA", "DEU", "NO", "NO.")
         private val WHITESPACE_PATTERN = "\\s+".toRegex()
         private val NEWLINE_PATTERN = "[\\t\\r\\n]+".toRegex()
         private val MULTI_SPACE_PATTERN = " +".toRegex()

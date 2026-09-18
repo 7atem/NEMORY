@@ -14,4 +14,16 @@
     <string name="travel_items_title">عناصر السفر</string>
     <string name="travel_item_location">الموقع: %1$s</string>
     <string name="travel_lens_view_subtitle">عرض لخزنتك — يمكن أن تظهر العناصر في أكثر من عدسة.</string>
+    <string name="travel_empty_message">لا توجد عناصر سفر بعد</string>
+    <string name="travel_section_recent">الأخيرة</string>
+    <string name="travel_section_older">الأقدم</string>
+    <string name="travel_stat_hero_upcoming">القادمة</string>
+    <string name="travel_stat_hero_flights">الرحلات الجوية</string>
+    <string name="travel_stat_hero_hotels">الفنادق</string>
+    <string name="travel_splitter_title">تقسيم فواتير المجموعة</string>
+    <string name="travel_splitter_total_cost">إجمالي تكلفة الرحلة:</string>
+    <string name="travel_splitter_travelers">المسافرون:</string>
+    <string name="travel_splitter_per_person">لكل شخص</string>
+    <string name="travel_splitter_decrease">إنقاص</string>
+    <string name="travel_splitter_increase">زيادة</string>
 </resources>

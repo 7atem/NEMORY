@@ -16,7 +16,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.vaultbrain.core.common.model.ProcessingState
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.notifications.UnifiedAlertManager
 import com.vaultbrain.feature.capture.DeferredItemAnalyzer
@@ -73,6 +73,7 @@ class DeferredAnalysisWorker @AssistedInject constructor(
                         alertManager.scheduleAlerts(analyzed)
                     }
                 } catch (e: Exception) {
+                    if (e is kotlinx.coroutines.CancellationException) throw e
                     failures++
                     repository.transitionIndexingState(
                         claimed.id,
@@ -84,7 +85,7 @@ class DeferredAnalysisWorker @AssistedInject constructor(
         } finally {
             dismissStatusNotification()
         }
-        if (gemmaModelManager.status.value == GemmaModelStatus.READY) {
+        if (gemmaModelManager.status.value == OnDeviceModelStatus.READY) {
             LlmEnrichmentWorker.enqueue(applicationContext)
         }
         return if (failures > 0 && runAttemptCount < MAX_RUN_ATTEMPTS) Result.retry() else Result.success()

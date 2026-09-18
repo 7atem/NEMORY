@@ -1,0 +1,87 @@
+name: iOS validation
+on:
+  push:
+    branches: [main, ios-kmp-foundation]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Pinned toolchain. The workflow queries the runner to confirm it exists.
+  XCODE_VERSION: '16.1'
+
+jobs:
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Print toolchain and available simulators
+        run: |
+          set -euo pipefail
+          echo '=== Installed Xcode versions ==='
+          ls -1 /Applications | grep '^Xcode' || true
+          echo "=== Selecting Xcode ${XCODE_VERSION} ==="
+          sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+          xcode-select -p
+          xcodebuild -version
+          echo '=== Available SDKs ==='
+          xcodebuild -showsdks
+          echo '=== Available runtimes ==='
+          xcrun simctl list runtimes
+          echo '=== Available devices ==='
+          xcrun simctl list devices available
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: iosApp
+        run: xcodegen generate
+
+      - name: Build shared Kotlin framework for iOS simulator
+        run: |
+          set -euo pipefail
+          mkdir -p shared/build/logs
+          ./gradlew :shared:embedAndSignAppleFrameworkForXcode --console=plain 2>&1 | tee shared/build/logs/embed-framework.log
+
+      - name: Run shared Kotlin/Native tests
+        run: |
+          set -euo pipefail
+          ./gradlew :shared:iosSimulatorArm64Test --console=plain 2>&1 | tee shared/build/logs/ios-simulator-test.log
+
+      - name: Build iOS app
+        run: |
+          set -euo pipefail
+          mkdir -p iosApp/build
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -derivedDataPath iosApp/build/DerivedData \
+            -resultBundlePath iosApp/build/iosApp.xcresult \
+            build 2>&1 | tee iosApp/build/xcodebuild.log
+
+      - name: Upload iOS build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-logs
+          path: |
+            iosApp/build/
+            shared/build/logs/
+            shared/build/reports/
+            shared/build/bin/

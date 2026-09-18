@@ -16,4 +16,10 @@
     <string name="money_item_recurring">متكرر</string>
     <string name="money_export_csv">تصدير CSV</string>
     <string name="money_lens_view_subtitle">عرض لخزنتك — يمكن أن تظهر العناصر في أكثر من عدسة.</string>
+    <string name="money_empty_message">لا توجد عناصر مالية أو تسوق بعد</string>
+    <string name="money_section_recent">الأخيرة</string>
+    <string name="money_section_older">الأقدم</string>
+    <string name="money_iban_validator">التحقق من الآيبان (IBAN)</string>
+    <string name="money_trial_expiring_title">فترة تجريبية تنتهي قريباً!</string>
+    <string name="money_trial_expiring_message">قم بإلغاء %1$s خلال %2$d أيام لتجنب الرسوم</string>
 </resources>

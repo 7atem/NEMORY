@@ -32,6 +32,7 @@ class ItemDetailViewModelTest {
     private val coordinator = mockk<HybridAiCoordinator>()
     private val consentStore = mockk<CloudConsentStore>(relaxed = true)
     private val vaultReminderManager = mockk<com.vaultbrain.core.notifications.VaultReminderManager>(relaxed = true)
+    private val actionExecutor = mockk<com.vaultbrain.core.integrations.action.ActionExecutor>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -54,7 +55,7 @@ class ItemDetailViewModelTest {
             HybridAiResult.Success("الأمير الصغير", AiResponseOrigin.ON_DEVICE_AI),
             HybridAiResult.CloudGenerationFailed
         )
-        val viewModel = ItemDetailViewModel(repository, alertManager, coordinator, consentStore, vaultReminderManager)
+        val viewModel = ItemDetailViewModel(repository, alertManager, coordinator, consentStore, vaultReminderManager, actionExecutor)
         viewModel.loadItem(item.id)
         advanceUntilIdle()
 
@@ -81,7 +82,7 @@ class ItemDetailViewModelTest {
         coEvery { repository.getById(item.id) } returns item
         every { repository.observeActiveCollections() } returns flowOf(listOf(member, other))
         every { repository.observeCollectionsForItem(item.id) } returns flowOf(listOf(member))
-        val viewModel = ItemDetailViewModel(repository, alertManager, coordinator, consentStore, vaultReminderManager)
+        val viewModel = ItemDetailViewModel(repository, alertManager, coordinator, consentStore, vaultReminderManager, actionExecutor)
         viewModel.loadItem(item.id)
         advanceUntilIdle()
 
@@ -99,7 +100,7 @@ class ItemDetailViewModelTest {
         every { repository.observeCollectionsForItem(item.id) } returns flowOf(emptyList())
         coEvery { repository.addItemToCollection(item.id, "c1") } returns true
         coEvery { repository.removeItemFromCollection(item.id, "c2") } returns true
-        val viewModel = ItemDetailViewModel(repository, alertManager, coordinator, consentStore, vaultReminderManager)
+        val viewModel = ItemDetailViewModel(repository, alertManager, coordinator, consentStore, vaultReminderManager, actionExecutor)
         viewModel.loadItem(item.id)
         advanceUntilIdle()
 

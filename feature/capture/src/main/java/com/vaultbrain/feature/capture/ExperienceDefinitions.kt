@@ -1,7 +1,7 @@
 package com.vaultbrain.feature.capture
 
 import com.vaultbrain.core.common.model.ExperienceId
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.PersonalExperience
 
 /**

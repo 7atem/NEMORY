@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -49,6 +50,14 @@ fun ConnectionsScreen(
         ActivityResultContracts.RequestPermission(),
         viewModel::onCalendarPermissionResult
     )
+    val googleConsent = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
+        viewModel.finishGoogleAuthorization(result.data, result.resultCode == android.app.Activity.RESULT_OK)
+    }
+    LaunchedEffect(Unit) {
+        viewModel.googleAuthorizationIntents.collect { pending ->
+            googleConsent.launch(androidx.activity.result.IntentSenderRequest.Builder(pending).build())
+        }
+    }
     LaunchedEffect(Unit) { viewModel.refreshCalendar() }
 
     Scaffold(
@@ -158,6 +167,36 @@ fun ConnectionsScreen(
                                     )
                                 }
                             )
+                        }
+                    }
+                    Text(stringResource(R.string.google_device_sync_body), modifier = Modifier.padding(top = 12.dp))
+                    uiState.google.error?.let { error ->
+                        Text(stringResource(when (error) {
+                            com.vaultbrain.feature.settings.viewmodel.GoogleConnectionError.SETUP -> R.string.google_setup_required
+                            com.vaultbrain.feature.settings.viewmodel.GoogleConnectionError.CONSENT -> R.string.google_consent_required
+                            com.vaultbrain.feature.settings.viewmodel.GoogleConnectionError.CONNECTION -> R.string.google_connection_failed
+                        }), color = MaterialTheme.colorScheme.error)
+                    }
+                    com.vaultbrain.core.integrations.google.GoogleService.entries.forEach { service ->
+                        Button(onClick = { viewModel.connectGoogle(service) }, enabled = !uiState.google.busy,
+                            modifier = Modifier.padding(top = 12.dp)) {
+                            Text(stringResource(if (service == com.vaultbrain.core.integrations.google.GoogleService.GMAIL)
+                                R.string.google_link_gmail else R.string.google_link_tasks))
+                        }
+                    }
+                    val googleConnections = nonCalendarConnections.filter { it.connectorId in setOf("gmail", "google_tasks") }
+                    googleConnections.filter { it.state != com.vaultbrain.core.common.model.external.ConnectionState.CONNECTED }.forEach { connection ->
+                        TextButton(onClick = {
+                            viewModel.connectGoogle(com.vaultbrain.core.integrations.google.GoogleService.entries.first {
+                                it.connectorId == connection.connectorId }, connection.accountId)
+                        }, enabled = !uiState.google.busy) { Text(stringResource(R.string.google_reconnect, connection.accountName ?: connection.accountId)) }
+                    }
+                    if (googleConnections.isNotEmpty()) {
+                        TextButton(onClick = viewModel::syncGoogle, enabled = !uiState.google.busy) { Text(stringResource(R.string.google_sync_now)) }
+                        googleConnections.distinctBy { it.accountId }.forEach { connection ->
+                            TextButton(onClick = { viewModel.disconnectGoogle(connection.accountId) }, enabled = !uiState.google.busy) {
+                                Text(stringResource(R.string.google_disconnect_account, connection.accountName ?: connection.accountId))
+                            }
                         }
                     }
                 }

@@ -99,18 +99,18 @@ class CaptureEnrichmentGeneratorTest {
         val textPrompts = mutableListOf<String>()
         val imagePrompts = mutableListOf<String>()
 
-        override suspend fun generate(prompt: String): String? {
+        override suspend fun generate(prompt: String, creative: Boolean): String? {
             textPrompts += prompt
             return textResponses?.getOrNull(textPrompts.lastIndex) ?: textResponse
         }
 
-        override suspend fun generate(prompt: String, image: LlmImageInput): String? {
+        override suspend fun generate(prompt: String, image: LlmImageInput, creative: Boolean): String? {
             imagePrompts += prompt
             if (cancelImage) throw CancellationException("foreground stopped")
             return imageResponse
         }
 
-        override fun generateStream(prompt: String): Flow<String> = emptyFlow()
+        override fun generateStream(prompt: String, creative: Boolean): Flow<String> = emptyFlow()
         override fun isAvailable(): Boolean = true
         override fun supportsImageInput(): Boolean = imageSupported
     }

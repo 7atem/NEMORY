@@ -2,7 +2,7 @@ package com.vaultbrain.core.ai.llm
 
 import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.VaultItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -237,8 +237,8 @@ private class FakeCloudConsentStore(initial: Set<Classification>) : CloudConsent
 }
 
 private class FakeLlmClient(private val response: String?) : LlmClient {
-    override suspend fun generate(prompt: String): String? = response
-    override fun generateStream(prompt: String): Flow<String> = emptyFlow()
+    override suspend fun generate(prompt: String, creative: Boolean): String? = response
+    override fun generateStream(prompt: String, creative: Boolean): Flow<String> = emptyFlow()
     override fun isAvailable(): Boolean = response != null
 }
 

@@ -4,7 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.android.billingclient.api.Purchase
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk

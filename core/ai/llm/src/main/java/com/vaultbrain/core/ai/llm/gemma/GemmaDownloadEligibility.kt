@@ -1,7 +1,6 @@
 package com.vaultbrain.core.ai.llm.gemma
 
 import com.vaultbrain.core.ai.llm.AiCapabilityManager
-import com.vaultbrain.core.ai.llm.OnDeviceModelStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -26,6 +25,6 @@ class GemmaDownloadEligibility @Inject constructor(
             .getOrElse { OnDeviceModelStatus.ERROR }
         if (nanoStatus == OnDeviceModelStatus.READY) return false
         withContext(Dispatchers.IO) { gemmaModelManager.refresh() }
-        return gemmaModelManager.status.value == GemmaModelStatus.NOT_DOWNLOADED
+        return gemmaModelManager.status.value == OnDeviceModelStatus.NOT_DOWNLOADED
     }
 }

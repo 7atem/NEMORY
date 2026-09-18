@@ -12,6 +12,13 @@ data class CaptureSuggestion(
     val subtitle: String
 )
 
+data class CollectionSuggestion(
+    val lensId: String,
+    val lensLabel: String,
+    val itemCount: Int,
+    val sampleTitles: List<String>
+)
+
 @Singleton
 class CapturePatternDetector @Inject constructor() {
     fun detectPattern(items: List<VaultItem>, now: Long = System.currentTimeMillis()): CaptureSuggestion? {
@@ -55,5 +62,41 @@ class CapturePatternDetector @Inject constructor() {
         }
 
         return null
+    }
+
+    /**
+     * Suggests grouping items into a collection when 3+ items share a lens in the past 7 days.
+     * Returns the top lens suggestion, or null if no strong pattern is found.
+     */
+    fun detectCollectionPattern(
+        items: List<VaultItem>,
+        now: Long = System.currentTimeMillis()
+    ): CollectionSuggestion? {
+        val sevenDaysAgo = now - 7L * 24 * 60 * 60 * 1000
+        val recent = items.filter { it.createdAt >= sevenDaysAgo && it.primaryLensId != null }
+        if (recent.isEmpty()) return null
+
+        // Group by primaryLensId and find the most common lens with >= 3 items
+        val candidate = recent
+            .groupBy { it.primaryLensId!! }
+            .maxByOrNull { it.value.size }
+            ?.takeIf { it.value.size >= 3 }
+            ?: return null
+
+        val lensLabel = when (candidate.key) {
+            com.vaultbrain.shared.domain.LensId.MONEY -> "Finance"
+            com.vaultbrain.shared.domain.LensId.HEALTH -> "Health"
+            com.vaultbrain.shared.domain.LensId.TRAVEL -> "Travel"
+            com.vaultbrain.shared.domain.LensId.BUREAUCRACY -> "Documents"
+            com.vaultbrain.shared.domain.LensId.MEDIA -> "Media"
+            else -> candidate.key
+        }
+
+        return CollectionSuggestion(
+            lensId = candidate.key,
+            lensLabel = lensLabel,
+            itemCount = candidate.value.size,
+            sampleTitles = candidate.value.take(3).map { it.title }
+        )
     }
 }

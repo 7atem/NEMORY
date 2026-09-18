@@ -38,9 +38,6 @@ import java.util.Date
 import java.util.Locale
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.LargeTopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 
 import androidx.compose.foundation.background
 import com.vaultbrain.core.common.ui.SharedItemCard
@@ -77,28 +74,18 @@ fun MoneyLensScreen(
     val recentItems = items.filter { (now - it.createdAt) <= 7 * 24 * 60 * 60 * 1000L }
     val olderItems = items.filter { (now - it.createdAt) > 7 * 24 * 60 * 60 * 1000L }
 
-    Scaffold(
-        topBar = {
-            LargeTopAppBar(
-                title = { Text("💰 Money (${items.size})") }
-            )
-        },
+    LazyColumn(
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxSize()
-    ) { paddingValues ->
-        LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.money_lens_view_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+    ) {
+        item {
+            Text(
+                text = stringResource(R.string.money_lens_view_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
             item {
                 if (upcomingTrials.isNotEmpty()) {
                     upcomingTrials.forEach { trialItem ->
@@ -131,7 +118,7 @@ fun MoneyLensScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "IBAN Validator",
+                    text = stringResource(R.string.money_iban_validator),
                     style = MaterialTheme.typography.labelLarge
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -167,16 +154,17 @@ fun MoneyLensScreen(
 
             if (items.isEmpty()) {
                 item {
-                    androidx.compose.material3.Text(
-                        text = "No money items yet", modifier = Modifier.fillMaxWidth().padding(32.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        
+                    Text(
+                        text = stringResource(R.string.money_empty_message),
+                        modifier = Modifier.fillMaxWidth().padding(32.dp),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             } else {
                 if (recentItems.isNotEmpty()) {
                     stickyHeader {
                         Text(
-                            text = "Recent",
+                            text = stringResource(R.string.money_section_recent),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -192,7 +180,7 @@ fun MoneyLensScreen(
                 if (olderItems.isNotEmpty()) {
                     stickyHeader {
                         Text(
-                            text = "Older",
+                            text = stringResource(R.string.money_section_older),
                             style = MaterialTheme.typography.titleMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -206,7 +194,6 @@ fun MoneyLensScreen(
                 }
             }
         }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -228,8 +215,8 @@ private fun TrialAlertCard(title: String, alertDate: Long, onClick: () -> Unit) 
             Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(24.dp))
             Spacer(modifier = Modifier.size(12.dp))
             Column {
-                Text("🚨 Trial expiring soon!", style = MaterialTheme.typography.titleSmall)
-                Text("Cancel $title in $daysUntil days to avoid charges", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.money_trial_expiring_title), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.money_trial_expiring_message, title, daysUntil.toInt()), style = MaterialTheme.typography.bodyMedium)
             }
         }
     }

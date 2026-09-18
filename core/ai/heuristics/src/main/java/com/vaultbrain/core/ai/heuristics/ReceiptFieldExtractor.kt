@@ -99,6 +99,9 @@ internal object ReceiptFieldExtractor {
         val name = match.groupValues[1].trim().trimEnd(':', '-')
         val amount = match.groupValues[2].normalizeAmount() ?: return@mapNotNull null
         if (name.length !in 2..80 || isControlLine(name) || looksLikeAddress(name)) return@mapNotNull null
+        if (name.none(Char::isLetter)) return@mapNotNull null
+        if (DATE_FRAGMENT.containsMatchIn(name)) return@mapNotNull null
+        if (ITEM_ADMIN_TERMS.containsMatchIn(name)) return@mapNotNull null
         name to amount
     }.distinct().take(MAX_ITEMS)
 
@@ -138,6 +141,10 @@ internal object ReceiptFieldExtractor {
     private fun String.cleanValue(): String? = trim().trimEnd(',', '.', ':').takeIf(String::isNotBlank)
 
     private val WHITESPACE = Regex("\\s+")
+    private val DATE_FRAGMENT = Regex("\\d{1,2}[-/.]\\d{1,2}")
+    private val ITEM_ADMIN_TERMS = Regex(
+        "(?i)\\b(?:account|approval|ref|reference|trans|txn|terminal|card|visa|mastercard|amex|validation|auth)\\b"
+    )
     private val AMOUNT = Regex("([0-9]+(?:[.,][0-9]{1,3})*)")
     private val DATE = Regex("(?<!\\d)\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{2,4}(?!\\d)")
     private val TIME = Regex("(?i)\\b\\d{1,2}:\\d{2}(?:\\s*[AP]M)?\\b")
@@ -153,7 +160,10 @@ internal object ReceiptFieldExtractor {
     )
     private val PRICED_ITEM_WITH_COLUMNS = Regex("^(.+?)\\s{2,}([0-9]+(?:[.,][0-9]{1,3})*)$")
 
-    private val TOTAL_LABEL = setOf("total", "grand total", "amount due", "balance due")
+    private val TOTAL_LABEL = setOf(
+        "total", "grand total", "amount due", "balance due", "total due",
+        "total amount due", "total amount", "pay this amount", "amount to pay"
+    )
     private val SUBTOTAL_LABEL = setOf("subtotal", "sub total")
     private val TAX_LABEL = setOf("tax", "no tax", "vat", "gst")
     private val TENDER_LABEL = setOf("tend", "tender", "tendered", "cash tendered", "amount tendered")

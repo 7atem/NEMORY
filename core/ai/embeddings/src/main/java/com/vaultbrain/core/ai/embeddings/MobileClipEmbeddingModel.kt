@@ -25,7 +25,11 @@ class MobileClipEmbeddingModel @Inject constructor(
     override suspend fun encode(image: Bitmap): FloatArray {
         val scaled = Bitmap.createScaledBitmap(image, 32, 32, true)
         val intValues = IntArray(32 * 32)
-        scaled.getPixels(intValues, 0, scaled.width, 0, 0, scaled.width, scaled.height)
+        try {
+            scaled.getPixels(intValues, 0, scaled.width, 0, 0, scaled.width, scaled.height)
+        } finally {
+            scaled.recycle()
+        }
         
         val output = FloatArray(100)
         

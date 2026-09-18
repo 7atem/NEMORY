@@ -44,6 +44,7 @@ dependencies {
     implementation(project(":core:ai:embeddings"))
     implementation(project(":core:ai:llm"))
     implementation(project(":core:notifications"))
+    implementation(project(":core:security"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

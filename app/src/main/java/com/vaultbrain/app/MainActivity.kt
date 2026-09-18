@@ -15,6 +15,8 @@ import androidx.core.view.WindowCompat
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.collectAsState
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
@@ -49,10 +51,12 @@ class MainActivity : FragmentActivity() {
     lateinit var gemmaDownloadPromptManager: com.vaultbrain.core.notifications.GemmaDownloadPromptManager
 
     private var pausedAtMillis: Long = 0L
+    private var navigationRequest by mutableIntStateOf(0)
 
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        navigationRequest = savedInstanceState?.getInt("navigation_request") ?: 0
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         // Screenshot protection is disabled at the owner's request.
@@ -63,7 +67,7 @@ class MainActivity : FragmentActivity() {
 
         com.vaultbrain.core.common.preferences.AppearancePreferences.init(applicationContext)
         setContent {
-            val crashFile = java.io.File(getExternalFilesDir(null), "vaultbrain_crash.txt")
+            val crashFile = java.io.File(filesDir, "vaultbrain_crash.txt")
             if (crashFile.exists()) {
                 val crashText = crashFile.readText()
                 MaterialTheme {
@@ -72,7 +76,7 @@ class MainActivity : FragmentActivity() {
                         androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                             item {
                                 androidx.compose.material3.Text(
-                                    text = "CRASH LOG FOUND:",
+                                    text = getString(R.string.crash_log_found),
                                     color = androidx.compose.ui.graphics.Color.Red,
                                     style = MaterialTheme.typography.titleLarge
                                 )
@@ -80,23 +84,21 @@ class MainActivity : FragmentActivity() {
                             item {
                                 androidx.compose.foundation.layout.Row {
                                     androidx.compose.material3.Button(
-                                        onClick = { crashFile.delete(); finish(); startActivity(intent) },
+                                        onClick = { crashFile.delete(); finish(); startActivity(Intent(this@MainActivity, MainActivity::class.java)) },
                                         modifier = Modifier.padding(end = 8.dp)
                                     ) {
-                                        androidx.compose.material3.Text("Clear & Restart")
+                                        androidx.compose.material3.Text(getString(R.string.crash_clear_restart))
                                     }
                                     val context = androidx.compose.ui.platform.LocalContext.current
                                     androidx.compose.material3.Button(
                                         onClick = {
-                                            val sendIntent = Intent().apply {
-                                                action = Intent.ACTION_SEND
-                                                putExtra(Intent.EXTRA_TEXT, crashText)
-                                                type = "text/plain"
-                                            }
-                                            context.startActivity(Intent.createChooser(sendIntent, "Share Crash Log"))
+                                            val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                            val clip = android.content.ClipData.newPlainText("Crash Log", getString(R.string.crash_copy_warning) + "\n\n" + crashText)
+                                            clipboard.setPrimaryClip(clip)
+                                            android.widget.Toast.makeText(context, getString(R.string.crash_copied_toast), android.widget.Toast.LENGTH_LONG).show()
                                         }
                                     ) {
-                                        androidx.compose.material3.Text("Share Log")
+                                        androidx.compose.material3.Text(getString(R.string.crash_copy_log))
                                     }
                                 }
                             }
@@ -139,7 +141,8 @@ class MainActivity : FragmentActivity() {
                         } else {
                             com.vaultbrain.app.navigation.Screen.Onboarding.route
                         },
-                        destinationAfterUnlock = shortcutDestination(intent)
+                        destinationAfterUnlock = shortcutDestination(intent),
+                        launchRequestId = navigationRequest
                     )
                 }
             }
@@ -150,8 +153,8 @@ class MainActivity : FragmentActivity() {
         val shortcutManager = getSystemService(ShortcutManager::class.java) ?: return
             
             val captureShortcut = ShortcutInfo.Builder(this, "shortcut_capture")
-                .setShortLabel("Quick Dump")
-                .setLongLabel("Capture to Vault")
+                .setShortLabel(getString(R.string.nav_capture))
+                .setLongLabel(getString(R.string.shortcut_capture_long))
                 .setIcon(Icon.createWithResource(this, android.R.drawable.ic_menu_camera))
                 .setIntent(Intent(this, MainActivity::class.java).apply {
                     action = ACTION_CAPTURE
@@ -159,8 +162,8 @@ class MainActivity : FragmentActivity() {
                 .build()
 
             val expiringShortcut = ShortcutInfo.Builder(this, "shortcut_expiring")
-                .setShortLabel("Expiring")
-                .setLongLabel("View Expiring Items")
+                .setShortLabel(getString(R.string.shortcut_expiring))
+                .setLongLabel(getString(R.string.shortcut_expiring))
                 .setIcon(Icon.createWithResource(this, android.R.drawable.ic_menu_today))
                 .setIntent(Intent(this, MainActivity::class.java).apply {
                     action = ACTION_VIEW_EXPIRING
@@ -179,7 +182,7 @@ class MainActivity : FragmentActivity() {
                     ?.let { "detail/${android.net.Uri.encode(it)}" }
                     ?: com.vaultbrain.app.navigation.Screen.Home.route
                 "lens" -> deepLink.pathSegments.firstOrNull()
-                    ?.let(com.vaultbrain.core.common.model.LensId::canonicalOrNull)
+                    ?.let(com.vaultbrain.shared.domain.LensId::canonicalOrNull)
                     ?.let { "lens/${android.net.Uri.encode(it)}" }
                     ?: com.vaultbrain.app.navigation.Screen.Home.route
                 "brain" -> com.vaultbrain.app.navigation.Screen.Brain.route
@@ -195,7 +198,7 @@ class MainActivity : FragmentActivity() {
             ACTION_CAPTURE -> {
                 val source = intent.getStringExtra("EXTRA_CAPTURE_SOURCE")
                 if (source != null) {
-                    "${com.vaultbrain.app.navigation.Screen.Capture.route}?source=$source"
+                    "${com.vaultbrain.app.navigation.Screen.Capture.route}?source=${android.net.Uri.encode(source)}"
                 } else {
                     com.vaultbrain.app.navigation.Screen.Capture.route
                 }
@@ -203,6 +206,7 @@ class MainActivity : FragmentActivity() {
             ACTION_VIEW_EXPIRING -> "${com.vaultbrain.app.navigation.Screen.Search.route}?filter=expiring"
             ACTION_OPEN_SETTINGS -> com.vaultbrain.app.navigation.Screen.Settings.route
             ACTION_ASK_NEMORY -> com.vaultbrain.app.navigation.Screen.Brain.route
+            ACTION_VIEW_VAULT -> com.vaultbrain.app.navigation.Screen.Search.route
             else -> com.vaultbrain.app.navigation.Screen.Home.route
         }
     }
@@ -228,6 +232,7 @@ class MainActivity : FragmentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        navigationRequest++
         reportShortcutUsage(intent)
         handleGemmaPromptAction(intent)
     }
@@ -235,6 +240,11 @@ class MainActivity : FragmentActivity() {
     override fun onPause() {
         super.onPause()
         pausedAtMillis = System.currentTimeMillis()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt("navigation_request", navigationRequest)
+        super.onSaveInstanceState(outState)
     }
 
     override fun onResume() {
@@ -245,7 +255,7 @@ class MainActivity : FragmentActivity() {
             if (elapsedMs >= thresholdMs) {
                 pausedAtMillis = 0L
                 finish()
-                startActivity(intent)
+                startActivity(Intent(this@MainActivity, MainActivity::class.java))
                 return
             }
         }
@@ -258,6 +268,7 @@ class MainActivity : FragmentActivity() {
         const val ACTION_OPEN_SETTINGS = "com.nemory.app.ACTION_OPEN_SETTINGS"
         const val ACTION_DOWNLOAD_GEMMA_MODEL = "com.nemory.app.ACTION_DOWNLOAD_GEMMA_MODEL"
         const val ACTION_ASK_NEMORY = "com.nemory.app.ACTION_ASK_NEMORY"
+        const val ACTION_VIEW_VAULT = "com.nemory.app.ACTION_VIEW_VAULT"
         private const val SHORTCUT_CAPTURE = "shortcut_capture"
         private const val SHORTCUT_EXPIRING = "shortcut_expiring"
     }

@@ -32,6 +32,7 @@ dependencyResolutionManagement {
 rootProject.name = "Nemory"
 
 include(":app")
+include(":shared")
 include(":core:common")
 include(":core:database")
 include(":core:integrations")

@@ -13,7 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import com.vaultbrain.core.ai.heuristics.HeuristicExtractor
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import org.junit.AfterClass
 import org.junit.Assert.assertTrue
 import org.junit.Test

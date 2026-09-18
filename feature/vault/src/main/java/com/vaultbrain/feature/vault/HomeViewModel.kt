@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vaultbrain.core.ai.llm.gemma.GemmaDownloadEligibility
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import com.vaultbrain.core.common.model.PersonalCollection
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.common.model.VaultReminder
@@ -12,6 +12,8 @@ import com.vaultbrain.core.common.model.external.ExternalSource
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository
+import com.vaultbrain.core.integrations.action.ActionExecutor
+import com.vaultbrain.core.common.model.ProactiveAction
 import com.vaultbrain.core.notifications.BackupNudgeStore
 import com.vaultbrain.core.notifications.GemmaBannerStore
 import com.vaultbrain.core.notifications.VaultReminderManager
@@ -24,7 +26,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ensureActive
 import javax.inject.Inject
 
 /**
@@ -46,8 +50,10 @@ data class HomeUiState(
     val needsReviewCount: Int = 0,
     val expiringSoonCount: Int = 0,
     val quickCaptureSuggestion: CaptureSuggestion? = null,
+    val collectionSuggestion: CollectionSuggestion? = null,
     val todayEvents: List<ExternalRecord> = emptyList(),
     val upcomingEvents: List<ExternalRecord> = emptyList(),
+    val todayGmail: List<ExternalRecord> = emptyList(),
     val todayReminders: List<VaultReminder> = emptyList(),
     val upcomingReminders: List<VaultReminder> = emptyList(),
     val attentionItems: List<AttentionItem> = emptyList()
@@ -62,8 +68,54 @@ class HomeViewModel @Inject constructor(
     private val gemmaBannerStore: GemmaBannerStore,
     private val externalContextRepository: ExternalContextRepository,
     private val vaultReminderManager: VaultReminderManager,
-    private val backupNudgeStore: BackupNudgeStore
+    private val backupNudgeStore: BackupNudgeStore,
+    private val actionExecutor: ActionExecutor,
+    private val dailyIntelligence: com.vaultbrain.core.ai.rag.DailyIntelligence? = null
 ) : ViewModel() {
+    private val _dailyInsights = MutableStateFlow<List<com.vaultbrain.core.ai.rag.DailyInsight>>(emptyList())
+    val dailyInsights: StateFlow<List<com.vaultbrain.core.ai.rag.DailyInsight>> = _dailyInsights
+    fun dismissDailyInsight(insight: com.vaultbrain.core.ai.rag.DailyInsight) {
+        _dailyInsights.update { it.filterNot { item -> item == insight } }
+        viewModelScope.launch { dailyIntelligence?.dismiss(insight) }
+    }
+    private var insightJob: kotlinx.coroutines.Job? = null
+    private var lastInsightRefresh = 0L
+    private var insightInput: InsightInput? = null
+
+    private data class InsightInput(
+        val items: List<VaultItem>,
+        val events: List<ExternalRecord>,
+        val reminders: List<VaultReminder>,
+        val downloadedModelReady: Boolean
+    )
+
+    fun refreshDailyInsights(items: List<VaultItem>, events: List<ExternalRecord>, reminders: List<VaultReminder>) {
+        if (com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value) {
+            insightJob?.cancel()
+            _dailyInsights.value = emptyList()
+            lastInsightRefresh = 0L
+            insightInput = null
+            return
+        }
+        val now = System.currentTimeMillis()
+        val input = InsightInput(items.toList(), events.toList(), reminders.toList(),
+            gemmaModelManager.status.value == OnDeviceModelStatus.READY)
+        if (input == insightInput &&
+            (insightJob?.isActive == true || now - lastInsightRefresh < 6 * 60 * 60 * 1000)) return
+        insightJob?.cancel()
+        insightInput = input
+        // Do not show conclusions about records that have changed or been removed.
+        _dailyInsights.value = emptyList()
+        insightJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(1_000) // Coalesce imports and connector sync bursts.
+            val selected = dailyIntelligence?.select(input.items, input.events, input.reminders).orEmpty()
+            kotlinx.coroutines.currentCoroutineContext().ensureActive()
+            if (!com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value && insightInput == input) {
+                _dailyInsights.value = selected
+                lastInsightRefresh = System.currentTimeMillis()
+            }
+        }
+    }
 
     private val gemmaEligible = MutableStateFlow(false)
     private val bannerDismissTick = MutableStateFlow(0)
@@ -94,9 +146,8 @@ class HomeViewModel @Inject constructor(
         bannerDismissTick
     ) { status, eligible, _ ->
         when {
-            status == GemmaModelStatus.QUEUED -> GemmaBanner(queued = true)
-            status is GemmaModelStatus.DOWNLOADING -> GemmaBanner(progress = status.progress)
-            eligible && status == GemmaModelStatus.NOT_DOWNLOADED && gemmaBannerStore.shouldShow() ->
+            status is OnDeviceModelStatus.DOWNLOADING -> GemmaBanner(progress = status.progress)
+            eligible && status == OnDeviceModelStatus.NOT_DOWNLOADED && gemmaBannerStore.shouldShow() ->
                 GemmaBanner()
             else -> null
         }
@@ -117,8 +168,9 @@ class HomeViewModel @Inject constructor(
 
     private val temporalContext = combine(
         externalContextRepository.observeRecordsBySource(ExternalSource.CALENDAR),
+        externalContextRepository.observeRecordsBySource(ExternalSource.GMAIL),
         vaultReminderManager.observeActive()
-    ) { events, reminders ->
+    ) { events, gmailRecords, reminders ->
         val zone = java.time.ZoneId.systemDefault()
         val todayStart = java.time.LocalDate.now(zone).atStartOfDay(zone).toInstant().toEpochMilli()
         val tomorrowStart = java.time.LocalDate.now(zone).plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
@@ -132,9 +184,12 @@ class HomeViewModel @Inject constructor(
             upcomingEvents = events.filter {
                 val start = it.startAt ?: return@filter false
                 start in tomorrowStart..upcomingEnd
-            }.sortedBy { it.startAt },
+            },
             todayReminders = reminders.filter { it.dueAt < tomorrowStart }.sortedBy { it.dueAt },
-            upcomingReminders = reminders.filter { it.dueAt in tomorrowStart..upcomingEnd }.sortedBy { it.dueAt }
+            upcomingReminders = reminders.filter { it.dueAt in tomorrowStart..upcomingEnd }.sortedBy { it.dueAt },
+            todayGmail = gmailRecords.filter { !it.isResolved &&
+                (it.expiresAt?.let { expiry -> expiry > System.currentTimeMillis() } ?: true) }
+                .sortedByDescending { it.updatedAt }.take(12)
         )
     }
 
@@ -156,19 +211,23 @@ class HomeViewModel @Inject constructor(
                     .any { it in System.currentTimeMillis()..expiryThreshold }
             },
             quickCaptureSuggestion = suggestion,
+            collectionSuggestion = patternDetector.detectCollectionPattern(recent),
             todayEvents = temporal.todayEvents,
             upcomingEvents = temporal.upcomingEvents,
             todayReminders = temporal.todayReminders,
             upcomingReminders = temporal.upcomingReminders,
+            todayGmail = temporal.todayGmail,
             attentionItems = buildAttentionItems(
                 todayReminders = temporal.todayReminders,
                 todayEvents = temporal.todayEvents,
+                todayGmail = temporal.todayGmail,
                 expiringDocuments = active.mapNotNull { item ->
                     listOfNotNull(item.expiryDate, item.secondaryAlertDate)
                         .filter { it in System.currentTimeMillis()..expiryThreshold }
                         .minOrNull()
                         ?.let { due -> ExpiringDocument(item.id, item.title, due) }
                 },
+                recentDocuments = recent.take(10), // Supply recent documents for proactive AI insights
                 needsReviewCount = active.count { it.needsReview }
             )
         )
@@ -177,6 +236,16 @@ class HomeViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = HomeUiState()
     )
+
+    init {
+        viewModelScope.launch {
+            combine(repository.observeActive(), externalContextRepository.observeRecords(),
+                vaultReminderManager.observeActive(), gemmaModelManager.status,
+                com.vaultbrain.core.common.security.DecoySessionState.isDecoy) { items, records, reminders, _, _ ->
+                Triple(items, records, reminders)
+            }.collect { (items, records, reminders) -> refreshDailyInsights(items, records, reminders) }
+        }
+    }
 
     fun archiveItem(item: VaultItem) {
         viewModelScope.launch {
@@ -209,12 +278,18 @@ class HomeViewModel @Inject constructor(
     fun completeReminder(id: String) {
         viewModelScope.launch { vaultReminderManager.complete(id) }
     }
+
+    fun executeAction(action: ProactiveAction, item: VaultItem) {
+        viewModelScope.launch {
+            actionExecutor.execute(action, item)
+        }
+    }
 }
 
 private data class TemporalContext(
     val todayEvents: List<ExternalRecord>,
     val upcomingEvents: List<ExternalRecord>,
     val todayReminders: List<VaultReminder>,
-    val upcomingReminders: List<VaultReminder>
+    val upcomingReminders: List<VaultReminder>,
+    val todayGmail: List<ExternalRecord>
 )
-

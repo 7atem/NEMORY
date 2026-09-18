@@ -48,6 +48,7 @@ import java.util.Locale
 fun MorningBriefingCard(
     modifier: Modifier = Modifier,
     onInsightClick: (String) -> Unit = {},
+    onInsightAction: (InsightAction) -> Unit = {},
     viewModel: BriefingViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -59,6 +60,7 @@ fun MorningBriefingCard(
         dailySummary = state.dailySummary,
         isSummaryLoading = state.isSummaryLoading,
         onInsightClick = onInsightClick,
+        onInsightAction = onInsightAction,
         modifier = modifier
     )
 }
@@ -72,6 +74,7 @@ internal fun MorningBriefingContent(
     dailySummary: String? = null,
     isSummaryLoading: Boolean = false,
     onInsightClick: (String) -> Unit = {},
+    onInsightAction: (InsightAction) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -165,7 +168,8 @@ internal fun MorningBriefingContent(
                         TodayInsightRow(
                             insight = insight,
                             explanation = explanations[insight.id],
-                            onClick = { onInsightClick(insight.primaryItemId) }
+                            onClick = { onInsightClick(insight.primaryItemId) },
+                            onActionClick = onInsightAction
                         )
                     }
                 }
@@ -187,7 +191,8 @@ internal fun MorningBriefingContent(
 private fun TodayInsightRow(
     insight: TodayInsight,
     explanation: String?,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onActionClick: (InsightAction) -> Unit
 ) {
     Card(
         onClick = onClick,
@@ -269,14 +274,14 @@ private fun TodayInsightRow(
                     insight.actions.forEachIndexed { index, action ->
                         if (index == 0) {
                             androidx.compose.material3.Button(
-                                onClick = { /* Handle action */ },
+                                onClick = { onActionClick(action) },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(stringResource(action.labelRes))
                             }
                         } else {
                             androidx.compose.material3.OutlinedButton(
-                                onClick = { /* Handle action */ },
+                                onClick = { onActionClick(action) },
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Text(stringResource(action.labelRes))

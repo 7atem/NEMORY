@@ -24,9 +24,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -66,108 +64,97 @@ fun TravelLensScreen(
     val recentItems = items.filter { (now - it.createdAt) <= 7 * 24 * 60 * 60 * 1000L }
     val olderItems = items.filter { (now - it.createdAt) > 7 * 24 * 60 * 60 * 1000L }
 
-    Scaffold(
-        topBar = {
-            LargeTopAppBar(
-                title = { Text("✈️ Travel (${items.size})") }
-            )
-        },
+    LazyColumn(
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.fillMaxSize()
-    ) { paddingValues ->
-        LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.travel_lens_view_subtitle),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            item {
-                TravelStatCard(
-                    totalCount = items.size,
-                    placesCount = placesCount,
-                    upcomingCount = upcomingCount,
-                    flightCount = flightCount,
-                    hotelCount = hotelCount
-                )
+    ) {
+        item {
+            Text(
+                text = stringResource(R.string.travel_lens_view_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        item {
+            TravelStatCard(
+                totalCount = items.size,
+                placesCount = placesCount,
+                upcomingCount = upcomingCount,
+                flightCount = flightCount,
+                hotelCount = hotelCount
+            )
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                BillSplitterCard(items = items)
+            BillSplitterCard(items = items)
 
-                Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = stringResource(R.string.travel_quick_add_title),
-                    style = MaterialTheme.typography.labelLarge
-                )
+            Text(
+                text = stringResource(R.string.travel_quick_add_title),
+                style = MaterialTheme.typography.labelLarge
+            )
 
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    TravelQuickAddChip(label = stringResource(R.string.travel_quick_add_ticket), onClick = onQuickAdd)
-                    TravelQuickAddChip(label = stringResource(R.string.travel_quick_add_passport), onClick = onQuickAdd)
-                    TravelQuickAddChip(label = stringResource(R.string.travel_quick_add_boarding), onClick = onQuickAdd)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.travel_items_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                TravelQuickAddChip(label = stringResource(R.string.travel_quick_add_ticket), onClick = onQuickAdd)
+                TravelQuickAddChip(label = stringResource(R.string.travel_quick_add_passport), onClick = onQuickAdd)
+                TravelQuickAddChip(label = stringResource(R.string.travel_quick_add_boarding), onClick = onQuickAdd)
             }
 
-            if (items.isEmpty()) {
-                item {
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = stringResource(R.string.travel_items_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        if (items.isEmpty()) {
+            item {
+                Text(
+                    text = stringResource(R.string.travel_empty_message),
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            if (recentItems.isNotEmpty()) {
+                stickyHeader {
                     Text(
-                        text = "No travel items yet",
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
-                        textAlign = TextAlign.Center
+                        text = stringResource(R.string.travel_section_recent),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(vertical = 8.dp)
                     )
                 }
-            } else {
-                if (recentItems.isNotEmpty()) {
-                    stickyHeader {
-                        Text(
-                            text = "Recent",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(vertical = 8.dp)
-                        )
-                    }
-                    items(recentItems, key = { it.id }) { item ->
-                        TravelItemCard(item = item, onClick = { onItemClick(item) })
-                    }
+                items(recentItems, key = { it.id }) { item ->
+                    TravelItemCard(item = item, onClick = { onItemClick(item) })
                 }
-                
-                if (olderItems.isNotEmpty()) {
-                    stickyHeader {
-                        Text(
-                            text = "Older",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(vertical = 8.dp)
-                        )
-                    }
-                    items(olderItems, key = { it.id }) { item ->
-                        TravelItemCard(item = item, onClick = { onItemClick(item) })
-                    }
+            }
+            
+            if (olderItems.isNotEmpty()) {
+                stickyHeader {
+                    Text(
+                        text = stringResource(R.string.travel_section_older),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(vertical = 8.dp)
+                    )
+                }
+                items(olderItems, key = { it.id }) { item ->
+                    TravelItemCard(item = item, onClick = { onItemClick(item) })
                 }
             }
         }
@@ -186,9 +173,9 @@ private fun TravelStatCard(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        HeroStatBox("Upcoming", upcomingCount.toString(), Modifier.weight(1f))
-        HeroStatBox("Flights", flightCount.toString(), Modifier.weight(1f))
-        HeroStatBox("Hotels", hotelCount.toString(), Modifier.weight(1f))
+        HeroStatBox(stringResource(R.string.travel_stat_hero_upcoming), upcomingCount.toString(), Modifier.weight(1f))
+        HeroStatBox(stringResource(R.string.travel_stat_hero_flights), flightCount.toString(), Modifier.weight(1f))
+        HeroStatBox(stringResource(R.string.travel_stat_hero_hotels), hotelCount.toString(), Modifier.weight(1f))
     }
 }
 
@@ -235,26 +222,26 @@ private fun BillSplitterCard(items: List<VaultItem>) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.AttachMoney, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(8.dp))
-                Text("Group Bill Splitter", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Text(stringResource(R.string.travel_splitter_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
             }
             Spacer(Modifier.height(16.dp))
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Total Trip Cost:", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Text(stringResource(R.string.travel_splitter_total_cost), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 Text("$${"%.2f".format(totalCost)}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             }
             
             Spacer(Modifier.height(8.dp))
             
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text("Travelers:", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                Text(stringResource(R.string.travel_splitter_travelers), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     androidx.compose.material3.IconButton(onClick = { if (travelers > 1) travelers-- }) {
-                        Icon(Icons.Default.Remove, contentDescription = "Decrease", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.travel_splitter_decrease), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                     Text("$travelers", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     androidx.compose.material3.IconButton(onClick = { travelers++ }) {
-                        Icon(Icons.Default.Add, contentDescription = "Increase", tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.travel_splitter_increase), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                 }
             }
@@ -263,7 +250,7 @@ private fun BillSplitterCard(items: List<VaultItem>) {
             
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
                 Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Per Person", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.travel_splitter_per_person), style = MaterialTheme.typography.titleSmall)
                     Text("$${"%.2f".format(costPerPerson)}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                 }
             }

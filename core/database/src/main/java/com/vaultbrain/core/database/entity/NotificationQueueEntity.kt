@@ -13,8 +13,11 @@ data class NotificationQueueEntity(
     @ColumnInfo(name = "id")
     val id: String,
 
-    @ColumnInfo(name = "item_id")
-    val itemId: String,
+    @ColumnInfo(name = "target_id")
+    val targetId: String,
+
+    @ColumnInfo(name = "target_type")
+    val targetType: String, // "VAULT_ITEM" or "EXTERNAL_RECORD"
 
     @ColumnInfo(name = "trigger_at")
     val triggerAt: Long,

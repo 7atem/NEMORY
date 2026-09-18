@@ -6,7 +6,7 @@ import com.vaultbrain.core.common.metadata.MetadataValueNormalizer
 import com.vaultbrain.core.common.model.Classification
 import com.vaultbrain.core.common.model.EnrichmentState
 import com.vaultbrain.core.common.model.ExperienceId
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.ProactiveAction
 import com.vaultbrain.core.common.model.ProactiveActionResolver
 import com.vaultbrain.core.common.model.VaultItem
@@ -122,10 +122,10 @@ data class CaptureEnrichmentResult(
         val safeSuggestions = cleanList(suggestions, MAX_SUGGESTIONS, MAX_SUGGESTION_CHARS)
         val safeSubtype = subtype?.trim()?.take(MAX_SUBTYPE_CHARS)?.takeIf(String::isNotBlank)
 
-        val modelLenses = systemFacets.mapNotNull(LensId::canonicalOrNull).toSet()
+        val modelLenses = systemFacets
         val deterministicLens = profile.primaryLens
         val resolvedLenses = modelLenses + listOfNotNull(deterministicLens)
-        val modelPrimaryLens = deterministicLens ?: modelLenses.firstOrNull()
+        val modelPrimaryLens = deterministicLens ?: modelLenses.firstNotNullOfOrNull(LensId::canonicalOrNull)
         val shouldReplacePrimaryLens = canReplace &&
             (item.experienceId == null || item.experienceId == ExperienceId.GENERIC)
         val previousAutomaticLens = item.aiClassification
@@ -219,27 +219,50 @@ object CaptureEnrichmentResultParser {
 
     fun parse(raw: String?): CaptureEnrichmentResult? {
         val cleanRaw = raw?.trim()?.takeIf(String::isNotBlank) ?: return null
-        if (!cleanRaw.startsWith('{') || !cleanRaw.endsWith('}')) return null
+        val jsonString = extractJsonObjectString(cleanRaw) ?: return null
 
         return runCatching {
-            val root = json.parseToJsonElement(cleanRaw).jsonObject
-            val rawClassification = root.string("classification")?.trim()
-            val matchedClassification = rawClassification
-                ?.uppercase(Locale.ROOT)
-                ?.replace(classificationSeparators, "_")
-                ?.let { normalized -> Classification.entries.firstOrNull { it.name == normalized } }
-                ?.takeUnless { it == Classification.UNKNOWN }
-            val classification = matchedClassification ?: return null
-            if (root.string("title").isNullOrBlank()) return null
+            val root = json.parseToJsonElement(jsonString).jsonObject
+            val rawClassification = root.string("classification")?.trim()?.takeIf(String::isNotBlank)
+                ?: return@runCatching null
+            val classification = resolveClassification(rawClassification)
+
+            val rawTitle = root.string("title")?.trim()
+            val rawSummary = root.string("summary")?.trim()
+            val title = when {
+                !rawTitle.isNullOrBlank() -> rawTitle.take(MAX_TITLE_CHARS)
+                !rawSummary.isNullOrBlank() -> rawSummary.lineSequence().first { it.isNotBlank() }.take(MAX_TITLE_CHARS)
+                else -> return@runCatching null
+            }
+
             val rawLegacyLens = root.string("lens")?.trim()
             val systemFacets = parseSystemFacets(root, rawLegacyLens)
 
+            val parsedTags = parseStringList(
+                root.element("tags") ?: root.element("keywords") ?: root.element("categories"),
+                MAX_TAGS,
+                MAX_TAG_CHARS
+            )
+            val parsedTopics = parseStringList(root.element("topics"), MAX_TOPICS, MAX_TOPIC_CHARS)
+            val parsedEntities = parseStringList(root.element("entities"), MAX_ENTITIES, MAX_ENTITY_CHARS)
+
+            val fallbackTags = if (parsedTags.isEmpty()) {
+                (parsedTopics + parsedEntities + listOf(classification.name.lowercase(Locale.ROOT)))
+                    .distinct()
+                    .take(MAX_TAGS)
+            } else parsedTags
+
+            val parsedSubtype = root.string("subtype")?.trim()?.take(MAX_SUBTYPE_CHARS)?.takeIf(String::isNotBlank)
+            val effectiveSubtype = if (classification == Classification.OTHER && parsedSubtype.isNullOrBlank()) {
+                rawClassification.take(MAX_SUBTYPE_CHARS)
+            } else parsedSubtype
+
             CaptureEnrichmentResult(
                 classification = classification,
-                subtype = root.string("subtype")?.trim()?.take(MAX_SUBTYPE_CHARS)?.takeIf(String::isNotBlank),
+                subtype = effectiveSubtype,
                 systemFacets = systemFacets,
-                title = root.string("title").orEmpty().trim().take(MAX_TITLE_CHARS),
-                summary = root.string("summary").orEmpty().trim().take(MAX_SUMMARY_CHARS),
+                title = title,
+                summary = rawSummary.orEmpty().take(MAX_SUMMARY_CHARS),
                 confidence = root.element("confidence")
                     ?.primitiveOrNull()
                     ?.doubleOrNull
@@ -252,14 +275,69 @@ object CaptureEnrichmentResultParser {
                 ),
                 suggestions = parseStringList(root.element("suggestions"), MAX_SUGGESTIONS, MAX_SUGGESTION_CHARS),
                 highlights = parseStringList(root.element("highlights"), MAX_HIGHLIGHTS, MAX_HIGHLIGHT_CHARS),
-                topics = parseStringList(root.element("topics"), MAX_TOPICS, MAX_TOPIC_CHARS),
-                entities = parseStringList(root.element("entities"), MAX_ENTITIES, MAX_ENTITY_CHARS),
-                tags = parseStringList(root.element("tags"), MAX_TAGS, MAX_TAG_CHARS),
+                topics = parsedTopics,
+                entities = parsedEntities,
+                tags = fallbackTags,
                 rawAiResponse = raw,
                 rawClassification = rawClassification,
                 rawLens = rawLegacyLens
             )
         }.getOrNull()
+    }
+
+    private fun extractJsonObjectString(rawText: String): String? {
+        var text = rawText.trim()
+        if (text.startsWith("```")) {
+            text = text.replace(Regex("^```(?:json)?\\s*"), "")
+                .replace(Regex("\\s*```$"), "")
+                .trim()
+        }
+        val firstBrace = text.indexOf('{')
+        val lastBrace = text.lastIndexOf('}')
+        if (firstBrace != -1 && lastBrace > firstBrace) {
+            return text.substring(firstBrace, lastBrace + 1)
+        }
+        return null
+    }
+
+    private fun resolveClassification(rawClassification: String): Classification {
+        val normalized = rawClassification.uppercase(Locale.ROOT)
+            .replace(classificationSeparators, "_")
+            .trim()
+
+        Classification.entries.firstOrNull { it.name == normalized && it != Classification.UNKNOWN }?.let { return it }
+
+        return when {
+            normalized.contains("RECEIPT") || normalized.contains("PAYMENT") || normalized.contains("PURCHASE") -> Classification.RECEIPT
+            normalized.contains("INVOICE") -> Classification.INVOICE
+            normalized.contains("BILL") || normalized.contains("UTILITY") -> Classification.UTILITY_BILL
+            normalized.contains("TICKET") || normalized.contains("BOARDING") || normalized.contains("FLIGHT") || normalized.contains("PASS") -> Classification.TICKET
+            normalized.contains("HOTEL") || normalized.contains("RESERVATION") || normalized.contains("BOOKING") || normalized.contains("MOTEL") -> Classification.HOTEL
+            normalized.contains("PASSPORT") -> Classification.PASSPORT
+            normalized.contains("LICENSE") || normalized.contains("DRIVER") -> Classification.DRIVERS_LICENSE
+            normalized.contains("ID") || normalized.contains("IDENTITY") || normalized.contains("CIVIL") -> Classification.IDENTITY_DOCUMENT
+            normalized.contains("PRESCRIPTION") || normalized.contains("MEDICINE") || normalized.contains("RX") -> Classification.PRESCRIPTION
+            normalized.contains("LAB") || normalized.contains("BLOOD") || normalized.contains("TEST") -> Classification.LAB_RESULT
+            normalized.contains("MEDICAL") || normalized.contains("HEALTH") || normalized.contains("CLINIC") || normalized.contains("DOCTOR") -> Classification.MEDICAL_RECORD
+            normalized.contains("WARRANTY") || normalized.contains("GUARANTEE") -> Classification.WARRANTY_CARD
+            normalized.contains("BUSINESS_CARD") || normalized.contains("CONTACT") -> Classification.BUSINESS_CARD
+            normalized.contains("PRODUCT") || normalized.contains("ITEM") -> Classification.PRODUCT_PHOTO
+            normalized.contains("MENU") || normalized.contains("FOOD") -> Classification.MENU_PHOTO
+            normalized.contains("SERIAL") || normalized.contains("VIN") || normalized.contains("PLATE") -> Classification.SERIAL_PLATE
+            normalized.contains("ARTICLE") || normalized.contains("URL") || normalized.contains("WEBSITE") || normalized.contains("PAGE") -> Classification.WEB_ARTICLE
+            normalized.contains("LEGAL") || normalized.contains("CONTRACT") || normalized.contains("AGREEMENT") -> Classification.LEGAL_DOCUMENT
+            normalized.contains("BANK") || normalized.contains("STATEMENT") -> Classification.BANK_STATEMENT
+            normalized.contains("CREDIT") || normalized.contains("DEBIT") -> Classification.CREDIT_CARD
+            normalized.contains("ACADEMIC") || normalized.contains("DEGREE") || normalized.contains("DIPLOMA") || normalized.contains("CERTIFICATE") -> Classification.ACADEMIC_RECORD
+            normalized.contains("ESTATE") || normalized.contains("LEASE") || normalized.contains("RENT") -> Classification.REAL_ESTATE
+            normalized.contains("BOOK") -> Classification.BOOK
+            normalized.contains("MOVIE") || normalized.contains("FILM") -> Classification.MOVIE
+            normalized.contains("SERIES") || normalized.contains("SHOW") -> Classification.TV_SERIES
+            normalized.contains("MEME") -> Classification.MEME_JUNK
+            normalized.contains("PHOTO") || normalized.contains("IMAGE") || normalized.contains("PICTURE") || normalized.contains("CAMERA") -> Classification.SCENE_PHOTO
+            normalized.contains("DOC") || normalized.contains("FILE") || normalized.contains("NOTE") || normalized.contains("TEXT") || normalized.contains("PAPER") -> Classification.GENERAL_DOCUMENT
+            else -> Classification.OTHER
+        }
     }
 
     private fun parseSystemFacets(root: JsonObject, rawLegacyLens: String?): Set<String> {
@@ -269,7 +347,9 @@ object CaptureEnrichmentResultParser {
             is JsonPrimitive -> listOf(element.content)
             else -> emptyList()
         } + listOfNotNull(rawLegacyLens)
-        return values.mapNotNull(LensId::canonicalOrNull).toCollection(linkedSetOf())
+        return values.map { it.trim().uppercase(Locale.ROOT) }
+            .filter(String::isNotEmpty)
+            .toCollection(linkedSetOf())
     }
 
     private fun parseActions(element: JsonElement?): Set<ProactiveAction> {
@@ -355,19 +435,19 @@ object CaptureEnrichmentResultParser {
     private const val MAX_TITLE_CHARS = 120
     private const val MAX_SUMMARY_CHARS = 500
     private const val MAX_SUBTYPE_CHARS = 80
-    private const val MAX_METADATA_ITEMS = 24
+    private const val MAX_METADATA_ITEMS = 64
     private const val MAX_METADATA_KEY_CHARS = 64
     private const val MAX_METADATA_VALUE_CHARS = 200
     private const val MAX_ACTIONS = 8
-    private const val MAX_HIGHLIGHTS = 3
+    private const val MAX_HIGHLIGHTS = 10
     private const val MAX_HIGHLIGHT_CHARS = 180
-    private const val MAX_TOPICS = 8
+    private const val MAX_TOPICS = 32
     private const val MAX_TOPIC_CHARS = 48
-    private const val MAX_ENTITIES = 8
+    private const val MAX_ENTITIES = 32
     private const val MAX_ENTITY_CHARS = 80
-    private const val MAX_TAGS = 8
+    private const val MAX_TAGS = 32
     private const val MAX_TAG_CHARS = 48
-    private const val MAX_SUGGESTIONS = 3
+    private const val MAX_SUGGESTIONS = 8
     private const val MAX_SUGGESTION_CHARS = 180
 }
 

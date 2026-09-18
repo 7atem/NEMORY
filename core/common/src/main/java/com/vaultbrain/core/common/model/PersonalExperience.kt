@@ -2,6 +2,7 @@ package com.vaultbrain.core.common.model
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import com.vaultbrain.shared.domain.LensId
 
 /**
  * A personal experience is a user intent layered on top of a lens.

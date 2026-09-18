@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.llm
 
 import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.VaultItem
 import javax.inject.Inject
 import javax.inject.Singleton

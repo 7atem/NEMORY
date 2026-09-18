@@ -35,15 +35,18 @@ android {
 }
 
 dependencies {
+    api(project(":shared"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
 
-    implementation(platform(libs.androidx.compose.bom))
+    api(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.runtime)
     implementation(libs.androidx.compose.animation)
     implementation(libs.androidx.ui)
     implementation(libs.androidx.material3)
+    api(libs.androidx.material3.window.size)
     implementation(libs.androidx.ui.graphics)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

@@ -280,6 +280,48 @@ object VaultDatabaseMigrations {
         }
     }
 
+    val MIGRATION_16_17: Migration = object : Migration(16, 17) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `notification_queue_new` (`id` TEXT NOT NULL, `target_id` TEXT NOT NULL, `target_type` TEXT NOT NULL, `trigger_at` INTEGER NOT NULL, `channel_id` TEXT NOT NULL, `title` TEXT NOT NULL, `body` TEXT NOT NULL, `is_delivered` INTEGER NOT NULL, PRIMARY KEY(`id`))"
+            )
+            db.execSQL(
+                "INSERT INTO `notification_queue_new` (`id`, `target_id`, `target_type`, `trigger_at`, `channel_id`, `title`, `body`, `is_delivered`) " +
+                    "SELECT `id`, `item_id`, 'VAULT_ITEM', `trigger_at`, `channel_id`, `title`, `body`, `is_delivered` FROM `notification_queue`"
+            )
+            db.execSQL("DROP TABLE `notification_queue`")
+            db.execSQL("ALTER TABLE `notification_queue_new` RENAME TO `notification_queue`")
+        }
+    }
+
+    val MIGRATION_17_18: Migration = object : Migration(17, 18) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `derived_facts` (`sourceItemId` TEXT NOT NULL, `kind` TEXT NOT NULL, `field` TEXT NOT NULL, `value` TEXT NOT NULL, `evidence` TEXT NOT NULL, `sourceUpdatedAt` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `modelVersion` TEXT NOT NULL, PRIMARY KEY(`sourceItemId`, `kind`, `field`, `value`), FOREIGN KEY(`sourceItemId`) REFERENCES `vault_items`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_derived_facts_sourceItemId` ON `derived_facts` (`sourceItemId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_derived_facts_kind_value` ON `derived_facts` (`kind`, `value`)")
+        }
+    }
+
+    val MIGRATION_18_19: Migration = object : Migration(18, 19) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `knowledge_entities` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `type` TEXT NOT NULL, `aliases` TEXT NOT NULL, PRIMARY KEY(`id`))")
+            db.execSQL("CREATE TABLE IF NOT EXISTS `item_entities` (`itemId` TEXT NOT NULL, `entityId` TEXT NOT NULL, PRIMARY KEY(`itemId`, `entityId`), FOREIGN KEY(`itemId`) REFERENCES `vault_items`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, FOREIGN KEY(`entityId`) REFERENCES `knowledge_entities`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_item_entities_entityId` ON `item_entities` (`entityId`)")
+            db.execSQL("CREATE TABLE IF NOT EXISTS `relationships` (`id` TEXT NOT NULL, `sourceItemId` TEXT NOT NULL, `targetItemId` TEXT NOT NULL, `type` TEXT NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`sourceItemId`) REFERENCES `vault_items`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, FOREIGN KEY(`targetItemId`) REFERENCES `vault_items`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_relationships_sourceItemId` ON `relationships` (`sourceItemId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_relationships_targetItemId` ON `relationships` (`targetItemId`)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_relationships_type` ON `relationships` (`type`)")
+        }
+    }
+
+    val MIGRATION_19_20: Migration = object : Migration(19, 20) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE relationships ADD COLUMN evidence TEXT NOT NULL DEFAULT ''")
+            db.execSQL("ALTER TABLE relationships ADD COLUMN confidence REAL NOT NULL DEFAULT 1.0")
+            db.execSQL("ALTER TABLE relationships ADD COLUMN createdAt INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
     val ALL: Array<Migration> = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
@@ -295,6 +337,10 @@ object VaultDatabaseMigrations {
         MIGRATION_12_13,
         MIGRATION_13_14,
         MIGRATION_14_15,
-        MIGRATION_15_16
+        MIGRATION_15_16,
+        MIGRATION_16_17,
+        MIGRATION_17_18,
+        MIGRATION_18_19,
+        MIGRATION_19_20
     )
 }

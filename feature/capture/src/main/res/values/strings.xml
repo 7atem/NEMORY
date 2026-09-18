@@ -18,6 +18,7 @@
     <string name="feature_capture_suggested_lenses">Suggested lenses</string>
     <string name="feature_capture_review_title">Review &amp; save</string>
     <string name="feature_capture_review_hint">Check the important details before saving. Automatic text recognition does not support Arabic script and may miss small print.</string>
+    <string name="feature_capture_arabic_ocr_notice">Automatic text recognition is Latin-optimized. Add an Arabic title and notes for quick searching.</string>
     <string name="feature_capture_ready">Looks ready</string>
     <string name="feature_capture_check">A quick check is recommended</string>
     <string name="feature_capture_ready_body">Nemory found a strong match. You can still adjust anything below.</string>
@@ -44,7 +45,7 @@
     <!-- Experience picker -->
     <string name="feature_capture_experience_picker_title">What is this?</string>
     <string name="feature_capture_experience_picker_hint">Choose how you want to use this item. Nemory will extract the right details.</string>
-    <string name="feature_capture_experience_search">Search experiences…</string>
+    <string name="feature_capture_experience_search">Search experiences...</string>
     <string name="feature_capture_experience_top_matches">Top matches</string>
     <string name="feature_capture_experience_see_all">See all experiences</string>
     <string name="feature_capture_experience_all">All</string>
@@ -404,4 +405,25 @@
     <string name="feature_capture_entities">People and things</string>
     <string name="feature_capture_tags">Tags</string>
     <string name="feature_capture_suggestions">Suggestions</string>
+    <string name="feature_capture_view_original">View original</string>
+    <string name="feature_capture_reset_zoom">Reset zoom</string>
+    <string name="feature_capture_close_preview">Close preview</string>
+    <string name="feature_capture_zoom_hint">Pinch to zoom and drag to inspect the document.</string>
+    <string name="feature_capture_verify_details">Check the extracted details against the original before saving.</string>
+    <string name="feature_capture_ai_highlights">AI highlights</string>
+    <string name="feature_capture_summary_notes">Summary &amp; notes</string>
+    <string name="feature_capture_discard_confirm_title">Discard capture?</string>
+    <string name="feature_capture_discard_confirm_body">Are you sure you want to discard this item? All extracted details will be lost.</string>
+    <string name="feature_capture_discard_confirm">Discard</string>
+    <string name="feature_capture_cancel">Cancel</string>
+    <string name="feature_capture_saved_success">Saved successfully!</string>
+    <string name="feature_capture_reminder_prompt_title">Need a reminder for this trip?</string>
+    <string name="feature_capture_reminder_prompt_body">We\'ve scheduled an automatic alert before the date.</string>
+    <string name="feature_capture_got_it">Got it</string>
+    <string name="feature_capture_suggested_followups">Suggested follow-ups:</string>
+    <string name="feature_capture_done">Done</string>
+    <string name="feature_capture_camera_perm_req_title">Camera Permission Required</string>
+    <string name="feature_capture_camera_perm_req_body">Please grant camera permission in settings to take photos, or pick an image from your gallery.</string>
+    <string name="feature_capture_open_settings">Open Settings</string>
+    <string name="feature_capture_pick_from_gallery">Pick from Gallery</string>
 </resources>

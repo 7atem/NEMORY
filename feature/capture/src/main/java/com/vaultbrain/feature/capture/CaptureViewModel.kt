@@ -13,15 +13,18 @@ import com.google.mlkit.vision.text.TextRecognizer
 import com.vaultbrain.core.ai.heuristics.HeuristicExtractor
 import com.vaultbrain.core.ai.heuristics.HeuristicExtractionResult
 import com.vaultbrain.core.ai.heuristics.experience.ExperienceKeywordLibrary
+import com.vaultbrain.core.ai.llm.ArabicDocumentTranscriber
+import com.vaultbrain.core.ai.llm.ArabicScriptCoverage
 import com.vaultbrain.core.ai.llm.CapturePromptEvidence
 import com.vaultbrain.core.ai.llm.LlmClient
+import com.vaultbrain.core.ai.llm.LlmImageInput
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import com.vaultbrain.core.ai.vision.VisionAnalyzer
 import com.vaultbrain.core.common.UserExperienceFrequency
 import com.vaultbrain.core.ai.heuristics.experience.ExperienceParserRegistry
 import com.vaultbrain.core.common.model.ExperienceId
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.SourceType
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
@@ -67,7 +70,7 @@ class CaptureViewModel @Inject constructor(
 ) : ViewModel() {
 
     /** Live model status so the review hint hides the moment a download starts. */
-    val gemmaStatus: StateFlow<GemmaModelStatus> = gemmaModelManager.status
+    val gemmaStatus: StateFlow<OnDeviceModelStatus> = gemmaModelManager.status
 
     /** Set per analyze() run: no LLM tier could enrich the current capture. */
     private var llmUnavailableAtAnalysis: Boolean = false
@@ -258,7 +261,7 @@ class CaptureViewModel @Inject constructor(
                 }
                 // Drain indexing/deferred analysis for the saved item in the background.
                 DeferredAnalysisWorker.enqueue(context)
-                if (gemmaModelManager.status.value == GemmaModelStatus.READY) {
+                if (gemmaModelManager.status.value == OnDeviceModelStatus.READY) {
                     LlmEnrichmentWorker.enqueue(context)
                 }
                 // Record experience frequency for learning
@@ -286,10 +289,16 @@ class CaptureViewModel @Inject constructor(
                 } else {
                     // Show post-save suggestions
                     val followUps = PostSaveSuggestionEngine.suggestFollowUps(item.experienceId)
-                    if (followUps.isNotEmpty()) {
+                    val expiry = item.expiryDate
+                    val needsReminderNudge = item.effectiveClassification in setOf(com.vaultbrain.core.common.model.Classification.TICKET, com.vaultbrain.core.common.model.Classification.HOTEL) 
+                        && expiry != null && expiry > System.currentTimeMillis()
+
+                    if (followUps.isNotEmpty() || needsReminderNudge) {
                         _uiState.value = CaptureUiState.Saved(
                             savedExperienceId = item.experienceId,
-                            followUps = followUps
+                            followUps = followUps,
+                            itemNeedsReminder = needsReminderNudge,
+                            savedItemId = item.id
                         )
                     } else {
                         batchDrafts.clear()
@@ -394,16 +403,23 @@ class CaptureViewModel @Inject constructor(
             val visionObjects = visionBundle.objects
             val barcodes = visionBundle.barcodes
 
-            var heuristic = heuristicExtractor.extract(
-                text = buildString {
-                    append(ocrText)
-                    if (barcodes.isNotEmpty()) appendLine().append(barcodes.joinToString("\n"))
-                },
-                visionObjects = visionObjects,
-                neuralClassification = visionBundle.neuralClassification,
-                neuralConfidence = visionBundle.neuralConfidence,
-                scoredLabels = visionBundle.scoredLabels
-            )
+            val primaryText = buildString {
+                append(ocrText)
+                if (barcodes.isNotEmpty()) appendLine().append(barcodes.joinToString("\n"))
+            }
+
+            llmUnavailableAtAnalysis = !llmClient.isAvailable()
+            var heuristic = if (!llmUnavailableAtAnalysis && !input.skipLlmEnrichment) {
+                HeuristicExtractionResult()
+            } else {
+                heuristicExtractor.extract(
+                    text = primaryText,
+                    visionObjects = visionObjects,
+                    neuralClassification = visionBundle.neuralClassification,
+                    neuralConfidence = visionBundle.neuralConfidence,
+                    scoredLabels = visionBundle.scoredLabels
+                )
+            }
             val heuristicMs = System.currentTimeMillis()
             android.util.Log.d("CaptureLatency", "Heuristics took ${heuristicMs - visionMs}ms")
 
@@ -433,14 +449,49 @@ class CaptureViewModel @Inject constructor(
             val llmStart = System.currentTimeMillis()
             val result = if (input.skipLlmEnrichment) item.copy(
                 enrichmentState = com.vaultbrain.core.common.model.EnrichmentState.SKIPPED_PRIVACY
-            ) else enrichWithLlm(
-                item,
-                ocrText,
-                visionObjects,
-                visionBundle.scoredLabels,
-                barcodes,
-                previewBitmap
-            )
+            ) else {
+                val enriched = enrichWithLlm(
+                    item,
+                    ocrText,
+                    visionObjects,
+                    visionBundle.scoredLabels,
+                    barcodes,
+                    previewBitmap
+                )
+                
+                // Fallback: If LLM is entirely unavailable, the heuristic extraction was already
+                // run earlier and applied to `item`.
+                val settled = if (llmUnavailableAtAnalysis && enriched === item && enriched.aiClassification == com.vaultbrain.core.common.model.Classification.UNKNOWN) {
+                    android.util.Log.w("CaptureLatency", "LLM unavailable; relying on deterministic heuristics")
+                    val fallbackHeuristic = heuristicExtractor.extract(
+                        text = primaryText,
+                        visionObjects = visionObjects,
+                        neuralClassification = visionBundle.neuralClassification,
+                        neuralConfidence = visionBundle.neuralConfidence,
+                        scoredLabels = visionBundle.scoredLabels
+                    )
+
+                    var fallbackItem = buildVaultItem(
+                        input.sourceType,
+                        primaryUri,
+                        ocrText,
+                        fallbackHeuristic,
+                        visionColors,
+                        visionObjects,
+                        barcodes,
+                        primaryUri?.let(mediaVaultStorage::mimeType)
+                    )
+
+                    if (input.provenanceMetadata.isNotEmpty()) {
+                        fallbackItem = fallbackItem.copy(parsedMetadata = fallbackItem.parsedMetadata + input.provenanceMetadata)
+                    }
+                    fallbackItem
+                } else {
+                    enriched
+                }
+                // Experimental Arabic VL path; any failure keeps `settled` untouched.
+                maybeTranscribeArabicDocument(settled, ocrText, previewBitmap) ?: settled
+            }
             val endMs = System.currentTimeMillis()
             android.util.Log.d("CaptureLatency", "LLM took ${endMs - llmStart}ms")
             android.util.Log.d("CaptureLatency", "Total capture latency: ${endMs - startMs}ms")
@@ -469,12 +520,8 @@ class CaptureViewModel @Inject constructor(
     ): VaultItem = try {
         val llmImage = imageBitmap
             ?.takeIf { captureEnrichmentGenerator.supportsImageInput() }
-            ?.let { bitmap ->
-                val stream = java.io.ByteArrayOutputStream()
-                bitmap.compress(Bitmap.CompressFormat.JPEG, 80, stream)
-                com.vaultbrain.core.ai.llm.LlmImageInput.fromEncodedBytes(stream.toByteArray())
-            }
-            
+            ?.let(::encodeForLlm)
+
         withTimeoutOrNull(LLM_ENRICHMENT_TIMEOUT_MS) {
             captureEnrichmentGenerator.generate(
                 evidence = CapturePromptEvidence(
@@ -493,6 +540,47 @@ class CaptureViewModel @Inject constructor(
         throw cancelled
     } catch (_: Exception) {
         item
+    }
+
+    /**
+     * Experimental Arabic VL path (BuildConfig.ARABIC_VL_EXPERIMENT, default off): when the
+     * Latin-only OCR captured too little meaningful text, the image-capable tier transcribes
+     * the page and verified facts merge into the draft. Any failure returns null and leaves
+     * the deterministic item untouched. Never called when enrichment is skipped for privacy.
+     */
+    private suspend fun maybeTranscribeArabicDocument(
+        item: VaultItem,
+        ocrText: String,
+        imageBitmap: Bitmap?
+    ): VaultItem? {
+        if (!com.vaultbrain.core.ai.llm.BuildConfig.ARABIC_VL_EXPERIMENT) return null
+        val bitmap = imageBitmap ?: return null
+        if (!ArabicScriptCoverage.needsVlTranscription(ocrText)) return null
+        return try {
+            val transcriber = ArabicDocumentTranscriber(llmClient)
+            if (!transcriber.isAvailable()) return null
+            val llmImage = encodeForLlm(bitmap) ?: return null
+            withTimeoutOrNull(LLM_ENRICHMENT_TIMEOUT_MS) {
+                transcriber.transcribe(llmImage)?.applyTo(item)
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun encodeForLlm(bitmap: Bitmap): LlmImageInput? {
+        val maxLlmDim = 768f
+        val scale = (maxLlmDim / maxOf(bitmap.width, bitmap.height)).coerceAtMost(1f)
+        val targetBitmap = if (scale < 1f) {
+            android.graphics.Bitmap.createScaledBitmap(bitmap, (bitmap.width * scale).toInt().coerceAtLeast(1), (bitmap.height * scale).toInt().coerceAtLeast(1), true)
+        } else bitmap
+
+        val stream = java.io.ByteArrayOutputStream()
+        targetBitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, stream)
+        if (targetBitmap !== bitmap) targetBitmap.recycle()
+        return LlmImageInput.fromEncodedBytes(stream.toByteArray())
     }
 
     private fun decodeBitmapFromUri(uri: Uri): Bitmap? {
@@ -650,7 +738,7 @@ class CaptureViewModel @Inject constructor(
             batchTotal = batchDrafts.size,
             showOnDeviceAiHint = llmUnavailableAtAnalysis &&
                 gemmaModelManager.isSupported() &&
-                gemmaModelManager.status.value == GemmaModelStatus.NOT_DOWNLOADED
+                gemmaModelManager.status.value == OnDeviceModelStatus.NOT_DOWNLOADED
         )
     }
 
@@ -665,7 +753,7 @@ class CaptureViewModel @Inject constructor(
         const val MAX_PDF_RENDER_WIDTH = 1_600
         const val OCR_RETRY_SCORE = 240
         const val MIN_RELIABLE_OCR_SCORE = 20
-        const val LLM_ENRICHMENT_TIMEOUT_MS = 30_000L
+        const val LLM_ENRICHMENT_TIMEOUT_MS = 120_000L
         /** Score threshold above which the top experience is auto-selected to skip the picker. */
         const val AUTO_SELECT_THRESHOLD = 8f
     }

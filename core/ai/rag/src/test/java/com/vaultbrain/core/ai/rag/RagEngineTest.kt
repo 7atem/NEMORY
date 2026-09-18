@@ -42,8 +42,25 @@ class RagEngineTest {
 
     @Before
     fun setUp() {
+        coEvery { vaultRepository.search(any()) } returns emptyList()
         coEvery { vaultRepository.getActiveCollections() } returns emptyList()
         coEvery { personalContextEngine.assembleContext(any()) } returns ContextResult()
+        every { llmClient.isAvailable() } returns false
+    }
+
+    @Test
+    fun `relationship context references only retrieved endpoints and known types`() {
+        val relationships = listOf(
+            com.vaultbrain.core.database.entity.RelationshipEntity("r1", "a", "b", "RENEWS"),
+            com.vaultbrain.core.database.entity.RelationshipEntity("r2", "a", "hidden", "REPLACES"),
+            com.vaultbrain.core.database.entity.RelationshipEntity("r3", "a", "b", "untrusted text")
+        )
+        val section = engine.buildRelationshipsSection(mapOf("a" to relationships),
+            listOf(sampleItem("a", "Renewal"), sampleItem("b", "Original")))
+        assertThat(section).contains("[1] RENEWS [2]")
+        assertThat(section).doesNotContain("hidden")
+        assertThat(section).doesNotContain("untrusted text")
+        assertThat(section).doesNotContain("REPLACES")
     }
 
     private val engine = RagEngine(
@@ -75,12 +92,23 @@ class RagEngineTest {
         )
 
     @Test
-    fun `returns empty response when embedding model unavailable`() = runTest {
+    fun `lexical retrieval works when embeddings are unavailable`() = runTest {
+        val item = sampleItem("fts", "Passport renewal")
+        every { textEmbeddingModel.isAvailable() } returns false
+        coEvery { vaultRepository.search("passport") } returns listOf(item)
+        coEvery { vaultRepository.filterIds(listOf("fts"), null, null, null, null) } returns listOf("fts")
+        coEvery { vaultRepository.getByIds(listOf("fts")) } returns listOf(item)
+        assertThat(engine.retrieveHybrid("passport", SearchFilters())).containsExactly(item)
+        verify(exactly = 0) { vectorStore.nearestNeighbors(any(), any(), any()) }
+    }
+
+    @Test
+    fun `returns no matches when both retrieval sources unavailable`() = runTest {
         every { textEmbeddingModel.isAvailable() } returns false
 
         val result = engine.query("receipt", SearchFilters())
 
-        assertThat(result.answer).isNull()
+        assertThat(result.answer).contains("couldn't find")
         assertThat(result.sources).isEmpty()
         assertThat(result.confidence).isEqualTo(0f)
     }
@@ -93,7 +121,33 @@ class RagEngineTest {
 
         val result = engine.query("receipt", SearchFilters())
 
-        assertThat(result.answer).isNull()
+        assertThat(result.answer).contains("couldn't find")
+        assertThat(result.sources).isEmpty()
+    }
+
+    @Test
+    fun `returns friendly greeting when query is hello and no vector candidates`() = runTest {
+        every { textEmbeddingModel.isAvailable() } returns true
+        coEvery { textEmbeddingModel.encode("hello") } returns FloatArray(384) { 0.1f }
+        every { vectorStore.nearestNeighbors(any(), any(), any()) } returns emptyList()
+
+        val result = engine.query("hello", SearchFilters())
+
+        assertThat(result.answer).contains("Nemory")
+        assertThat(result.sources).isEmpty()
+    }
+
+    @Test
+    fun `generates direct answer using LLM when no vector candidates and LLM is available`() = runTest {
+        every { textEmbeddingModel.isAvailable() } returns true
+        coEvery { textEmbeddingModel.encode("what can you do?") } returns FloatArray(384) { 0.1f }
+        every { vectorStore.nearestNeighbors(any(), any(), any()) } returns emptyList()
+        every { llmClient.isAvailable() } returns true
+        coEvery { llmClient.generate(any()) } returns "I am Nemory. I can organize your documents."
+
+        val result = engine.query("what can you do?", SearchFilters())
+
+        assertThat(result.answer).isEqualTo("I am Nemory. I can organize your documents.")
         assertThat(result.sources).isEmpty()
     }
 
@@ -121,7 +175,7 @@ class RagEngineTest {
     }
 
     @Test
-    fun `generates answer when LLM is available`() = runTest {
+    fun `unsupported model amounts fall back to saved evidence`() = runTest {
         val item = sampleItem("1", "Carrefour Receipt")
         val vector = FloatArray(384) { 0.2f }
         val embedding = embeddingFor("1", vector)
@@ -136,7 +190,8 @@ class RagEngineTest {
 
         val result = engine.query("receipt", SearchFilters())
 
-        assertThat(result.answer).contains("You spent EGP 4850 at Carrefour.")
+        assertThat(result.answer).doesNotContain("4850")
+        assertThat(result.answer).contains("> Carrefour Receipt [1]")
         assertThat(result.answer).doesNotContain("invented")
         assertThat(result.answer).contains("Verify with official financial records")
         assertThat(result.sources).hasSize(1)
@@ -192,6 +247,23 @@ class RagEngineTest {
     }
 
     @Test
+    fun `calendar only evidence reaches both answer paths without a vault document`() = runTest {
+        val event = com.vaultbrain.core.integrations.model.ExternalRecord("calendar", "device", "event",
+            com.vaultbrain.core.common.model.external.ExternalSource.CALENDAR,
+            com.vaultbrain.core.common.model.external.ExternalRecordType.EVENT, title = "Dentist appointment")
+        every { textEmbeddingModel.isAvailable() } returns false
+        coEvery { personalContextEngine.assembleContext(any()) } returns ContextResult(records = listOf(event))
+        coEvery { llmClient.generate(any()) } returns "Dentist appointment [1]"
+        val result = engine.query("dentist", SearchFilters())
+        assertThat(result.externalSources).containsExactly(event)
+        assertThat(result.answer).contains("Dentist appointment")
+        val streamed = engine.queryStream("dentist", SearchFilters()).toList()
+        assertThat(streamed.last().externalSources).containsExactly(event)
+        assertThat(streamed.last().answer).contains("Dentist appointment")
+        coVerify(exactly = 0) { hybridAiCoordinator.generateStream(any()) }
+    }
+
+    @Test
     fun `streaming Brain path emits deterministic result without generation`() = runTest {
         coEvery { vaultRepository.getActive() } returns listOf(
             sampleItem("1", "Invoice").copy(
@@ -222,15 +294,15 @@ class RagEngineTest {
             exactText = "Exact payload",
             canRememberForCategory = true
         )
-        coEvery { hybridAiCoordinator.generate(any()) } returns
-            HybridAiResult.ConsentRequired(disclosure)
+        coEvery { hybridAiCoordinator.generateStream(any()) } returns
+            kotlinx.coroutines.flow.flowOf(HybridAiResult.ConsentRequired(disclosure))
 
         val results = engine.queryStream(query, SearchFilters()).toList()
 
         assertThat(results.last().cloudConsent).isEqualTo(disclosure)
         assertThat(results.last().answer).contains("Saved poster")
         coVerify(exactly = 1) {
-            hybridAiCoordinator.generate(match {
+            hybridAiCoordinator.generateStream(match {
                 it.item.id == "private-id" &&
                     it.operation == CloudAiOperation.EXPLAIN_RETRIEVED_EVIDENCE &&
                     it.sharedTextPreview == it.cloudPrompt &&
@@ -245,7 +317,7 @@ class RagEngineTest {
         val query = "Describe the visual style"
         val item = sampleItem("1", "Saved poster").copy(aiClassification = Classification.MOVIE)
         prepareRetrieval(query, item)
-        coEvery { hybridAiCoordinator.generate(any()) } returns HybridAiResult.CloudNotConfigured
+        coEvery { hybridAiCoordinator.generateStream(any()) } returns kotlinx.coroutines.flow.flowOf(HybridAiResult.CloudNotConfigured)
 
         val results = engine.queryStream(
             query,
@@ -255,7 +327,7 @@ class RagEngineTest {
 
         assertThat(results.last().cloudFailure).isEqualTo(RagCloudFailure.NOT_CONFIGURED)
         assertThat(results.last().answer).contains("Saved poster")
-        coVerify { hybridAiCoordinator.generate(match { it.explicitConsent }) }
+        coVerify { hybridAiCoordinator.generateStream(match { it.explicitConsent }) }
     }
 
     @Test
@@ -263,10 +335,10 @@ class RagEngineTest {
         val query = "Describe the visual style"
         val item = sampleItem("1", "Saved poster").copy(aiClassification = Classification.MOVIE)
         prepareRetrieval(query, item)
-        coEvery { hybridAiCoordinator.generate(any()) } returns HybridAiResult.Success(
+        coEvery { hybridAiCoordinator.generateStream(any()) } returns kotlinx.coroutines.flow.flowOf(HybridAiResult.Success(
             text = "A quiet film. [record_1]",
             origin = AiResponseOrigin.CLOUD_AI
-        )
+        ))
 
         val result = engine.queryStream(
             query,
@@ -274,7 +346,7 @@ class RagEngineTest {
             explicitCloudConsent = true
         ).toList().last()
 
-        assertThat(result.answer).isEqualTo("A quiet film. [1]")
+        assertThat(result.answer).isEqualTo("> Saved poster [1]")
         assertThat(result.responseOrigin).isEqualTo(AiResponseOrigin.CLOUD_AI)
         assertThat(result.sources.single().id).isEqualTo("1")
     }
@@ -289,5 +361,32 @@ class RagEngineTest {
         coEvery { vaultRepository.filterIds(listOf(item.id), null, null, null, null) } returns
             listOf(item.id)
         coEvery { vaultRepository.getByIds(listOf(item.id)) } returns listOf(item)
+    }
+
+    @Test
+    fun `queryStream emits progressive answer chunks during generation then verifies with claim verifier`() = runTest {
+        val query = "Describe the policy"
+        val item = sampleItem("1", "Insurance Policy").copy(
+            aiClassification = Classification.GENERAL_DOCUMENT,
+            rawOcrText = "Policy 123 expires on 2026-12-14."
+        )
+        prepareRetrieval(query, item)
+        coEvery { hybridAiCoordinator.generateStream(any()) } returns kotlinx.coroutines.flow.flowOf(
+            HybridAiResult.Success(text = "Your policy ", origin = AiResponseOrigin.ON_DEVICE_AI),
+            HybridAiResult.Success(text = "Your policy expires on 2026-12-14. [record_1]", origin = AiResponseOrigin.ON_DEVICE_AI)
+        )
+
+        val emissions = engine.queryStream(query, SearchFilters()).toList()
+
+        // 1. Initial found status
+        assertThat(emissions[0].status).isNotNull()
+        // 2. Progressive chunk 1
+        assertThat(emissions[1].answer).isEqualTo("Your policy")
+        // 3. Progressive chunk 2
+        assertThat(emissions[2].answer).contains("Your policy expires on 2026-12-14. [1]")
+        // 4. Verification status
+        assertThat(emissions[3].status).isNotNull()
+        // 5. Final verified answer
+        assertThat(emissions[4].answer).contains("2026-12-14. [1]")
     }
 }

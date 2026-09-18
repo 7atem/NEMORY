@@ -8,126 +8,48 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
-import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.glance.appwidget.cornerRadius
+import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
-import androidx.glance.layout.Alignment
 import androidx.glance.layout.Column
-import androidx.glance.layout.Row
-import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
-import androidx.glance.layout.height
 import androidx.glance.layout.padding
-import androidx.glance.layout.width
-import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.vaultbrain.app.MainActivity
+import com.vaultbrain.app.R
 
-/**
- * Android Glance App Widget for VaultBrain.
- * Provides home-screen access to Quick Dump capture and Expiring items.
- */
+/** Public home-screen surface: shortcuts only, never vault content or counts. */
 class VaultBrainWidget : GlanceAppWidget() {
-
     override suspend fun provideGlance(context: Context, id: GlanceId) {
+        // Legacy state clearing is handled by WidgetUpdateWorker (WorkManager), NOT here.
+        // Calling clearLegacyState() inside provideGlance() mutates DataStore, which triggers
+        // state invalidation and re-runs provideGlance() — creating an infinite loop.
         provideContent {
             GlanceTheme {
-                WidgetContent(context)
+                Column(GlanceModifier.fillMaxSize().background(GlanceTheme.colors.widgetBackground).padding(12.dp)) {
+                    Text(context.getString(R.string.app_name), style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 18.sp))
+                    Shortcut(context, R.string.nav_capture, MainActivity.ACTION_CAPTURE)
+                    Shortcut(context, R.string.nav_vault, MainActivity.ACTION_VIEW_VAULT)
+                    Shortcut(context, R.string.nav_brain, MainActivity.ACTION_ASK_NEMORY)
+                }
             }
         }
     }
 
     @Composable
-    private fun WidgetContent(context: Context) {
-        val captureIntent = Intent(
-            Intent.ACTION_VIEW,
-            null
-        ).apply {
-            setClass(context, MainActivity::class.java)
-            action = MainActivity.ACTION_CAPTURE
+    private fun Shortcut(context: Context, label: Int, action: String) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            this.action = action
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
-
-        val expiringIntent = Intent(
-            Intent.ACTION_VIEW,
-            null
-        ).apply {
-            setClass(context, MainActivity::class.java)
-            action = MainActivity.ACTION_VIEW_EXPIRING
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-
-        Column(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .background(GlanceTheme.colors.widgetBackground)
-                .cornerRadius(16.dp)
-                .padding(12.dp),
-            verticalAlignment = Alignment.Vertical.CenterVertically,
-            horizontalAlignment = Alignment.Horizontal.CenterHorizontally
-        ) {
-            Text(
-                text = "Nemory",
-                style = TextStyle(
-                    color = GlanceTheme.colors.onSurface,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            )
-            Spacer(modifier = GlanceModifier.height(8.dp))
-
-            Row(
-                modifier = GlanceModifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
-                verticalAlignment = Alignment.Vertical.CenterVertically
-            ) {
-                // Quick Capture Button
-                Column(
-                    modifier = GlanceModifier
-                        .clickable(actionStartActivity(captureIntent))
-                        .background(GlanceTheme.colors.primary)
-                        .cornerRadius(12.dp)
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.Horizontal.CenterHorizontally
-                ) {
-                    Text(
-                        text = "+ Quick Dump",
-                        style = TextStyle(
-                            color = GlanceTheme.colors.onPrimary,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    )
-                }
-
-                Spacer(modifier = GlanceModifier.width(8.dp))
-
-                // Expiring Items Button
-                Column(
-                    modifier = GlanceModifier
-                        .clickable(actionStartActivity(expiringIntent))
-                        .background(GlanceTheme.colors.secondaryContainer)
-                        .cornerRadius(12.dp)
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.Horizontal.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Expiring",
-                        style = TextStyle(
-                            color = GlanceTheme.colors.onSecondaryContainer,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                    )
-                }
-            }
-        }
+        Text(context.getString(label),
+            modifier = GlanceModifier.fillMaxWidth().clickable(actionStartActivity(intent)).padding(10.dp),
+            style = TextStyle(color = GlanceTheme.colors.onSurface, fontSize = 14.sp))
     }
 }
 

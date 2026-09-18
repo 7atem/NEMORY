@@ -39,7 +39,9 @@ sealed interface CaptureUiState {
     /** Post-save state showing follow-up suggestions before returning. */
     data class Saved(
         val savedExperienceId: String?,
-        val followUps: List<PostSaveSuggestionEngine.FollowUpSuggestion> = emptyList()
+        val followUps: List<PostSaveSuggestionEngine.FollowUpSuggestion> = emptyList(),
+        val itemNeedsReminder: Boolean = false,
+        val savedItemId: String? = null
     ) : CaptureUiState
 
     data class Error(val message: String) : CaptureUiState

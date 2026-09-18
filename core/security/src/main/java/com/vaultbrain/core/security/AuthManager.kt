@@ -92,6 +92,16 @@ class AuthManager @Inject constructor(
         return matched
     }
 
+    private fun verifyPinRaw(pin: String): Boolean {
+        val stored = prefs.getString(KEY_PIN_HASH, null) ?: return false
+        return verifyStoredPin(stored, pin)
+    }
+
+    private fun verifyDecoyPinRaw(pin: String): Boolean {
+        val stored = prefs.getString(KEY_DECOY_PIN_HASH, null) ?: return false
+        return verifyStoredPin(stored, pin)
+    }
+
     /**
      * Verifies either configured PIN and enforces a process-independent,
      * escalating cooldown after repeated failures.
@@ -102,11 +112,21 @@ class AuthManager @Inject constructor(
             return PinVerificationResult.Locked(lockoutRemaining)
         }
 
-        if (verifyDecoyPin(pin)) {
+        // Compute both hashes unconditionally to prevent timing attacks
+        val isDecoyMatch = verifyDecoyPinRaw(pin)
+        val isRealMatch = verifyPinRaw(pin)
+
+        if (isDecoyMatch) {
+            val stored = prefs.getString(KEY_DECOY_PIN_HASH, null)
+            if (stored != null) migrateLegacyPinIfNeeded(KEY_DECOY_PIN_HASH, stored, pin)
+            DecoySessionState.setDecoyMode(true)
             clearFailedAttempts()
             return PinVerificationResult.Success(isDecoyMode = true)
         }
-        if (verifyPin(pin)) {
+        if (isRealMatch) {
+            val stored = prefs.getString(KEY_PIN_HASH, null)
+            if (stored != null) migrateLegacyPinIfNeeded(KEY_PIN_HASH, stored, pin)
+            DecoySessionState.setDecoyMode(false)
             clearFailedAttempts()
             return PinVerificationResult.Success(isDecoyMode = false)
         }

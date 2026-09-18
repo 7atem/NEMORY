@@ -6,29 +6,27 @@ import kotlinx.coroutines.flow.Flow
  * Abstraction over on-device large language model providers.
  */
 interface LlmClient {
+    val modelVersion: String get() = "local-provider-unspecified"
+    suspend fun generateForTask(prompt: String, budget: ReasoningBudget): String? =
+        kotlinx.coroutines.withTimeoutOrNull(budget.timeoutMillis) {
+            generate(prompt, false)?.let(ModelOutput::visible)
+        }
 
-    /**
-     * Optionally prepares a local provider before its first request. Implementations that do
-     * not need preparation keep the default no-op behavior.
-     */
+    suspend fun generateForTask(prompt: String, image: LlmImageInput, budget: ReasoningBudget): String? =
+        kotlinx.coroutines.withTimeoutOrNull(budget.timeoutMillis) {
+            generate(prompt, image, false)?.let(ModelOutput::visible)
+        }
+
     suspend fun warmup(): Boolean = false
 
-    /**
-     * Generates a response for the given [prompt]. Returns null if the model is unavailable
-     * or generation fails.
-     */
-    suspend fun generate(prompt: String): String?
+    suspend fun generate(prompt: String, creative: Boolean = false): String?
 
-    /**
-     * Generates from combined image and text evidence when the provider supports it. The default
-     * preserves the text-only behavior for non-multimodal providers.
-     */
-    suspend fun generate(prompt: String, image: LlmImageInput): String? = null
+    suspend fun generate(prompt: String, image: LlmImageInput, creative: Boolean = false): String? = null
 
     /**
      * Streams a response for the given [prompt]. Returns a Flow of string chunks.
      */
-    fun generateStream(prompt: String): Flow<String>
+    fun generateStream(prompt: String, creative: Boolean = false): Flow<String>
 
     /**
      * Returns true if this client can be used on the current device right now.

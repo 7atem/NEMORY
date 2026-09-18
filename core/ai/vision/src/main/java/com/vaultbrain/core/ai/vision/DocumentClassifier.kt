@@ -6,6 +6,7 @@ import androidx.core.graphics.scale
 import com.vaultbrain.core.common.model.Classification
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -32,6 +33,7 @@ class DocumentClassifier @Inject constructor(
      * Lazily loaded TFLite interpreter. Returns null if the model asset
      * is missing, so the rest of the app degrades gracefully.
      */
+    private val interpreterMutex = kotlinx.coroutines.sync.Mutex()
     private val interpreter: org.tensorflow.lite.Interpreter? by lazy {
         loadInterpreter()
     }
@@ -45,36 +47,38 @@ class DocumentClassifier @Inject constructor(
      * @return a pair of (predicted classification, confidence) or null if unavailable.
      */
     suspend fun classify(bitmap: Bitmap): Pair<Classification, Float>? = withContext(Dispatchers.IO) {
-        val interp = interpreter ?: return@withContext null
+        interpreterMutex.withLock {
+            val interp = interpreter ?: return@withLock null
 
-        // 1. Preprocess: Resize to 224x224 and normalize to [0, 1].
-        val resized = bitmap.scale(INPUT_SIZE, INPUT_SIZE)
-        val inputBuffer = java.nio.ByteBuffer.allocateDirect(1 * INPUT_SIZE * INPUT_SIZE * 3 * 4)
-            .order(java.nio.ByteOrder.nativeOrder())
+            // 1. Preprocess: Resize to 224x224 and normalize to [0, 1].
+            val resized = bitmap.scale(INPUT_SIZE, INPUT_SIZE)
+            val inputBuffer = java.nio.ByteBuffer.allocateDirect(1 * INPUT_SIZE * INPUT_SIZE * 3 * 4)
+                .order(java.nio.ByteOrder.nativeOrder())
 
-        // Bulk-read pixels instead of per-pixel Bitmap.get() calls.
-        val pixels = IntArray(INPUT_SIZE * INPUT_SIZE)
-        resized.getPixels(pixels, 0, INPUT_SIZE, 0, 0, INPUT_SIZE, INPUT_SIZE)
-        for (pixel in pixels) {
-            inputBuffer.putFloat(((pixel shr 16) and 0xFF) / 255f)
-            inputBuffer.putFloat(((pixel shr 8) and 0xFF) / 255f)
-            inputBuffer.putFloat((pixel and 0xFF) / 255f)
+            // Bulk-read pixels instead of per-pixel Bitmap.get() calls.
+            val pixels = IntArray(INPUT_SIZE * INPUT_SIZE)
+            resized.getPixels(pixels, 0, INPUT_SIZE, 0, 0, INPUT_SIZE, INPUT_SIZE)
+            for (pixel in pixels) {
+                inputBuffer.putFloat(((pixel shr 16) and 0xFF) / 255f)
+                inputBuffer.putFloat(((pixel shr 8) and 0xFF) / 255f)
+                inputBuffer.putFloat((pixel and 0xFF) / 255f)
+            }
+            if (resized !== bitmap) resized.recycle()
+
+            // 2. Run inference.
+            val outputBuffer = Array(1) { FloatArray(NUM_CLASSES) }
+            inputBuffer.rewind()
+            interp.run(inputBuffer, outputBuffer)
+
+            // 3. Find the class with the highest probability.
+            val probabilities = outputBuffer[0]
+            val maxIndex = probabilities.indices.maxByOrNull { probabilities[it] } ?: return@withLock null
+            val confidence = probabilities[maxIndex]
+
+            // 4. Map index to Classification enum.
+            val classification = LABEL_MAP.getOrNull(maxIndex) ?: Classification.UNKNOWN
+            classification to confidence
         }
-        if (resized !== bitmap) resized.recycle()
-
-        // 2. Run inference.
-        val outputBuffer = Array(1) { FloatArray(NUM_CLASSES) }
-        inputBuffer.rewind()
-        interp.run(inputBuffer, outputBuffer)
-
-        // 3. Find the class with the highest probability.
-        val probabilities = outputBuffer[0]
-        val maxIndex = probabilities.indices.maxByOrNull { probabilities[it] } ?: return@withContext null
-        val confidence = probabilities[maxIndex]
-
-        // 4. Map index to Classification enum.
-        val classification = LABEL_MAP.getOrNull(maxIndex) ?: Classification.UNKNOWN
-        classification to confidence
     }
 
     private fun loadInterpreter(): org.tensorflow.lite.Interpreter? {

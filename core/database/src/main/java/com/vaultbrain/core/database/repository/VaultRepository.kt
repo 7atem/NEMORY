@@ -167,9 +167,7 @@ open class VaultRepository @Inject constructor(
     /** One-shot active collections for the matcher / RAG context. */
     suspend fun getActiveCollections(): List<PersonalCollection> {
         if (DecoySessionState.isDecoy.value) return emptyList()
-        return personalCollectionDao.getActiveEntities().map { entity ->
-            entity.toDomain(personalCollectionDao.countItems(entity.id))
-        }
+        return personalCollectionDao.getActiveRows().map(::collectionOf)
     }
 
     /** Existing collection ids including archived. Empty in decoy mode. */

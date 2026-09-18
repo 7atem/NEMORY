@@ -21,12 +21,12 @@ class QnnLlmClient @Inject constructor(
         return false
     }
 
-    override suspend fun generate(prompt: String): String? {
+    override suspend fun generate(prompt: String, creative: Boolean): String? {
         if (!isAvailable()) return null
         return ""
     }
 
-    override fun generateStream(prompt: String): kotlinx.coroutines.flow.Flow<String> = kotlinx.coroutines.flow.flow {
+    override fun generateStream(prompt: String, creative: Boolean): kotlinx.coroutines.flow.Flow<String> = kotlinx.coroutines.flow.flow {
         val fullResponse = generate(prompt) ?: return@flow
         emit(fullResponse)
     }

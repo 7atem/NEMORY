@@ -23,6 +23,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Text
@@ -34,12 +38,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.feature.vault.LensDetailViewModel
 import com.vaultbrain.feature.lensbureaucracy.BureaucracyLensScreen
 import com.vaultbrain.feature.lenshealth.HealthLensScreen
@@ -51,10 +56,21 @@ import com.vaultbrain.feature.lenstravel.TravelLensScreen
 @Composable
 fun VaultBrainNavGraph(
     modifier: Modifier = Modifier,
+    windowWidthSizeClass: WindowWidthSizeClass = WindowWidthSizeClass.Compact,
     navController: NavHostController = rememberNavController(),
     startDestination: String = Screen.AuthGate.route,
-    destinationAfterUnlock: String = Screen.Home.route
+    destinationAfterUnlock: String = Screen.Home.route,
+    launchRequestId: Int = 0
 ) {
+    val consumedLaunch = androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableIntStateOf(-1) }
+    LaunchedEffect(launchRequestId) {
+        if (consumedLaunch.intValue != launchRequestId && startDestination !in setOf(Screen.AuthGate.route, Screen.Onboarding.route)) {
+            consumedLaunch.intValue = launchRequestId
+            if (launchRequestId > 0 || destinationAfterUnlock != Screen.Home.route) {
+                navController.navigate(destinationAfterUnlock) { launchSingleTop = true }
+            }
+        }
+    }
     SharedTransitionLayout {
         NavHost(
             navController = navController,
@@ -71,8 +87,10 @@ fun VaultBrainNavGraph(
                 )
             }
             composable(Screen.Onboarding.route) {
+                val context = androidx.compose.ui.platform.LocalContext.current
                 com.vaultbrain.feature.vault.OnboardingScreen(
                     onOnboardingComplete = {
+                        com.vaultbrain.core.common.OnboardingState.setHasSeenOnboarding(context, true)
                         navController.navigate(destinationAfterUnlock) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
@@ -80,7 +98,7 @@ fun VaultBrainNavGraph(
                 )
             }
             composable(Screen.Home.route) {
-                MainScaffold(navController, Screen.Home.route) {
+                MainScaffold(navController, Screen.Home.route, windowWidthSizeClass) {
                     com.vaultbrain.feature.vault.HomeScreen(
                         onSearchClick = { query ->
                             val route = query?.let {
@@ -117,7 +135,12 @@ fun VaultBrainNavGraph(
                                 "${Screen.Capture.route}?text=${android.net.Uri.encode(text)}&source=voice"
                             )
                         },
-                        onSettingsClick = { navController.navigate(Screen.Settings.route) }
+                        onSettingsClick = { navController.navigate(Screen.Settings.route) },
+                        onAskBrain = { query ->
+                            navController.navigate("${Screen.Brain.route}?query=${android.net.Uri.encode(query)}")
+                        },
+                        onLensClick = { lensId -> navController.navigate("lens/${android.net.Uri.encode(lensId)}") },
+                        windowWidthSizeClass = windowWidthSizeClass
                     )
                 }
             }
@@ -136,12 +159,13 @@ fun VaultBrainNavGraph(
                     }
                 )
             ) { backStackEntry ->
-                MainScaffold(navController, Screen.Search.route) {
+                MainScaffold(navController, Screen.Search.route, windowWidthSizeClass) {
                     com.vaultbrain.feature.vault.VaultBrowserScreen(
                         onBack = { navController.popBackStack() },
                         onItemClick = { id -> navController.navigate("detail/${android.net.Uri.encode(id)}") },
                         initialFilter = backStackEntry.arguments?.getString("filter"),
-                        initialQuery = backStackEntry.arguments?.getString("query")
+                        initialQuery = backStackEntry.arguments?.getString("query"),
+                        windowWidthSizeClass = windowWidthSizeClass
                     )
                 }
             }
@@ -154,7 +178,7 @@ fun VaultBrainNavGraph(
                     }
                 )
             ) {
-                MainScaffold(navController, Screen.Brain.route) {
+                MainScaffold(navController, Screen.Brain.route, windowWidthSizeClass) {
                     com.vaultbrain.feature.brain.BrainChatScreen(
                         onSourceClick = { id -> navController.navigate("detail/${android.net.Uri.encode(id)}") },
                         onBack = { navController.popBackStack() }
@@ -164,7 +188,13 @@ fun VaultBrainNavGraph(
             composable(Screen.Settings.route) {
                 com.vaultbrain.feature.settings.SettingsScreen(
                     onBack = { navController.popBackStack() },
-                    onConnectionsClick = { navController.navigate(Screen.Connections.route) }
+                    onConnectionsClick = { navController.navigate(Screen.Connections.route) },
+                    onPrivacyScoreClick = { navController.navigate("privacy_score") }
+                )
+            }
+            composable("privacy_score") {
+                com.vaultbrain.feature.settings.PrivacyScoreScreen(
+                    onBack = { navController.popBackStack() }
                 )
             }
             composable(Screen.Connections.route) {
@@ -270,7 +300,7 @@ fun VaultBrainNavGraph(
                 ?.filter(String::isNotBlank)
                 .orEmpty()
             val pastedText = backStackEntry.arguments?.getString("text")
-            val preferredLens = com.vaultbrain.core.common.model.LensId.canonicalOrNull(
+            val preferredLens = com.vaultbrain.shared.domain.LensId.canonicalOrNull(
                 backStackEntry.arguments?.getString("lens")
             )
             val preferredLenses = preferredLens?.let(::setOf).orEmpty()
@@ -321,14 +351,17 @@ private val bottomNavItems = listOf(
 )
 
 /**
- * Scaffold wrapper for screens that include the bottom navigation bar.
+ * Scaffold wrapper for screens that include the bottom navigation bar or rail.
  */
 @Composable
 private fun MainScaffold(
     navController: NavHostController,
     currentRoute: String,
+    windowWidthSizeClass: WindowWidthSizeClass,
     content: @Composable () -> Unit
 ) {
+    val isCompact = windowWidthSizeClass == WindowWidthSizeClass.Compact
+
     Scaffold(
         floatingActionButton = {
             var showPasteDialog by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
@@ -344,7 +377,8 @@ private fun MainScaffold(
                 }
             }
 
-            com.vaultbrain.feature.vault.components.SpeedDialFab(
+            if (currentRoute != Screen.Brain.route) {
+                com.vaultbrain.feature.vault.components.SpeedDialFab(
                 onCaptureClick = { navController.navigate(Screen.Capture.route) { launchSingleTop = true } },
                 onGalleryClick = { galleryLauncher.launch(arrayOf("image/*", "application/pdf")) },
                 onPasteClick = {
@@ -358,6 +392,7 @@ private fun MainScaffold(
                 },
                 onVoiceClick = { showVoiceDialog = true }
             )
+            }
             
             if (showPasteDialog) {
                 com.vaultbrain.feature.vault.PasteTextDialog(
@@ -383,40 +418,74 @@ private fun MainScaffold(
             }
         },
         bottomBar = {
-            NavigationBar(
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface
-            ) {
-                bottomNavItems.forEach { item ->
-                    val selected = currentRoute == item.route
-                    val labelText = stringResource(id = item.labelRes)
-                    NavigationBarItem(
-                        icon = {
-                            Icon(
-                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = labelText
-                            )
-                        },
-                        label = { Text(labelText) },
-                        selected = selected,
-                        onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            if (isCompact) {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    bottomNavItems.forEach { item ->
+                        val selected = currentRoute == item.route
+                        val labelText = stringResource(id = item.labelRes)
+                        NavigationBarItem(
+                            icon = {
+                                Icon(
+                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = labelText
+                                )
+                            },
+                            label = { Text(labelText) },
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
     ) { innerPadding ->
-        androidx.compose.foundation.layout.Box(
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            content()
+        Row(modifier = Modifier.padding(innerPadding)) {
+            if (!isCompact) {
+                NavigationRail(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    bottomNavItems.forEach { item ->
+                        val selected = currentRoute == item.route
+                        val labelText = stringResource(id = item.labelRes)
+                        NavigationRailItem(
+                            icon = {
+                                Icon(
+                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = labelText
+                                )
+                            },
+                            label = { Text(labelText) },
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
+                }
+            }
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                content()
+            }
         }
     }
 }
@@ -434,7 +503,6 @@ sealed class Screen(val route: String) {
     data object Collections : Screen("collections")
 }
 
-
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun LensRouterScreen(
@@ -447,7 +515,7 @@ private fun LensRouterScreen(
     androidx.compose.runtime.LaunchedEffect(lensId) {
         viewModel.loadLens(lensId)
     }
-    val state by viewModel.uiState.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
 
     Scaffold(
@@ -472,7 +540,7 @@ private fun LensRouterScreen(
     ) { innerPadding ->
         val modifier = Modifier.padding(innerPadding)
         when (lensId) {
-            com.vaultbrain.core.common.model.LensId.MONEY -> com.vaultbrain.feature.lensmoney.MoneyLensScreen(
+            com.vaultbrain.shared.domain.LensId.MONEY -> com.vaultbrain.feature.lensmoney.MoneyLensScreen(
                 items = state.items,
                 onItemClick = { onItemClick(it.id) },
                 onExportClick = {
@@ -484,28 +552,28 @@ private fun LensRouterScreen(
                         android.content.Intent.createChooser(shareIntent, null)
                     )
                 },
-                onQuickAdd = { onAdd(com.vaultbrain.core.common.model.LensId.MONEY) },
+                onQuickAdd = { onAdd(com.vaultbrain.shared.domain.LensId.MONEY) },
                 modifier = modifier
             )
-            com.vaultbrain.core.common.model.LensId.HEALTH -> com.vaultbrain.feature.lenshealth.HealthLensScreen(
+            com.vaultbrain.shared.domain.LensId.HEALTH -> com.vaultbrain.feature.lenshealth.HealthLensScreen(
                 items = state.items,
                 onItemClick = { onItemClick(it.id) },
-                onQuickAdd = { onAdd(com.vaultbrain.core.common.model.LensId.HEALTH) },
+                onQuickAdd = { onAdd(com.vaultbrain.shared.domain.LensId.HEALTH) },
                 modifier = modifier
             )
-            com.vaultbrain.core.common.model.LensId.TRAVEL -> com.vaultbrain.feature.lenstravel.TravelLensScreen(
+            com.vaultbrain.shared.domain.LensId.TRAVEL -> com.vaultbrain.feature.lenstravel.TravelLensScreen(
                 items = state.items,
                 onItemClick = { onItemClick(it.id) },
-                onQuickAdd = { onAdd(com.vaultbrain.core.common.model.LensId.TRAVEL) },
+                onQuickAdd = { onAdd(com.vaultbrain.shared.domain.LensId.TRAVEL) },
                 modifier = modifier
             )
-            com.vaultbrain.core.common.model.LensId.BUREAUCRACY -> com.vaultbrain.feature.lensbureaucracy.BureaucracyLensScreen(
+            com.vaultbrain.shared.domain.LensId.BUREAUCRACY -> com.vaultbrain.feature.lensbureaucracy.BureaucracyLensScreen(
                 items = state.items,
                 onItemClick = { onItemClick(it.id) },
-                onQuickAdd = { onAdd(com.vaultbrain.core.common.model.LensId.BUREAUCRACY) },
+                onQuickAdd = { onAdd(com.vaultbrain.shared.domain.LensId.BUREAUCRACY) },
                 modifier = modifier
             )
-            com.vaultbrain.core.common.model.LensId.MEDIA -> com.vaultbrain.feature.lensmedia.MediaLensScreen(
+            com.vaultbrain.shared.domain.LensId.MEDIA -> com.vaultbrain.feature.lensmedia.MediaLensScreen(
                 items = state.items,
                 onItemClick = { onItemClick(it.id) },
                 onRemindLater = { viewModel.remindMediaItem(it) },

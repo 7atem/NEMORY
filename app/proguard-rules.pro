@@ -70,8 +70,6 @@
 # 10. Dagger / Hilt & ViewModels
 -keep class * extends androidx.hilt.work.HiltWorker
 -keep class dagger.hilt.** { *; }
--keep class com.vaultbrain.app.** { *; }
--keep class com.vaultbrain.feature.** { *; }
 -keepclassmembers class * extends androidx.lifecycle.ViewModel {
     <init>(...);
 }

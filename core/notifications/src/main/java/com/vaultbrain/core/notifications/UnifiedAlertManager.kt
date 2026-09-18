@@ -21,7 +21,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.vaultbrain.core.common.model.VaultItem
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.Classification
 import com.vaultbrain.core.database.dao.NotificationQueueDao
 import com.vaultbrain.core.database.entity.NotificationQueueEntity
@@ -55,7 +55,8 @@ class UnifiedAlertManager @Inject constructor(
         val id = UUID.randomUUID().toString()
         val entity = NotificationQueueEntity(
             id = id,
-            itemId = item.id,
+            targetId = item.id,
+            targetType = "VAULT_ITEM",
             triggerAt = triggerAt,
             channelId = channelId,
             title = title,
@@ -84,11 +85,74 @@ class UnifiedAlertManager @Inject constructor(
     }
 
     /**
-     * Cancels all pending notifications for the given item id.
+     * Schedules a notification for an external record.
      */
-    suspend fun cancelForItem(itemId: String) {
-        notificationDao.deleteForItem(itemId)
-        workManager.cancelAllWorkByTag(itemTag(itemId))
+    suspend fun scheduleForExternal(
+        targetId: String,
+        triggerAt: Long,
+        title: String,
+        body: String,
+        channelId: String
+    ) {
+        val id = UUID.randomUUID().toString()
+        val entity = NotificationQueueEntity(
+            id = id,
+            targetId = targetId,
+            targetType = "EXTERNAL_RECORD",
+            triggerAt = triggerAt,
+            channelId = channelId,
+            title = title,
+            body = body,
+            isDelivered = false
+        )
+        notificationDao.insert(entity)
+
+        val delay = max(triggerAt - System.currentTimeMillis(), 0L)
+        val workRequest = OneTimeWorkRequestBuilder<AlertWorker>()
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .setInputData(
+                Data.Builder()
+                    .putString(KEY_NOTIFICATION_ID, id)
+                    .build()
+            )
+            .addTag(WORK_TAG)
+            .addTag(itemTag(targetId))
+            .build()
+
+        workManager.enqueueUniqueWork(
+            "$WORK_TAG:$id",
+            ExistingWorkPolicy.REPLACE,
+            workRequest
+        )
+    }
+
+    /**
+     * Cancels all pending notifications for the given target id.
+     */
+    suspend fun cancelForTarget(targetId: String) {
+        notificationDao.deleteForTarget(targetId)
+        workManager.cancelAllWorkByTag(itemTag(targetId))
+    }
+
+    /**
+     * Cancels all pending notifications for the given item id (alias for target).
+     */
+    suspend fun cancelForItem(itemId: String) = cancelForTarget(itemId)
+
+    suspend fun dismissNotification(id: String) {
+        notificationDao.deleteById(id)
+        workManager.cancelUniqueWork("$WORK_TAG:$id")
+    }
+
+    suspend fun snoozeNotification(id: String) {
+        val delay = TimeUnit.HOURS.toMillis(24)
+        if (notificationDao.snoozeById(id, System.currentTimeMillis() + delay) == 0) return
+        val request = OneTimeWorkRequestBuilder<AlertWorker>()
+            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+            .setInputData(Data.Builder().putString(KEY_NOTIFICATION_ID, id).build())
+            .addTag(WORK_TAG)
+            .build()
+        workManager.enqueueUniqueWork("$WORK_TAG:$id", ExistingWorkPolicy.REPLACE, request)
     }
 
     /**
@@ -170,11 +234,40 @@ class UnifiedAlertManager @Inject constructor(
 
     private fun itemTag(itemId: String) = "notification_item_$itemId"
 
+    private fun ensureChannel(channelId: String) {
+        val notificationManager = context.getSystemService(NotificationManager::class.java)
+        if (notificationManager?.getNotificationChannel(channelId) == null) {
+            val (name, desc, importance) = when (channelId) {
+                CHANNEL_CALENDAR -> Triple(
+                    context.getString(R.string.calendar_notification_channel),
+                    context.getString(R.string.calendar_notification_channel_desc),
+                    NotificationManager.IMPORTANCE_HIGH
+                )
+                CHANNEL_GMAIL -> Triple(
+                    context.getString(R.string.gmail_notification_channel),
+                    context.getString(R.string.gmail_notification_channel_desc),
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
+                else -> Triple(channelId, channelId, NotificationManager.IMPORTANCE_DEFAULT)
+            }
+            val channel = NotificationChannel(
+                channelId,
+                name,
+                importance
+            ).apply {
+                description = desc
+            }
+            notificationManager?.createNotificationChannel(channel)
+        }
+    }
+
     companion object {
         private const val WORK_TAG = "AlertWorker"
         private const val KEY_NOTIFICATION_ID = "notification_id"
         private const val CHANNEL_CRITICAL = "CRITICAL"
         private const val CHANNEL_REMINDER = "REMINDER"
+        const val CHANNEL_CALENDAR = "CALENDAR_EVENTS"
+        const val CHANNEL_GMAIL = "GMAIL_SYNC"
     }
 }
 
@@ -183,17 +276,27 @@ class UnifiedAlertManager @Inject constructor(
  */
 @HiltWorker
 class AlertWorker @AssistedInject constructor(
-    @Assisted context: Context,
+    @Assisted private val applicationContext: Context,
     @Assisted params: WorkerParameters,
     private val notificationDao: NotificationQueueDao
-) : CoroutineWorker(context, params) {
+) : CoroutineWorker(applicationContext, params) {
 
     override suspend fun doWork(): Result {
+        if (com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value) return Result.retry()
         val now = System.currentTimeMillis()
         val due = notificationDao.getDue(now)
         due.forEach { entity ->
-            if (postNotification(entity)) {
-                notificationDao.update(entity.copy(isDelivered = true))
+            if (com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value) return Result.retry()
+            if (notificationDao.claimVisible(entity.id, entity.triggerAt, now) == 1) {
+                try {
+                    if (!postNotification(entity)) {
+                        notificationDao.releaseClaim(entity.id, entity.triggerAt)
+                        return Result.retry()
+                    }
+                } catch (error: Exception) {
+                    notificationDao.releaseClaim(entity.id, entity.triggerAt)
+                    throw error
+                }
             }
         }
         return Result.success()
@@ -201,6 +304,7 @@ class AlertWorker @AssistedInject constructor(
 
     @SuppressLint("MissingPermission") // Guarded immediately below on Android 13+.
     private fun postNotification(entity: NotificationQueueEntity): Boolean {
+        if (com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value) return false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(
                 applicationContext,
@@ -212,10 +316,41 @@ class AlertWorker @AssistedInject constructor(
 
         ensureChannel(entity.channelId)
 
+        val intentUri = if (entity.targetType == "EXTERNAL_RECORD") {
+            "nemory://external/${android.net.Uri.encode(entity.targetId)}".toUri()
+        } else {
+            "nemory://item/${android.net.Uri.encode(entity.targetId)}".toUri()
+        }
+
+        // Snooze action — sends to NotificationActionReceiver
+        val snoozeIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            entity.id.hashCode() + 1,
+            Intent(NotificationActionReceiver.ACTION_SNOOZE).apply {
+                setClass(applicationContext, NotificationActionReceiver::class.java)
+                putExtra(NotificationActionReceiver.EXTRA_NOTIF_ID, entity.id.hashCode())
+                putExtra(NotificationActionReceiver.EXTRA_ENTITY_ID, entity.id)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Dismiss action
+        val dismissIntent = PendingIntent.getBroadcast(
+            applicationContext,
+            entity.id.hashCode() + 2,
+            Intent(NotificationActionReceiver.ACTION_DISMISS).apply {
+                setClass(applicationContext, NotificationActionReceiver::class.java)
+                putExtra(NotificationActionReceiver.EXTRA_NOTIF_ID, entity.id.hashCode())
+                putExtra(NotificationActionReceiver.EXTRA_ENTITY_ID, entity.id)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(applicationContext, entity.channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle(entity.title)
-            .setContentText(entity.body)
+            .setContentTitle(applicationContext.getString(R.string.alert_private_title))
+            .setContentText(applicationContext.getString(R.string.alert_private_body))
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(
                 PendingIntent.getActivity(
@@ -223,11 +358,13 @@ class AlertWorker @AssistedInject constructor(
                     entity.id.hashCode(),
                     Intent(
                         Intent.ACTION_VIEW,
-                        "nemory://item/${android.net.Uri.encode(entity.itemId)}".toUri()
-                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+                        intentUri
+                    ).setClassName(applicationContext.packageName, "com.vaultbrain.app.MainActivity").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
             )
+            .addAction(android.R.drawable.ic_lock_idle_alarm, applicationContext.getString(R.string.alert_action_snooze), snoozeIntent)
+            .addAction(android.R.drawable.ic_delete, applicationContext.getString(R.string.alert_action_dismiss), dismissIntent)
             .setAutoCancel(true)
             .build()
 
@@ -236,14 +373,38 @@ class AlertWorker @AssistedInject constructor(
         return true
     }
 
+    companion object {
+        /** Remove previews produced by versions that placed document content outside the vault. */
+        fun clearLegacyPreviews(context: Context) {
+            val manager = context.getSystemService(NotificationManager::class.java) ?: return
+            manager.activeNotifications.filter { it.notification.channelId in setOf("CRITICAL", "REMINDER", "CALENDAR_EVENTS", "GMAIL_SYNC", "VAULT_REMINDERS") }
+                .forEach { manager.cancel(it.tag, it.id) }
+        }
+    }
+
     private fun ensureChannel(channelId: String) {
         val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
         if (notificationManager?.getNotificationChannel(channelId) == null) {
+            val (name, desc, importance) = when (channelId) {
+                UnifiedAlertManager.CHANNEL_CALENDAR -> Triple(
+                    applicationContext.getString(R.string.calendar_notification_channel),
+                    applicationContext.getString(R.string.calendar_notification_channel_desc),
+                    NotificationManager.IMPORTANCE_HIGH
+                )
+                UnifiedAlertManager.CHANNEL_GMAIL -> Triple(
+                    applicationContext.getString(R.string.gmail_notification_channel),
+                    applicationContext.getString(R.string.gmail_notification_channel_desc),
+                    NotificationManager.IMPORTANCE_DEFAULT
+                )
+                else -> Triple(channelId, channelId, NotificationManager.IMPORTANCE_DEFAULT)
+            }
             val channel = NotificationChannel(
                 channelId,
-                channelId,
-                NotificationManager.IMPORTANCE_DEFAULT
-            )
+                name,
+                importance
+            ).apply {
+                description = desc
+            }
             notificationManager?.createNotificationChannel(channel)
         }
     }

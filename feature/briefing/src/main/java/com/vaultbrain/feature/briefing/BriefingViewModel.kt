@@ -66,10 +66,10 @@ class BriefingViewModel @Inject constructor(
                 val endOfDay = today.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                 val todayRecords = externalRecords.filter { record ->
                     val anchor = record.startAt ?: record.createdAt
-                    anchor in startOfDay..endOfDay
+                    anchor >= startOfDay && anchor < endOfDay
                 }
                 val todayReminders = reminders.filter { reminder ->
-                    reminder.dueAt in startOfDay..endOfDay
+                    reminder.dueAt >= startOfDay && reminder.dueAt < endOfDay
                 }
                 BriefingInputs(insights, weekAhead, todayRecords, todayReminders)
             }
@@ -85,13 +85,13 @@ class BriefingViewModel @Inject constructor(
 
                     val language = Locale.getDefault().language
                     val leading = inputs.insights.firstOrNull()
-                    val explanation = leading?.let { explanationGenerator.explain(it, language) }
-                    val dailySummary = explanationGenerator.generateDailySummary(
+                    val explanation = leading?.let { kotlinx.coroutines.withTimeoutOrNull(8_000) { explanationGenerator.explain(it, language) } }
+                    val dailySummary = kotlinx.coroutines.withTimeoutOrNull(8_000) { explanationGenerator.generateDailySummary(
                         insights = inputs.insights,
                         externalRecords = inputs.todayRecords,
                         reminders = inputs.todayReminders,
                         languageCode = language
-                    )
+                    ) }
                     summaryAttempted = true
 
                     _uiState.value = _uiState.value.copy(

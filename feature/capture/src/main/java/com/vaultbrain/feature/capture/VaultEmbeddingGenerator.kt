@@ -39,11 +39,13 @@ class VaultEmbeddingGenerator @Inject constructor(
     private val visionEmbeddingModel: VisionEmbeddingModel,
     private val vectorStore: VectorStore,
     private val mediaVaultStorage: MediaVaultStorage,
-    private val collectionSuggestionMatcher: com.vaultbrain.feature.capture.collections.CollectionSuggestionMatcher
+    private val collectionSuggestionMatcher: com.vaultbrain.feature.capture.collections.CollectionSuggestionMatcher,
+    private val knowledgeIndexer: DocumentKnowledgeIndexer? = null
 ) {
 
     /** Generates and stores embeddings for [item]. Items with no embeddable content are cleared. */
     suspend fun indexItem(item: VaultItem) = withContext(Dispatchers.Default) {
+        knowledgeIndexer?.index(item)
         val now = System.currentTimeMillis()
         val embeddings = mutableListOf<VaultEmbedding>()
 

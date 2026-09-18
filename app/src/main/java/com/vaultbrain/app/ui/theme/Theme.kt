@@ -1,6 +1,7 @@
 package com.vaultbrain.app.ui.theme
 
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -9,6 +10,8 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.vaultbrain.core.common.theme.*
@@ -18,8 +21,8 @@ import com.vaultbrain.core.common.theme.*
  * Evokes a secure, premium vault aesthetic.
  */
 private val VaultBrainDarkScheme = darkColorScheme(
-    primary = VaultTeal,
-    onPrimary = Color.White,
+    primary = Color(0xFF79D5CE),
+    onPrimary = Color(0xFF003735),
     primaryContainer = VaultTealContainer,
     onPrimaryContainer = OnVaultTealContainer,
 
@@ -45,7 +48,15 @@ private val VaultBrainDarkScheme = darkColorScheme(
     errorContainer = VaultErrorContainer,
     onErrorContainer = OnVaultErrorContainer,
 
-    outline = VaultOutline,
+    surfaceContainerLowest = VaultBlack,
+    surfaceContainerLow = VaultCharcoal,
+    surfaceContainer = VaultSurface,
+    surfaceContainerHigh = VaultSurfaceVariant,
+    surfaceContainerHighest = VaultSurfaceBright,
+    inverseSurface = VaultOnDarkPrimary,
+    inverseOnSurface = VaultBlack,
+    inversePrimary = VaultTealDark,
+    outline = Color(0xFF7D8993),
     outlineVariant = VaultOutlineVariant
 )
 
@@ -55,15 +66,15 @@ private val VaultBrainDarkScheme = darkColorScheme(
 private val VaultBrainLightScheme = lightColorScheme(
     primary = VaultTeal,
     onPrimary = Color.White,
-    primaryContainer = VaultTealLight,
+    primaryContainer = Color(0xFFD1F1EC),
     onPrimaryContainer = VaultTealDark,
 
-    secondary = VaultAmber,
-    onSecondary = Color.Black,
-    secondaryContainer = VaultAmberLight,
-    onSecondaryContainer = VaultAmberDark,
+    secondary = Color(0xFF785900),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFFFE7A7),
+    onSecondaryContainer = Color(0xFF261A00),
 
-    tertiary = VaultLavender,
+    tertiary = VaultLavenderDark,
     onTertiary = Color.White,
     tertiaryContainer = OnVaultLavenderContainer,
     onTertiaryContainer = VaultLavenderDark,
@@ -75,12 +86,20 @@ private val VaultBrainLightScheme = lightColorScheme(
     surfaceVariant = VaultLightSurfaceVariant,
     onSurfaceVariant = VaultOnLightSecondary,
 
-    error = VaultError,
+    error = Color(0xFFBA1A1A),
     onError = Color.White,
     errorContainer = OnVaultErrorContainer,
     onErrorContainer = VaultErrorContainer,
 
-    outline = VaultLightOutline,
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = VaultWhite,
+    surfaceContainer = VaultLightSurface,
+    surfaceContainerHigh = Color(0xFFE9EEF0),
+    surfaceContainerHighest = VaultLightSurfaceVariant,
+    inverseSurface = VaultCharcoal,
+    inverseOnSurface = VaultOnDarkPrimary,
+    inversePrimary = Color(0xFF79D5CE),
+    outline = Color(0xFF707B83),
     outlineVariant = VaultLightSurfaceVariant
 )
 
@@ -108,6 +127,23 @@ fun VaultBrainTheme(
     MaterialTheme(
         colorScheme = colorScheme,
         typography = VaultBrainTypography,
-        content = content
+        shapes = androidx.compose.material3.Shapes(
+            extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+            small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+            medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+            large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+            extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
+        ),
+        content = {
+            // Apply subtle gradient background for premium aesthetic
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier.background(
+                    brush = if (darkTheme) VaultBrainGradients.darkBackgroundGradient
+                    else VaultBrainGradients.lightBackgroundGradient
+                )
+            ) {
+                content()
+            }
+        }
     )
 }

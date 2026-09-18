@@ -242,6 +242,14 @@ fun CollectionDetailScreen(
         )
     }
     if (showAddItems) {
+        var selectedItemIds by remember { mutableStateOf(setOf<String>()) }
+        fun toggleSelection(id: String) {
+            selectedItemIds = if (selectedItemIds.contains(id)) {
+                selectedItemIds - id
+            } else {
+                selectedItemIds + id
+            }
+        }
         AlertDialog(
             onDismissRequest = { showAddItems = false },
             title = { Text(stringResource(R.string.collection_add_items)) },
@@ -253,20 +261,25 @@ fun CollectionDetailScreen(
                         if (state.suggestedItems.isNotEmpty()) {
                             item {
                                 Text(
-                                    "Smart Suggestions",
+                                    stringResource(R.string.collections_smart_suggestions),
                                     style = MaterialTheme.typography.titleSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(vertical = 8.dp)
                                 )
                             }
                             items(state.suggestedItems, key = { it.id }) { item ->
+                                val isSelected = selectedItemIds.contains(item.id)
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().clickable {
-                                        viewModel.addItem(item.id)
-                                    }.padding(vertical = 8.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { toggleSelection(item.id) }
+                                        .padding(vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Checkbox(checked = false, onCheckedChange = { viewModel.addItem(item.id) })
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = { toggleSelection(item.id) }
+                                    )
                                     Text(item.title, modifier = Modifier.weight(1f))
                                 }
                             }
@@ -274,19 +287,24 @@ fun CollectionDetailScreen(
                         if (state.otherItems.isNotEmpty()) {
                             item {
                                 Text(
-                                    "All Items",
+                                    stringResource(R.string.collections_all_items),
                                     style = MaterialTheme.typography.titleSmall,
                                     modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
                                 )
                             }
                             items(state.otherItems, key = { it.id }) { item ->
+                                val isSelected = selectedItemIds.contains(item.id)
                                 Row(
-                                    modifier = Modifier.fillMaxWidth().clickable {
-                                        viewModel.addItem(item.id)
-                                    }.padding(vertical = 8.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { toggleSelection(item.id) }
+                                        .padding(vertical = 8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Checkbox(checked = false, onCheckedChange = { viewModel.addItem(item.id) })
+                                    Checkbox(
+                                        checked = isSelected,
+                                        onCheckedChange = { toggleSelection(item.id) }
+                                    )
                                     Text(item.title, modifier = Modifier.weight(1f))
                                 }
                             }
@@ -295,7 +313,20 @@ fun CollectionDetailScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showAddItems = false }) { Text(stringResource(R.string.detail_done)) }
+                Button(
+                    onClick = {
+                        selectedItemIds.forEach { viewModel.addItem(it) }
+                        showAddItems = false
+                    },
+                    enabled = selectedItemIds.isNotEmpty()
+                ) {
+                    Text(stringResource(R.string.collections_add_items_confirm, selectedItemIds.size))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddItems = false }) {
+                    Text(stringResource(R.string.detail_cancel))
+                }
             }
         )
     }

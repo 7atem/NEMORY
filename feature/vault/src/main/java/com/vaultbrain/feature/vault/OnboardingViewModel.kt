@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vaultbrain.core.ai.llm.gemma.GemmaDownloadEligibility
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +26,7 @@ class OnboardingViewModel @Inject constructor(
     private val _offerModelDownload = MutableStateFlow(false)
     val offerModelDownload: StateFlow<Boolean> = _offerModelDownload.asStateFlow()
 
-    val gemmaStatus: StateFlow<GemmaModelStatus> = gemmaModelManager.status
+    val gemmaStatus: StateFlow<OnDeviceModelStatus> = gemmaModelManager.status
 
     init {
         viewModelScope.launch {

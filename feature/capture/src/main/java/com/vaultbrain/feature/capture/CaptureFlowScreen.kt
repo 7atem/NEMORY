@@ -38,7 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.vaultbrain.core.ai.llm.gemma.GemmaModelStatus
+import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import com.vaultbrain.core.common.model.SourceType
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.common.permissions.PermissionHelper
@@ -193,7 +193,7 @@ fun CaptureFlowScreen(
                     onMetadataChange = { key, value -> viewModel.updateMetadata(key, value) },
                     editedMetadataKeys = state.editedMetadataKeys,
                     showOnDeviceAiHint = state.showOnDeviceAiHint &&
-                        gemmaStatus == GemmaModelStatus.NOT_DOWNLOADED,
+                        gemmaStatus == OnDeviceModelStatus.NOT_DOWNLOADED,
                     onOnDeviceAiDownload = viewModel::downloadGemmaModel
                 )
             }
@@ -212,17 +212,51 @@ fun CaptureFlowScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Saved successfully!",
+                        text = stringResource(R.string.feature_capture_saved_success),
                         style = MaterialTheme.typography.titleLarge
                     )
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
                     
-                    Text(
-                        text = "Suggested follow-ups:",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    if (state.itemNeedsReminder) {
+                        androidx.compose.material3.Card(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                            colors = androidx.compose.material3.CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Text(
+                                    text = stringResource(R.string.feature_capture_reminder_prompt_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = stringResource(R.string.feature_capture_reminder_prompt_body),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = { viewModel.dismissFollowUp(onComplete) },
+                                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.feature_capture_got_it))
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (state.followUps.isNotEmpty()) {
+                        Text(
+                            text = stringResource(R.string.feature_capture_suggested_followups),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                     
                     state.followUps.forEach { suggestion ->
                         OutlinedButton(
@@ -238,7 +272,7 @@ fun CaptureFlowScreen(
                         onClick = { viewModel.dismissFollowUp(onComplete) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Done")
+                        Text(stringResource(R.string.feature_capture_done))
                     }
                 }
             }
@@ -299,23 +333,23 @@ private fun PermissionDeniedScreen(
         )
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Camera Permission Required",
+            text = stringResource(R.string.feature_capture_camera_perm_req_title),
             style = MaterialTheme.typography.titleLarge
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Please grant camera permission in settings to take photos, or pick an image from your gallery.",
+            text = stringResource(R.string.feature_capture_camera_perm_req_body),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
         Spacer(modifier = Modifier.height(32.dp))
         Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
-            Text("Open Settings")
+            Text(stringResource(R.string.feature_capture_open_settings))
         }
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(onClick = onPickFromGallery, modifier = Modifier.fillMaxWidth()) {
-            Text("Pick from Gallery")
+            Text(stringResource(R.string.feature_capture_pick_from_gallery))
         }
     }
 }

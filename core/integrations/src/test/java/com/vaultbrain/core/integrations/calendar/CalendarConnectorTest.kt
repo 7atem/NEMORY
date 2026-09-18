@@ -13,7 +13,8 @@ import org.junit.Test
 class CalendarConnectorTest {
     private val source = FakeCalendarDataSource()
     private val repository = ExternalContextRepository(FakeExternalRecordDao(), FakeExternalConnectionDao())
-    private val connector = CalendarConnector(source, repository)
+    private val alertManager: com.vaultbrain.core.notifications.UnifiedAlertManager = io.mockk.mockk(relaxed = true)
+    private val connector = CalendarConnector(source, repository, alertManager)
 
     @Test
     fun `sync normalizes one-time all-day recurring timezone and multiple calendars`() = runTest {

@@ -53,4 +53,15 @@
     <string name="brain_suggestion_media">ماذا يوجد في قائمة المشاهدة أو القراءة؟</string>
     <string name="brain_suggestion_health">اعثر على مستنداتي الصحية</string>
     <string name="brain_suggestion_recurring_spend">ما الاشتراكات التي ارتفعت تكلفتها؟</string>
+    <string name="brain_chat_title_standard">اسأل Nemory</string>
+    <string name="brain_chat_subtitle_standard">محادثة، أوامر، أو بحث</string>
+    <string name="brain_chat_generating">جارٍ الإنشاء</string>
+    <string name="brain_chat_deep_filter">عميق</string>
+    <string name="brain_collection_create_title">إنشاء مجموعة</string>
+    <string name="brain_collection_create_confirm">إنشاء مجموعة جديدة \"%1$s\" تضم %2$d من العناصر؟</string>
+    <string name="brain_collection_create_body">سيتم تنظيم العناصر المحددة في هذه المجموعة.</string>
+    <string name="brain_collection_create_action">إنشاء</string>
+    <string name="brain_collection_add_title">إضافة إلى مجموعة</string>
+    <string name="brain_collection_empty_message">لا توجد مجموعات بعد. أنشئ مجموعة من تبويب الخزنة أولاً.</string>
+    <string name="brain_chat_back">رجوع</string>
 </resources>

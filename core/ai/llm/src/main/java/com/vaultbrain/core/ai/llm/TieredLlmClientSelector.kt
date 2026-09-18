@@ -9,44 +9,46 @@ import javax.inject.Singleton
 
 /**
  * Default [LlmClient]: per-call tier selection between Gemini Nano (Tier 1, foreground-gated)
- * and Gemma (Tier 2, background-safe).
- *
- * Delegation happens per call rather than once at injection because Nano can become READY
- * mid-session (AICore download finishing) and Gemma can become READY after a model download.
+ * and Qwen3-VL On-Device VLM (Tier 2, background-safe).
  */
 @Singleton
 class TieredLlmClientSelector @Inject constructor(
     @Nano private val nano: LlmClient,
-    @Gemma private val gemma: LlmClient
+    @Gemma private val onDevice: LlmClient
 ) : LlmClient {
+    override val modelVersion: String get() = activeTextClient()?.modelVersion ?: "unavailable"
 
-    /** A user-downloaded Gemma model becomes the primary text engine across the app. */
     private fun activeTextClient(): LlmClient? = when {
-        gemma.isAvailable() -> gemma
+        onDevice.isAvailable() -> onDevice
         nano.isAvailable() -> nano
         else -> null
     }
 
-    /** Gemma is text-only, so retain Nano multimodal input where the device supports it. */
     private fun activeImageClient(): LlmClient? = when {
+        onDevice.isAvailable() && onDevice.supportsImageInput() -> onDevice
         nano.isAvailable() && nano.supportsImageInput() -> nano
-        gemma.isAvailable() && gemma.supportsImageInput() -> gemma
         else -> null
     }
 
     override suspend fun warmup(): Boolean =
-        gemma.warmup() || nano.warmup()
+        onDevice.warmup() || nano.warmup()
 
-    override suspend fun generate(prompt: String): String? =
-        activeTextClient()?.generate(prompt)
+    override suspend fun generate(prompt: String, creative: Boolean): String? =
+        activeTextClient()?.generate(prompt, creative)
 
-    override suspend fun generate(prompt: String, image: LlmImageInput): String? =
-        activeImageClient()?.generate(prompt, image)
+    override suspend fun generateForTask(prompt: String, budget: ReasoningBudget): String? =
+        activeTextClient()?.generateForTask(prompt, budget)
 
-    override fun generateStream(prompt: String): Flow<String> =
-        activeTextClient()?.generateStream(prompt) ?: emptyFlow()
+    override suspend fun generateForTask(prompt: String, image: LlmImageInput, budget: ReasoningBudget): String? =
+        activeImageClient()?.generateForTask(prompt, image, budget)
 
-    override fun isAvailable(): Boolean = nano.isAvailable() || gemma.isAvailable()
+    override suspend fun generate(prompt: String, image: LlmImageInput, creative: Boolean): String? =
+        activeImageClient()?.generate(prompt, image, creative)
+
+    override fun generateStream(prompt: String, creative: Boolean): Flow<String> =
+        activeTextClient()?.generateStream(prompt, creative) ?: emptyFlow()
+
+    override fun isAvailable(): Boolean = nano.isAvailable() || onDevice.isAvailable()
 
     override fun supportsImageInput(): Boolean =
         activeImageClient() != null

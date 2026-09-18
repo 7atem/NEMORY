@@ -162,12 +162,15 @@ class BillingManager @Inject constructor(
 
     private suspend fun processPurchases(purchases: List<Purchase>) {
         val relevant = purchases.filter { REMOVE_ADS_PRODUCT_ID in it.products }
-        relevant
+        val verified = relevant.filter { purchase ->
+            BillingSecurity.verifyPurchase(BASE64_PUBLIC_KEY, purchase)
+        }
+        verified
             .filter {
                 it.purchaseState == Purchase.PurchaseState.PURCHASED && !it.isAcknowledged
             }
             .forEach { acknowledge(it) }
-        _purchases.value = relevant
+        _purchases.value = verified
     }
 
     private suspend fun acknowledge(purchase: Purchase): Boolean {
@@ -210,5 +213,11 @@ class BillingManager @Inject constructor(
         /** Must exactly match the one-time product configured in Play Console. */
         const val REMOVE_ADS_PRODUCT_ID = "remove_ads"
         private const val CONNECTION_TIMEOUT_MS = 10_000L
+
+        /**
+         * Base64 public key from Google Play Console (Services & APIs).
+         * Set here or supply via BuildConfig to enforce strict local cryptographic validation.
+         */
+        private val BASE64_PUBLIC_KEY: String? = null
     }
 }

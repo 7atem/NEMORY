@@ -29,3 +29,9 @@ objectbox-models/*.bak
 
 # Generated evaluation reports
 evaluation/reports/generated/
+
+# Local validation/toolchain artifacts (source, Room and ObjectBox schemas stay tracked).
+/.toolchain-tmp/
+/*.log
+/localization-gaps.json
+/remediation-artifacts/

@@ -8,8 +8,36 @@ The detailed product, architecture, privacy, testing, and release reference is
 `NEMORY_MASTER_DOCUMENTATION.md`. Keep this implementation guide and that master
 document aligned with source changes.
 
+> **Nemory Intelligence V1 architecture is complete. V1.1 is the Quality, Performance, Validation and Release-Hardening milestone. Full CPU Qwen-VL vision is experimental and disabled for normal production use.**
+
+Assessment & validation status (14 September 2026):
+- Current Room schema is v20, extending the v19 `relationships` table (behavior-driving `RelationshipType` enum: `RENEWS`, `REPLACES`, `PAYMENT_FOR`, `BELONGS_TO`, `SAME_ENTITY`, `VERSION_OF`) with `evidence`, `confidence`, and `createdAt` columns. Relationship reads exclude archived/stealth endpoints and recheck decoy state after the query; writes go through `KnowledgeRepository.replaceRelationships` (decoy/archived/stealth/SKIPPED_PRIVACY guards, verbatim evidence, cap 24).
+- Retrieval loop: `LocalAgent` in `core/ai/rag` performs read-only retrieval rounds bounded by `ReasoningBudget` (FAST/NORMAL/DEEP: 1/2/5 rounds, 15/45/90 seconds), with at most two queries per round and a 30-item candidate cap.
+- Benchmark: 100-case deterministic JVM `IntelligenceBenchmarkTest.kt` passes 100/100 across retrieval recall, arithmetic, grounding, anti-hallucination, and cross-document reasoning.
+- Widget & alert privacy: `VaultBrainWidget` displays public launch shortcuts only (no unauthenticated previews on home screen); `WidgetUpdateWorker.clearLegacyState()` purges old Glance prefs; `AlertWorker` sets `NotificationCompat.VISIBILITY_PRIVATE` with generic titles/bodies to prevent lockscreen leakage, and uses atomic `claimVisible()` against duplicate delivery races.
+- Claim Grounding & Verification: `ClaimVerifier` enforces verbatim citations across both `VaultItem` and `ExternalRecord` without length caps, failing closed to quoted excerpts. `RagEngine.queryStream` verifies evidence once after token generation finishes and retains `answer = result.text` during the verification status chunk to eliminate UI flicker and text wiping.
+- Media Vault File-at-Rest Security: `MediaVaultStorage` stores files encrypted with AES-256-GCM at rest using hardware-backed keystore credentials, supports transparent streaming decryption via Coil's `VaultMediaFetcher`, and enforces complete fail-closed storage isolation in Decoy Mode (`DecoySessionState.isDecoy`).
+- Vector Store Decoy Isolation: `VectorStore` checks `DecoySessionState.isDecoy`, returning empty results and suppressing mutations during decoy sessions.
+- Interactive Mutex Preemption: `QwenLlmClient` implements `preemptBackground()` so foreground Brain chat queries immediately abort or preempt background analysis workers holding `nativeMutex`.
+- Arabic Document Transparency: `ReviewScreen` renders honest bilingual guidance when Latin-optimized OCR detects sparse or missing text, prompting for Arabic titles and keywords.
+- Decoy mode Detail: `ItemDetailViewModel` observes `DecoySessionState.isDecoy` and immediately cancels load jobs and wipes `_uiState` upon decoy entry.
+- Agent write confirmation: `PendingWriteCard` renders structured inline confirm/cancel cards for agent write proposals in Brain chat.
+- Proactive intelligence: Today selects up to three insights with `DailyIntelligence` using proactive multi-factor scoring: `(0.30 * relevance) + (0.30 * confidence) + (0.25 * urgency) + (0.15 * novelty)`, requiring score > 70 and confidence > 0.6.
+- Release & Quality Gates: `:app:assembleRelease` passed with full native CMake compilation (`arm64-v8a` + `x86_64`) and R8 minification. `:app:lintDebug` reports 0 errors and 0 warnings. `check_localization.py` reports 100% bilingual parity.
+- Physical device testing: Verified on Samsung Galaxy Tab S7+ (SM-T975, Android 13). 13 database migration tests passed (including `Schema19MigrationTest`), backup/restore/rollback passed (`DriveBackupManagerInstrumentedTest`), and live tablet navigation, adaptive layout, and Decoy wipe verified.
+
 ## Module map
 
+17 September 2026 follow-up: Today insight refresh is input-sensitive (one-second
+coalescing, cancellation of stale analysis, model-ready retry, decoy clearing),
+with bounded upcoming context and code-computed confidence/ranking gates.
+`DYNAMIC_BRAIN_ROADMAP.md` records remaining planner placeholders, external-only
+answer limitations, and the Gmail/tasks authorization and sync work still needed.
+
+- `shared/` — new Kotlin Multiplatform module (T1). Currently hosts `LensId`,
+  `KeywordDictionary`, and a bilingual Compose Multiplatform sample. iOS targets
+  (`iosArm64`, `iosSimulatorArm64`) are declared; Apple-target builds are pending
+  verification on macOS.
 - `app/` — application shell: `VaultBrainApplication` (Hilt + WorkManager config,
   keyword warmup), `MainActivity`, navigation (`navigation/VaultBrainNavGraph.kt`).
 - `feature/vault` — home/Today screen (greeting, "Needs attention" prioritizer in
@@ -20,38 +48,50 @@ document aligned with source changes.
   picker, review screen, `ShareActivity`, `ShareIngestionViewModel`,
   `DeferredItemAnalyzer`, `worker/DeferredAnalysisWorker`, `ExperienceDefinitions`,
   `PostSaveDuplicateDetector`, `MediaVaultStorage`.
-- `feature/brain` — Brain chat (RAG Q&A over the vault).
+- `feature/brain` — Brain chat (RAG Q&A over the vault, interactive `PendingWriteCard` for write confirmation).
 - `feature/briefing` — daily briefing.
 - `feature/voice` — on-device voice capture dialog.
 - `feature/lens-money|lens-health|lens-travel|lens-bureaucracy|lens-media` — per-lens
   screens and lens-specific utilities (e.g. CSV export).
 - `feature/settings` — settings.
-- `core/common` — shared models (`VaultItem`, `LensId`, `ProcessingState`,
-  `EnrichmentState`, `Classification`), `ui/MetadataFields.kt`, user frequency tracking.
-- `core/database` — Room DB (encrypted), DAOs, `VaultRepository` (claim primitives for
+- `core/common` — shared models (`VaultItem`, `ProcessingState`,
+  `EnrichmentState`, `Classification`, `RelationshipType`), `ui/MetadataFields.kt`, user frequency tracking.
+  `LensId` now lives in the KMP `shared` module and is re-exported via `api(project(":shared"))`.
+- `core/database` — Room DB (encrypted, Schema 20), DAOs, `VaultRepository` (claim primitives for
   enrichment/indexing queues), external-context and Vault Reminder persistence.
 - `core/integrations` — connector contracts, `PersonalContextEngine`, Android Calendar
   connector, Calendar sync and connection management.
-- `core/vectorstore` — ObjectBox vector store (`VectorStore`, `VaultEmbedding`).
+- `core/vectorstore` — ObjectBox vector store (`VectorStore`, `VaultEmbedding`, app-private sandbox).
 - `core/ai/vision` — `VisionAnalyzer` (colors/confidence-bearing labels/barcodes/classifier, parallelized,
   shared injected ML Kit clients), `DocumentClassifier` (TFLite, lazy interpreter),
   `di/VisionModule`.
-- `core/ai/heuristics` — `HeuristicExtractor`, `KeywordDictionary`,
+- `core/ai/heuristics` — `HeuristicExtractor`,
   `experience/ExperienceKeywordLibrary` (precompiled keyword regexes),
   `experience/parsers/*` per-experience parsers.
+  `KeywordDictionary` now lives in the KMP `shared` module and is consumed via `implementation(project(":shared"))`.
 - `core/ai/embeddings` — text/vision embedding models (All-MiniLM, MobileCLIP).
 - `core/ai/rag` — `RagEngine` retrieval/rerank/answer pipeline (reads the vector store,
   validates numbered claim citations, and can add matching bounded external context).
-- `core/ai/llm` — tiered on-device LLM. `TieredLlmClientSelector` (the unqualified
-  `LlmClient` binding) delegates per call: Tier 1 Gemini Nano via ML Kit Prompt API
-  (`NanoPromptClient`, `AiCapabilityManager`, foreground-gated), Tier 2 Gemma 3 1B
-  int4 via MediaPipe `LlmInference` (`GemmaLlmClient`, `gemma/GemmaModelManager`,
-  `gemma/GemmaModelDownloadWorker` — on-demand ~530 MB download to
-  `filesDir/models/`, URL/SHA-256 configured via `gradle.properties`, no foreground
-  gate so it also serves background workers). Hybrid coordinator interfaces exist,
-  but the current build binds `DisabledCloudAiRuntime`.
+- `core/ai/llm` — tiered on-device providers. `TieredLlmClientSelector` prefers the
+  available Qwen3-VL-2B provider (`QwenLlmClient`, llama.cpp JNI), with Gemini Nano
+  (`NanoPromptClient`, foreground-gated) as the text fallback and Gemma 3 1B int4 as
+  download fallback. `OnDeviceModelManager` verifies the language GGUF plus vision projector
+  in `filesDir/models/` using URL/SHA-256 configuration in `gradle.properties` (about 1.55 GB combined).
+  Legacy Gemma type aliases/qualifiers remain for compatibility. Native compilation
+  requires NDK 27.2.12479018 + CMake 3.22.1 in the SDK; `-Pnemory.skipNativeForTests=true`
+  skips it for test builds and stamps the app versionName with `-nonative` (plus
+  `BuildConfig.NATIVE_RUNTIME_OMITTED`) so such APKs are never mistaken for production.
+  Text inference validated on-device (SM-T975) via `LlamaBridgeOnDeviceTest`.
+  Multimodal vision on CPU was benchmarked on SM-T975 (taking ~50 min for a 768x1024 receipt, pinning CPU >400%);
+  full CPU vision is therefore hardware-gated and disabled for production use, with Qwen3-VL-2B serving
+  as an on-device text LLM over deterministic OCR evidence.
+  `ArabicScriptCoverage` + `ArabicDocumentTranscriber` add an experimental VL
+  transcription path for Arabic documents (ML Kit OCR is Latin-only), gated by
+  `nemory.arabicVlExperiment` (default false); extracted values must appear verbatim
+  in the VL transcription.
+  Hybrid interfaces exist, but the build binds `DisabledCloudAiRuntime`.
 - `core/notifications` — `UnifiedAlertManager`, `PersistentCaptureNotificationManager`,
-  `GemmaDownloadPromptManager` (one-tap Tier 2 model download prompt for supported
+  `GemmaDownloadPromptManager` (one-tap model download prompt for supported
   non-AICore devices; max two prompts, 7 days apart), Vault Reminder scheduling and
   notification actions.
 - `core/security` — app lock/decoy mode.

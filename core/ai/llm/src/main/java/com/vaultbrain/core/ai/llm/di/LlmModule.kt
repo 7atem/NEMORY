@@ -1,25 +1,24 @@
 package com.vaultbrain.core.ai.llm.di
 
-import android.app.ActivityManager
 import android.content.Context
 import com.vaultbrain.core.ai.llm.AppForegroundChecker
 import com.vaultbrain.core.ai.llm.CloudAiRuntime
 import com.vaultbrain.core.ai.llm.CloudConsentStore
 import com.vaultbrain.core.ai.llm.DisabledCloudAiRuntime
-import com.vaultbrain.core.ai.llm.GemmaLlmClient
 import com.vaultbrain.core.ai.llm.LlmClient
 import com.vaultbrain.core.ai.llm.MlKitNanoRuntime
 import com.vaultbrain.core.ai.llm.NanoPromptClient
 import com.vaultbrain.core.ai.llm.NanoRuntime
 import com.vaultbrain.core.ai.llm.QnnLlmClient
+import com.vaultbrain.core.ai.llm.QwenLlmClient
 import com.vaultbrain.core.ai.llm.SharedPreferencesCloudConsentStore
 import com.vaultbrain.core.ai.llm.TieredLlmClientSelector
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.components.SingletonComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -38,6 +37,10 @@ annotation class Onnx
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class Gemma
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class OnDevice
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
@@ -69,7 +72,7 @@ abstract class LlmModule {
     @Binds
     @Singleton
     @Gemma
-    abstract fun bindGemmaClient(client: GemmaLlmClient): LlmClient
+    abstract fun bindGemmaClient(client: QwenLlmClient): LlmClient
 
     @Binds
     @Singleton

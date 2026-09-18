@@ -323,6 +323,8 @@ class BrainChatViewModelTest {
         coVerify(exactly = 1) { vaultRepository.addItemToCollection("item1", "collection-id") }
     }
 
+    private val actionExecutor = io.mockk.mockk<com.vaultbrain.core.integrations.action.ActionExecutor>(relaxed = true)
+
     private fun viewModel() = BrainChatViewModel(
         ragEngine = ragEngine,
         conversationRepository = conversationRepository,
@@ -332,7 +334,8 @@ class BrainChatViewModelTest {
         cloudConsentStore = cloudConsentStore,
         writeActionPlanner = writeActionPlanner,
         capabilityManager = capabilityManager,
-        vaultReminderManager = vaultReminderManager
+        vaultReminderManager = vaultReminderManager,
+        actionExecutor = actionExecutor
     )
 }
 

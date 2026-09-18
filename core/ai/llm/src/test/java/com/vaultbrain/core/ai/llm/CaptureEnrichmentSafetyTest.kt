@@ -2,7 +2,7 @@ package com.vaultbrain.core.ai.llm
 
 import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.VaultItem
 import org.junit.Test
 
@@ -44,11 +44,11 @@ class CaptureEnrichmentSafetyTest {
     }
 
     @Test fun `incomplete or invalid model classifications do not count as enrichment`() {
-        listOf("{}", """{"title":"A title"}""", """{"classification":"SECRET","title":"A title"}""",
-            """{"classification":"BOOK"}""").forEach {
+        listOf("{}", """{"title":"A title"}""", """{"classification":"BOOK"}""").forEach {
             assertThat(CaptureEnrichmentResultParser.parse(it)).isNull()
         }
         assertThat(CaptureEnrichmentResultParser.parse("""{"classification":"OTHER","title":"Unusual object"}""")).isNotNull()
+        assertThat(CaptureEnrichmentResultParser.parse("""{"classification":"SECRET","title":"A title"}""")).isNotNull()
     }
 
     @Test fun `enrichment cannot overwrite user edited title classification or metadata`() {
@@ -72,5 +72,24 @@ class CaptureEnrichmentSafetyTest {
     @Test fun `short OCR is retained verbatim`() {
         val text = "Merchant\nTOTAL 42 USD\nExpiry 2030-06-30"
         assertThat(CaptureEnrichmentPrompt.selectOcrEvidence(text)).isEqualTo(text)
+    }
+
+    @Test fun `markdown wrapped JSON responses and classification aliases are parsed successfully`() {
+        val markdownOutput = """
+            ```json
+            {
+              "classification": "DOCUMENT",
+              "title": "Vehicle Registration Certificate",
+              "summary": "Vehicle registration for Ford Explorer",
+              "tags": ["vehicle", "registration", "ford"],
+              "confidence": 0.92
+            }
+            ```
+        """.trimIndent()
+        val parsed = CaptureEnrichmentResultParser.parse(markdownOutput)
+        assertThat(parsed).isNotNull()
+        assertThat(parsed?.classification).isEqualTo(Classification.GENERAL_DOCUMENT)
+        assertThat(parsed?.title).isEqualTo("Vehicle Registration Certificate")
+        assertThat(parsed?.tags).containsExactly("vehicle", "registration", "ford")
     }
 }

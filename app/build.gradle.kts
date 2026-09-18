@@ -18,6 +18,13 @@ val uploadSigningConfigured = listOf(
     uploadKeyPassword
 ).all { !it.isNullOrBlank() }
 
+// Explicit escape hatch shared with core:ai:llm for hosts without the NDK. A build made
+// this way has no Qwen native runtime; stamp the version so it can never be mistaken
+// for a production build.
+val nativeRuntimeOmitted = providers.gradleProperty("nemory.skipNativeForTests")
+    .map(String::toBoolean)
+    .getOrElse(false)
+
 android {
     namespace = "com.vaultbrain.app"
     compileSdk = 36
@@ -27,7 +34,8 @@ android {
         minSdk = 29
         targetSdk = 36
         versionCode = 15
-        versionName = "1.1.2"
+        versionName = "1.1.2" + if (nativeRuntimeOmitted) "-nonative" else ""
+        buildConfigField("boolean", "NATIVE_RUNTIME_OMITTED", nativeRuntimeOmitted.toString())
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -77,6 +85,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     packaging {
         resources {
@@ -93,6 +102,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":shared"))
     implementation(project(":core:common"))
     implementation(project(":core:database"))
     implementation(project(":core:vectorstore"))
@@ -117,6 +127,8 @@ dependencies {
     implementation(project(":feature:lens-media"))
     implementation(project(":feature:settings"))
     implementation(project(":sync:gmail"))
+    implementation(project(":sync:drive"))
+    implementation(project(":core:billing"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -129,6 +141,7 @@ dependencies {
     implementation(libs.androidx.ui.text.google.fonts)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.material3.window.size)
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.navigation.compose)
@@ -137,6 +150,7 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.work)
     ksp(libs.hilt.compiler.work)
+    implementation(libs.workmanager.runtime.ktx)
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)

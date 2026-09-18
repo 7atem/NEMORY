@@ -15,23 +15,70 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
 
-        // Gemma Tier 2 model download config. Real values live in local gradle.properties;
-        // the placeholders keep the project buildable without any configuration.
+        // Qwen3-VL Tier 2 VLM model download config (language GGUF + mmproj GGUF).
         buildConfigField(
             "String",
-            "GEMMA_MODEL_URL",
-            "\"${project.findProperty("GEMMA_MODEL_URL") ?: "https://example.com/gemma3-1b-it-int4.task"}\""
+            "QWEN_MODEL_URL",
+            "\"${project.findProperty("QWEN_MODEL_URL") ?: "https://example.com/Qwen3VL-2B-Instruct-Q4_K_M.gguf"}\""
         )
         buildConfigField(
             "String",
-            "GEMMA_MODEL_SHA256",
-            "\"${project.findProperty("GEMMA_MODEL_SHA256") ?: "0".repeat(64)}\""
+            "QWEN_MODEL_SHA256",
+            "\"${project.findProperty("QWEN_MODEL_SHA256") ?: "0".repeat(64)}\""
         )
         buildConfigField(
             "long",
-            "GEMMA_MODEL_SIZE_BYTES",
-            "${project.findProperty("GEMMA_MODEL_SIZE_BYTES") ?: "0"}L"
+            "QWEN_MODEL_SIZE_BYTES",
+            "${project.findProperty("QWEN_MODEL_SIZE_BYTES") ?: "0"}L"
         )
+        buildConfigField(
+            "String",
+            "QWEN_MMPROJ_URL",
+            "\"${project.findProperty("QWEN_MMPROJ_URL") ?: "https://example.com/mmproj-Qwen3VL-2B-Instruct-Q8_0.gguf"}\""
+        )
+        buildConfigField(
+            "String",
+            "QWEN_MMPROJ_SHA256",
+            "\"${project.findProperty("QWEN_MMPROJ_SHA256") ?: "0".repeat(64)}\""
+        )
+        buildConfigField(
+            "long",
+            "QWEN_MMPROJ_SIZE_BYTES",
+            "${project.findProperty("QWEN_MMPROJ_SIZE_BYTES") ?: "0"}L"
+        )
+
+        // Experimental Arabic VL transcription path; default off. Enable locally with
+        // -Pnemory.arabicVlExperiment=true.
+        buildConfigField(
+            "boolean",
+            "ARABIC_VL_EXPERIMENT",
+            "${project.findProperty("nemory.arabicVlExperiment") ?: "false"}"
+        )
+
+        externalNativeBuild {
+            cmake {
+                cppFlags("-std=c++17")
+                arguments("-DGGML_NATIVE=OFF", "-DGGML_OPENMP=OFF")
+            }
+        }
+
+        ndk {
+            // llama.cpp's fp16 NEON kernels (ggml sgemm) require AArch64 FP16 intrinsics;
+            // 32-bit ABIs do not compile, and Play requires 64-bit anyway.
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+    }
+
+    // Explicit escape hatch for JVM tests on hosts that cannot fetch the Android toolchain.
+    // Normal builds must package the native runtime.
+    if (!providers.gradleProperty("nemory.skipNativeForTests").map(String::toBoolean).getOrElse(false)) {
+        ndkVersion = "27.2.12479018"
+        externalNativeBuild {
+            cmake {
+                path("src/main/cpp/CMakeLists.txt")
+                version = "3.22.1"
+            }
+        }
     }
 
     buildTypes {
@@ -59,7 +106,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.mlkit.genai.prompt)
-    implementation(libs.mediapipe.tasks.genai)
 
     // Hilt
     implementation(libs.hilt.android)
@@ -67,7 +113,7 @@ dependencies {
     implementation(libs.hilt.work)
     ksp(libs.hilt.compiler.work)
 
-    // WorkManager (Gemma model download)
+    // WorkManager (On-device model download)
     implementation(libs.workmanager.runtime.ktx)
     
     implementation(libs.androidx.lifecycle.process)
@@ -78,6 +124,8 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.test.core)
 }
+
 
 

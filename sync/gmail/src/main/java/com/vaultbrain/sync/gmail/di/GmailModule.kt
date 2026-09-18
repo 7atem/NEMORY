@@ -15,7 +15,7 @@ object GmailModule {
 
     @Provides
     @Singleton
-    fun provideGmailDataSource(): GmailDataSource = UnconfiguredGmailDataSource()
+    fun provideGmailDataSource(source: com.vaultbrain.sync.gmail.DeviceGmailDataSource): GmailDataSource = source
 
     @Provides
     @Singleton

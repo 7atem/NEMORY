@@ -31,6 +31,8 @@ class DeterministicToolRegistry @Inject constructor(
             QueryIntent.RecurringSpendIncreases -> recurringSpendIncreases(items, arabic)
             QueryIntent.MediaBacklog -> mediaBacklog(items, arabic)
             is QueryIntent.MoneyDocuments -> moneyDocuments(items, intent.range, arabic)
+            is QueryIntent.MissingDocuments -> missingDocuments(items, arabic)
+            is QueryIntent.DocumentReplacementChains -> documentReplacementChains(items, arabic)
         }
     }
 
@@ -264,6 +266,52 @@ class DeterministicToolRegistry @Inject constructor(
                     else "${increases.size} recurring increases",
                 supportingFacts = facts
             )
+        )
+    }
+
+    private fun missingDocuments(items: List<VaultItem>, arabic: Boolean): RagResponse {
+        val missing = mutableListOf<String>()
+        val trips = items.filter { it.effectiveClassification == Classification.TICKET }
+        val hotels = items.filter { it.effectiveClassification == Classification.HOTEL }
+        trips.forEach { trip ->
+            val tripDate = trip.actionDate()
+            if (tripDate != null && hotels.none { Math.abs((it.actionDate() ?: 0) - tripDate) < TRIP_CLUSTER_MILLIS }) {
+                missing.add(if (arabic) "رحلة (${trip.title}) بدون حجز فندق" else "Trip (${trip.title}) missing hotel booking")
+            }
+        }
+        val vehicles = items.filter { it.metadataValue("vehicle", "car") != null }
+        val insurances = items.filter { it.effectiveClassification == Classification.LEGAL_DOCUMENT || it.metadataValue("insurance") != null }
+        vehicles.forEach { vehicle ->
+            val vName = vehicle.metadataValue("vehicle", "car")!!
+            if (insurances.none { it.metadataValue("vehicle", "car") == vName }) {
+                missing.add(if (arabic) "مركبة ($vName) بدون تأمين" else "Vehicle ($vName) missing insurance")
+            }
+        }
+        if (missing.isEmpty()) return noEvidence(RagEvidenceKind.MISSING_DOCUMENTS, arabic, "No obvious missing documents detected.", "لم يتم اكتشاف مستندات مفقودة واضحة.")
+        return RagResponse(
+            answer = if (arabic) "التحليل استند إلى القواعد الاستدلالية (رحلات بدون فنادق، سيارات بدون تأمين)." else "Analysis based on heuristics (trips without hotels, cars without insurance).",
+            sources = items.take(MAX_TOOL_SOURCES),
+            confidence = 1f,
+            evidence = RagEvidence(RagEvidenceKind.MISSING_DOCUMENTS, if (arabic) "المستندات المفقودة المحتملة" else "Potential Missing Documents", missing.take(MAX_SUPPORTING_FACTS))
+        )
+    }
+
+    private fun documentReplacementChains(items: List<VaultItem>, arabic: Boolean): RagResponse {
+        // We'll rely on the RAG loop to use relationships, but for this deterministic check, 
+        // we can group items by identical tags or merchants and find overlapping periods.
+        val renewals = mutableListOf<String>()
+        val byMerchant = items.filter { it.isRecurringCharge() }.groupBy { it.metadataValue("merchant", "supplier", "biller") ?: "Unknown" }
+        byMerchant.forEach { (merchant, docs) ->
+            if (docs.size > 1 && merchant != "Unknown") {
+                renewals.add(if (arabic) "تجديدات $merchant (${docs.size} مستندات)" else "$merchant renewals (${docs.size} documents)")
+            }
+        }
+        if (renewals.isEmpty()) return noEvidence(RagEvidenceKind.REPLACEMENT_CHAIN, arabic, "No document chains detected.", "لم يتم اكتشاف سلاسل مستندات.")
+        return RagResponse(
+            answer = if (arabic) "سلاسل المستندات المكتشفة بناءً على الدفعات المتكررة." else "Detected document chains based on recurring payments.",
+            sources = items.take(MAX_TOOL_SOURCES),
+            confidence = 1f,
+            evidence = RagEvidence(RagEvidenceKind.REPLACEMENT_CHAIN, if (arabic) "سلاسل المستندات" else "Document Chains", renewals.take(MAX_SUPPORTING_FACTS))
         )
     }
 

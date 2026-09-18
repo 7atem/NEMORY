@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.runtime.*
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,11 +62,14 @@ fun HomeScreen(
     onVoiceCaptured: (String) -> Unit,
     onSettingsClick: () -> Unit,
     onAskBrain: (String) -> Unit = {},
+    onLensClick: (String) -> Unit = {},
+    windowWidthSizeClass: androidx.compose.material3.windowsizeclass.WindowWidthSizeClass = androidx.compose.material3.windowsizeclass.WindowWidthSizeClass.Compact,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val state by viewModel.uiState.collectAsState()
-    val gemmaBanner by viewModel.gemmaBanner.collectAsState()
-    val backupNudgeVisible by viewModel.backupNudgeVisible.collectAsState()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val dailyInsights by viewModel.dailyInsights.collectAsStateWithLifecycle()
+    val gemmaBanner by viewModel.gemmaBanner.collectAsStateWithLifecycle()
+    val backupNudgeVisible by viewModel.backupNudgeVisible.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -85,6 +89,7 @@ fun HomeScreen(
 
     HomeContent(
         state = state,
+        windowWidthSizeClass = windowWidthSizeClass,
         onSearchClick = onSearchClick,
         onFilterClick = onFilterClick,
         onCollectionsClick = onCollectionsClick,
@@ -117,6 +122,8 @@ fun HomeScreen(
                 if (result == SnackbarResult.ActionPerformed) viewModel.restoreItem(item)
             }
         },
+        dailyInsights = dailyInsights,
+        onDismissInsight = viewModel::dismissDailyInsight,
         briefingCard = { MorningBriefingCard(onInsightClick = onItemClick) },
         gemmaBanner = gemmaBanner,
         onGemmaDownloadClick = viewModel::downloadGemmaModel,
@@ -143,6 +150,10 @@ fun HomeScreen(
                     attention.targetId?.let(onItemClick)
                 com.vaultbrain.feature.vault.home.AttentionItem.Kind.REVIEW ->
                     onFilterClick("needs_review")
+                com.vaultbrain.feature.vault.home.AttentionItem.Kind.GMAIL ->
+                    attention.targetId?.let { id -> onFilterClick("gmail:$id") }
+                com.vaultbrain.feature.vault.home.AttentionItem.Kind.PROACTIVE_ACTION ->
+                    attention.targetId?.let(onItemClick)
             }
         },
         onOpenEvent = { record ->
@@ -214,6 +225,7 @@ fun HomeScreen(
 @Composable
 internal fun HomeContent(
     state: HomeUiState,
+    windowWidthSizeClass: androidx.compose.material3.windowsizeclass.WindowWidthSizeClass = androidx.compose.material3.windowsizeclass.WindowWidthSizeClass.Compact,
     onSearchClick: (String?) -> Unit,
     onFilterClick: (String) -> Unit,
     onCollectionsClick: () -> Unit,
@@ -226,6 +238,8 @@ internal fun HomeContent(
     onSettingsClick: () -> Unit,
     onArchiveItem: (VaultItem) -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    dailyInsights: List<com.vaultbrain.core.ai.rag.DailyInsight> = emptyList(),
+    onDismissInsight: (com.vaultbrain.core.ai.rag.DailyInsight) -> Unit = {},
     briefingCard: @Composable () -> Unit = { MorningBriefingCard() },
     gemmaBanner: GemmaBanner? = null,
     onGemmaDownloadClick: () -> Unit = {},
@@ -290,26 +304,112 @@ internal fun HomeContent(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
+        ) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding),
-                contentPadding = PaddingValues(16.dp),
+                    .padding(padding)
+                    .widthIn(max = 1000.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                item {
+                    SectionHeader(
+                        title = stringResource(R.string.home_your_collections),
+                        actionLabel = stringResource(R.string.home_see_all),
+                        onAction = onCollectionsClick
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    if (state.collections.isEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth().clickable(onClick = onCollectionsClick),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    stringResource(R.string.home_collections_empty_title),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    stringResource(R.string.home_collections_empty_body),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                TextButton(onClick = onCollectionsClick) {
+                                    Text(stringResource(R.string.home_create_first_collection))
+                                }
+                            }
+                        }
+                    } else {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            items(state.collections, key = { it.id }) { collection ->
+                                CollectionCard(
+                                    collection = collection,
+                                    onClick = { onCollectionClick(collection.id) },
+                                    modifier = Modifier.width(280.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 if (state.attentionItems.isNotEmpty()) {
                     item {
                         AttentionSection(
-                            items = state.attentionItems,
+                            items = state.attentionItems.take(3),
                             needsReviewCount = state.needsReviewCount,
                             onClick = onAttentionClick
                         )
                     }
                 }
 
-                item {
-                    briefingCard()
+                if (dailyInsights.isNotEmpty()) {
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.home_proactive_insights_title), style = MaterialTheme.typography.titleMedium)
+                            dailyInsights.forEach { insight ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().clickable {
+                                        if (state.activeItems.any { it.id == insight.itemId }) onItemClick(insight.itemId)
+                                        else onAskBrain(insight.title)
+                                    },
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.AutoAwesome,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = insight.title,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                            )
+                                            IconButton(onClick = { onDismissInsight(insight) }) {
+                                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.home_dismiss_insight))
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = insight.evidence,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 if (gemmaBanner != null) {
@@ -449,6 +549,10 @@ internal fun HomeContent(
                 }
 
                 item {
+                    briefingCard()
+                }
+
+                item {
                     VaultOverviewCard(
                         itemCount = state.activeItems.size,
                         reviewCount = state.needsReviewCount,
@@ -495,49 +599,6 @@ internal fun HomeContent(
                                     onClick = { onItemClick(item.id) },
                                     onArchive = { onArchiveItem(item) },
                                     modifier = Modifier.width(280.dp).graphicsLayer { alpha = itemAlpha }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                item {
-                    SectionHeader(
-                        title = stringResource(R.string.home_your_collections),
-                        actionLabel = stringResource(R.string.home_see_all),
-                        onAction = onCollectionsClick
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    if (state.collections.isEmpty()) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth().clickable(onClick = onCollectionsClick),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(20.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    stringResource(R.string.home_collections_empty_title),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    stringResource(R.string.home_collections_empty_body),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                TextButton(onClick = onCollectionsClick) {
-                                    Text(stringResource(R.string.home_create_first_collection))
-                                }
-                            }
-                        }
-                    } else {
-                        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            items(state.collections, key = { it.id }) { collection ->
-                                CollectionCard(
-                                    collection = collection,
-                                    onClick = { onCollectionClick(collection.id) },
-                                    modifier = Modifier.width(280.dp)
                                 )
                             }
                         }
@@ -964,6 +1025,10 @@ private fun AttentionSection(
                             Icons.Default.WarningAmber to MaterialTheme.colorScheme.error
                         AttentionItem.Kind.REVIEW ->
                             Icons.Default.RateReview to MaterialTheme.colorScheme.secondary
+                        AttentionItem.Kind.GMAIL ->
+                            Icons.Default.Email to MaterialTheme.colorScheme.tertiary
+                        AttentionItem.Kind.PROACTIVE_ACTION ->
+                            Icons.Default.AutoAwesome to MaterialTheme.colorScheme.primary
                     }
                     ListItem(
                         headlineContent = {

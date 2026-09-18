@@ -34,10 +34,12 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:database"))
+    implementation(project(":core:notifications"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.play.services.auth)
     implementation(libs.workmanager.runtime.ktx)
     // Hilt
     implementation(libs.hilt.android)

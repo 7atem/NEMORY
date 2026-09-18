@@ -17,6 +17,8 @@ sealed interface QueryIntent {
     data object RecurringSpendIncreases : QueryIntent
     data object MediaBacklog : QueryIntent
     data class MoneyDocuments(val range: DateRange?) : QueryIntent
+    data class MissingDocuments(val context: String? = null) : QueryIntent
+    data class DocumentReplacementChains(val context: String? = null) : QueryIntent
 }
 
 /** Small fail-closed bilingual router. Unrecognized wording falls back to semantic RAG. */
@@ -40,6 +42,12 @@ class QueryIntentParser @Inject constructor() {
         }
         if (TRAVEL_TERMS.any(normalized::contains) && UPCOMING_TERMS.any(normalized::contains)) {
             return QueryIntent.UpcomingTravel()
+        }
+        if (MISSING_TERMS.any(normalized::contains) && DOCUMENT_TERMS.any(normalized::contains)) {
+            return QueryIntent.MissingDocuments()
+        }
+        if (CHAIN_TERMS.any(normalized::contains) || (HISTORY_TERMS.any(normalized::contains) && DOCUMENT_TERMS.any(normalized::contains))) {
+            return QueryIntent.DocumentReplacementChains()
         }
 
         val merchant = extractMerchant(normalized)
@@ -102,6 +110,9 @@ class QueryIntentParser @Inject constructor() {
         val TOTAL_TERMS = listOf("how much", "total", "spent", "spending", "إجمالي", "المجموع", "أنفقت", "مصروف")
         val MONEY_TERMS = listOf("receipts", "invoices", "إيصالات", "فواتير")
         val DOCUMENT_TERMS = listOf("document", "documents", "items", "saved", "مستند", "مستندات", "عناصر", "محفوظ")
+        val MISSING_TERMS = listOf("missing", "forgot", "missing documents", "مفقود", "نسيت", "ناقص")
+        val CHAIN_TERMS = listOf("replacement chain", "renewals", "سلسلة", "تجديدات")
+        val HISTORY_TERMS = listOf("history", "previous", "old", "تاريخ", "سابق", "قديم")
         val LAST_DAYS = Regex("(?:last|past|آخر)\\s+(\\d{1,4})\\s+(?:days?|يوم|أيام|يومًا)")
         val MERCHANT = Regex("(?:\\bat\\b|\\bfrom\\b|\\bmerchant\\b|من|لدى)\\s+[\"']?([\\p{L}\\p{N} .&'_-]{2,80})")
         val TEMPORAL_SUFFIX = Regex("\\s+(?:this month|last month|previous month|this year|هذا الشهر|الشهر الماضي|هذه السنة|هذا العام|last|past|آخر).*$")

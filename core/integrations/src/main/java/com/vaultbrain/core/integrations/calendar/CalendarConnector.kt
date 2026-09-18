@@ -32,7 +32,8 @@ import javax.inject.Singleton
 @Singleton
 class CalendarConnector @Inject constructor(
     private val dataSource: CalendarDataSource,
-    private val repository: ExternalContextRepository
+    private val repository: ExternalContextRepository,
+    private val alertManager: com.vaultbrain.core.notifications.UnifiedAlertManager
 ) : ExternalConnector {
     override val connectorId = CONNECTOR_ID
     override val displayName = "Calendar"
@@ -112,6 +113,21 @@ class CalendarConnector @Inject constructor(
                 seen += record.externalId
                 if (existing.containsKey(record.externalId)) updated++ else added++
                 repository.upsertRecord(record)
+
+                // Schedule notification for upcoming calendar event (15 minutes prior)
+                if (row.startAt > now) {
+                    val alertTime = row.startAt - 15 * 60 * 1000L
+                    if (alertTime > now) {
+                        val locationSnippet = row.location?.takeIf(String::isNotBlank)?.let { " ($it)" } ?: ""
+                        alertManager.scheduleForExternal(
+                            targetId = record.externalId,
+                            triggerAt = alertTime,
+                            title = record.title ?: "Calendar Event",
+                            body = "Event starting in 15 minutes$locationSnippet",
+                            channelId = com.vaultbrain.core.notifications.UnifiedAlertManager.CHANNEL_CALENDAR
+                        )
+                    }
+                }
             }
             val stale = existing.values.filter { record ->
                 val anchor = record.startAt ?: return@filter false

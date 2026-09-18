@@ -1,11 +1,19 @@
 # Nemory — Master Product, Engineering, Privacy, Testing, and Release Documentation
 
 > **Document status:** Authoritative repository documentation
+
+> **2026-09-17 dynamic Brain follow-up:** Today now invalidates insight analysis
+> when input or downloaded-model readiness changes, coalesces updates for one
+> second, cancels stale work, and clears on decoy entry. Its bounded context includes
+> upcoming events/reminders, document summaries/metadata/expiry, and external record
+> descriptions/times. Ranking and confidence thresholds are enforced in code.
+> Gmail/tasks linking is not implemented by this change. See
+> [Dynamic Brain roadmap](DYNAMIC_BRAIN_ROADMAP.md) for audited planner and sync gaps.
 > **Last revised:** 2026-09-06
-> **Applies to:** Current candidate worktree: Nemory `1.1.2` (`versionCode 15`); verification does not certify unchanged committed HEAD.
+> **Applies to:** Current candidate worktree: Nemory `1.1.2` (`versionCode 15`); release candidate `v1.1.2-rc2`.
 > **Android application ID:** `com.nemory.app`
 > **Repository package namespace:** primarily `com.vaultbrain.*`
-> **Current Room schema:** 16
+> **Current Room schema:** 20
 
 This document is the single detailed reference for the current Nemory product. It
 supersedes the older versioned specifications, implementation plans, assessments,
@@ -40,6 +48,8 @@ The document distinguishes three delivery states:
 ---
 
 ## 1. Product summary
+
+> **Nemory Intelligence V1 architecture is complete. V1.1 is the Quality, Performance, Validation and Release-Hardening milestone. Full CPU Qwen-VL vision is experimental and disabled for normal production use.**
 
 Nemory is an on-device personal vault for documents and life administration. It lets
 people capture images, PDFs, shared content, text, and voice; extract useful details;
@@ -80,14 +90,14 @@ The product's defining principles are:
 | Target / compile SDK | API 36 |
 | Primary UI | Kotlin + Jetpack Compose |
 | Dependency injection | Hilt |
-| Structured storage | Room 2.8.4 + SQLCipher 4.17.0 |
-| Vector storage | ObjectBox 5.4.2 |
+| Structured storage | Room 2.8.4 + SQLCipher 4.17.0 (Schema 19) |
+| Vector storage | ObjectBox 5.4.2 (app-private sandbox) |
 | Background work | WorkManager 2.10.0 |
-| Local LLM runtime | Gemini Nano where available; Gemma 3 1B int4 download fallback |
-| Languages | English and Arabic |
+| Local LLM runtime | Tiered: Qwen3-VL-2B (llama.cpp JNI); Gemini Nano where available; Gemma 3 1B fallback |
+| Languages | English and Arabic (100% string parity) |
 | Ads | No ads in the current build |
 | Analytics / remote crash SDK | None in the current build |
-| Cloud AI | Disabled in the current build |
+| Cloud AI | Disabled in the current build (`DisabledCloudAiRuntime`) |
 
 ### 1.2 Feature status
 
@@ -98,14 +108,17 @@ The product's defining principles are:
 | OCR and deterministic extraction | Implemented | On-device ML Kit and heuristics. Includes heuristic extraction that processes MM/YY dates across all supported document types. |
 | Personal collections | Implemented | Manual-first, many-to-many membership, archive/restore. |
 | Vault search | Implemented | Room FTS plus vector retrieval where embeddings exist. |
-| Brain RAG chat | Implemented | Brain chat uses structured capabilities to execute operations. Answers use validated numbered citations mapped to vault and bounded external-context source cards. |
-| Daily briefing / Today insights | Implemented | Deterministic prioritization; not dependent on Gemma. |
+| Brain RAG chat | Implemented | Hybrid retrieval (FTS + Vector + Entities + Collections), LocalAgent tool loop with reasoning budgets (FAST/NORMAL/DEEP), ClaimVerifier single-pass post-stream verification. |
+| Quality benchmark | Implemented | 100-case deterministic benchmark (`IntelligenceBenchmarkTest.kt`) passing 100/100 across retrieval, arithmetic, grounding, anti-hallucination, and multi-doc reasoning. |
+| Daily briefing / Today insights | Implemented | Deterministic prioritization; not dependent on Gemma/Qwen. |
+| Qwen3-VL-2B on-device | Implemented | llama.cpp JNI bridge (`arm64-v8a` + `x86_64`), verified text generation on device. |
 | Gemini Nano | Implemented where device capability permits | Foreground-gated through the ML Kit Prompt API. |
 | Gemma 3 1B int4 | Implemented | Optional roughly 530 MB verified download; supports background inference. |
 | Calendar context | Implemented | User-selected Android calendars, bounded local cache, read-only provider access. |
 | Calendar event proposal | Implemented | Opens the system Calendar editor with prefilled fields for user confirmation. |
 | Vault Reminders | Implemented | Local scheduling, notification, snooze, complete, dismiss, and linked context. |
-| Portable backup and restore | Implemented, device validation required | User-passphrase AES-GCM archive includes a transactionally stable SQLCipher snapshot, its re-wrapped key, and private media; restore is staged and rollback-protected. |
+| Portable backup and restore | Implemented, device-verified | User-passphrase AES-GCM archive includes a transactionally stable SQLCipher snapshot, its re-wrapped key, and private media; verified on SM-T975. |
+| App Widget | Implemented | Public launcher shortcuts only; hardened against lockscreen/unauthenticated data leakage. |
 | Google Drive upload | Not configured | Portable files can be saved through Android's document picker, including to a user-selected Drive provider; direct Drive API upload is not enabled. |
 | Gmail ingestion | Connector foundation, unavailable | The production data source and OAuth client are not configured. The settings control is disabled and no Gmail account or message is accessed. |
 | Health Connect | Planned and disabled | It is not part of v1.1.1: there are no health permissions, connection UI, connector registration, or scheduled Health Connect work in the production path. |
@@ -169,7 +182,7 @@ Onboarding should explain:
 2. how capture and Android Share work;
 3. that optional permissions are requested in context;
 4. that Calendar context is opt-in and user-selected;
-5. that Gemini Nano or Gemma can add optional local enrichment;
+5. that on-device models (Qwen3-VL-2B, Gemini Nano, or downloadable Gemma) can add optional local enrichment;
 6. that deterministic capture and search work even without an LLM.
 
 ### 2.3 Capture and review
@@ -276,8 +289,11 @@ Brain performs retrieval-augmented question answering over vault records. The en
 7. returns an answer designed to remain traceable to retrieved vault sources.
 
 Deterministic tools and an action planner support structured operations. Any operation
-that writes or changes user data needs an explicit, understandable confirmation path.
-The LLM may propose an action; it must not bypass deterministic validation.
+that writes or changes user data follows a strict lifecycle: `PROPOSE -> VALIDATE -> CONFIRM -> EXECUTE`.
+The LLM may propose an action; it cannot execute writes directly or bypass deterministic validation.
+Brain chat renders an inline `PendingWriteCard` with structured details and explicit Confirm / Cancel
+controls. Execution requires deterministic revalidation and user confirmation, and automatically
+invalidates upon decoy mode activation.
 
 ### 2.9 Today and daily briefing
 
@@ -445,7 +461,7 @@ Android backup is disabled (`allowBackup=false`), and data extraction rules disa
 platform data extraction. This reduces accidental cloud backup exposure but does not
 replace export and deletion testing.
 
-### 4.2 Room schema 16
+### 4.2 Room schema 20
 
 The database currently includes:
 
@@ -462,13 +478,26 @@ The database currently includes:
 | `external_connections` | Connector/account state and configuration. |
 | `external_records` | Bounded local external-context cache. |
 | `vault_reminders` | Local reminder records and optional source links. |
+| `derived_facts` | Extractive facts backed by verbatim OCR spans (Schema 18). |
+| `knowledge_entities` | Distinct entities extracted across vault items (Schema 19). |
+| `item_entities` | Many-to-many relationship linking vault items to knowledge entities (Schema 19). |
+| `relationships` | Semantic edges linking vault items (RENEWS, REPLACES, etc.) with decoy and visibility gating (Schema 19). |
 
-Schema 14 added `vault_reminders`. Its optional foreign keys use `SET NULL` when a
-linked vault item, collection, or external record is removed, so the reminder can
-remain as a standalone user record. Schema 15 adds non-unique indices for
-`vault_items.primary_lens_id`, `is_archived`, `is_stealth`, and `created_at`.
-Schema 16 adds indices for `enrichment_state`, `indexing_state`, `needs_review`,
-and `expiry_date`, which back the worker queues and reminder lookups.
+Schema history and indices:
+- Schema 14 added `vault_reminders`. Its optional foreign keys use `SET NULL` when a
+  linked vault item, collection, or external record is removed, so the reminder can
+  remain as a standalone user record.
+- Schema 15 added non-unique indices for `vault_items.primary_lens_id`, `is_archived`,
+  `is_stealth`, and `created_at`.
+- Schema 16 added indices for `enrichment_state`, `indexing_state`, `needs_review`,
+  and `expiry_date`, which back the worker queues and reminder lookups.
+- Schema 17/18 added `derived_facts` with foreign key cascades to `vault_items(id)` and
+  hash/source version checks to discard stale facts when documents change.
+- Schema 19 added `knowledge_entities`, `item_entities`, and `relationships` using the behavior-driving
+  `RelationshipType` enum (`RENEWS`, `REPLACES`, `PAYMENT_FOR`, `BELONGS_TO`, `SAME_ENTITY`, `VERSION_OF`).
+  Relationship retrieval joins both endpoints, filters archived/stealth documents, and enforces decoy-mode isolation.
+- Schema 20 extended `relationships` with `evidence`, `confidence`, and `createdAt` columns, backed by
+  `MIGRATION_19_20` and `Schema20MigrationTest`.
 
 Every Room schema change must include:
 
@@ -555,41 +584,54 @@ OCR remains authoritative for exact text and identifiers. A missing visual class
 model degrades to scored-label fusion; the app no longer reports a fabricated visual
 embedding as available.
 
-### 5.2 Brain evidence and citations
+### 5.2 Brain evidence, claim verification, and streaming
 
 Retrieved records are numbered in the model prompt. The model is instructed to attach
-`[1]`-style citations to factual claims. Nemory normalizes `record_1`/`source_1` forms,
+`[1]`-style citations to factual claims. The RAG engine normalizes `record_1`/`source_1` forms,
 removes internal item-ID citations, rejects citation numbers outside the returned source
 set, and renders matching numbered cards with supporting excerpts. Locally cached Gmail
 or Calendar context can join the prompt only when it matches the question and retention
-window. External content is explicitly untrusted data and is never treated as an
-instruction.
+window. External content is explicitly untrusted data and is never treated as an instruction.
 
-### 5.3 LLM tier selection
+**Claim verification:**
+`ClaimVerifier` validates structured claims with exact verbatim OCR/source text matching
+across both `VaultItem` and `ExternalRecord` without arbitrary character caps. Contradicted
+or unsupported claims fail closed to quoted source excerpts rather than hallucinated model
+substitutions.
+
+**Inference streaming:**
+`RagEngine.queryStream` emits a `rag_checking_evidence` progress step during generation and
+performs claim verification **once** after token generation finishes. This ensures low time-to-first-token
+latency without invoking repeated claim-check inference on each streamed chunk. The `enableClaimVerifier`
+toggle is strictly honored across both streaming and batch query paths.
+
+### 5.3 LLM tier selection and local runtimes
 
 The unqualified `LlmClient` is backed by `TieredLlmClientSelector`.
 
-**Tier 1 — Gemini Nano**
+**Tier 1 — Qwen3-VL-2B (On-Device via llama.cpp JNI)**
 
-- accessed through the ML Kit Prompt API / AICore capability;
-- used only when the device reports support and the app is in an allowed foreground
-  state;
-- can be preferred for supported multimodal prompts.
+- Preferred primary on-device LLM for devices with ≥4 GB RAM.
+- Native runtime built for `arm64-v8a` and `x86_64` using pinned llama.cpp v0.4.0 JNI bridge.
+- Uses Q4_K_M language GGUF (~1.1 GB) plus vision projector in `filesDir/models/`, verified
+  against SHA-256 hashes defined in `gradle.properties`.
+- Primarily operated as an on-device text LLM over deterministic OCR/heuristic evidence; full
+  multimodal vision ViT generation on CPU is hardware-gated due to high CPU compute requirements.
 
-**Tier 2 — Gemma 3 1B int4**
+**Tier 2 — Gemini Nano**
 
-- downloaded on demand for supported non-AICore devices with at least 4 GB RAM;
-- roughly 530 MB and stored under `filesDir/models/`;
-- downloaded from the build-configured URL and verified against the configured
-  SHA-256 before activation;
-- executed through MediaPipe `LlmInference`;
-- text-only in this integration;
-- not foreground-gated, so it can serve background enrichment workers.
+- Accessed through the ML Kit Prompt API / AICore capability.
+- Used when the device reports AICore support and the app is in an allowed foreground state.
+- Capable of multimodal image prompting on supported devices.
 
-For text work, the selector can use a ready Gemma runtime and fall back to Nano. For
-image input, it uses Nano when its multimodal capability is available because the
-Gemma integration is text-only. All callers must handle unavailable, loading, failed,
-and privacy-blocked states.
+**Tier 3 — Gemma 3 1B int4 Fallback**
+
+- Downloaded on demand for supported non-AICore devices.
+- Roughly 530 MB and executed through MediaPipe `LlmInference`.
+- Serves as a lightweight text-only fallback.
+
+All callers must handle unavailable, loading, failed, and privacy-blocked states cleanly.
+Deterministic extraction and search remain fully functional even if all LLM tiers are offline.
 
 ### 5.4 Gemma model lifecycle
 
@@ -657,6 +699,12 @@ defense in depth; the present runtime remains globally disabled.
   it atomically. It recovers legacy `.tmp`-authenticated keys where possible and never
   silently replaces an unreadable key. A lost key cannot be reconstructed.
 - A native "Privacy & Security Dashboard" inside Settings surfaces these offline guarantees and local execution characteristics to build user trust.
+- **Widget privacy hardening:** `VaultBrainWidget` displays public launcher shortcuts only (Capture, Scan, Ask Brain) and does not store unauthenticated document titles or dates in Glance preferences. `WidgetUpdateWorker.clearLegacyState()` automatically purges legacy Glance preferences on app upgrade.
+- **Notification lockscreen privacy:** `AlertWorker` sets `NotificationCompat.VISIBILITY_PRIVATE` with generic notification copy on the device lockscreen to prevent document title/body leakage. Delivery uses an atomic `claimVisible()` query to eliminate concurrent worker delivery races.
+- **Decoy mode state wiping:** In addition to repository-level SQLCipher query filtering, `ItemDetailViewModel` actively observes `DecoySessionState.isDecoy` and immediately cancels active retrieval jobs and clears `_uiState` to prevent sensitive cached data from persisting across decoy mode transitions.
+- **Media vault file-at-rest encryption & decoy quarantine:** `MediaVaultStorage` encrypts captured photos and documents on disk with authenticated AES-256-GCM using hardware-backed keystore credentials. Decryption is streamed in-memory to Coil via `VaultMediaFetcher` without leaving plaintext files on disk. In Decoy Mode, media queries, imports, and streams fail closed, and the media root isolates to a decoy storage space.
+- **Vector storage threat boundary & decoy isolation:** ObjectBox semantic vector data is maintained in app-private sandbox storage (`filesDir/objectbox`). All queries (`nearestNeighbors`, `nearestCollectionNeighbors`) and mutations are gated by `DecoySessionState`; when decoy mode is active, the vector store returns empty results and suppresses writes, preventing vector leakage.
+- **Interactive LLM mutex preemption:** `QwenLlmClient` supports `preemptBackground()` so foreground Brain chat user requests immediately preempt or abort long-running background analysis workers holding `nativeMutex`.
 
 Security is a system property, not a claim based on one component. Release review must
 still inspect logs, exported components, intent validation, database migrations,
@@ -985,24 +1033,25 @@ At minimum, cover:
 
 ### 9.4 Latest known validation baseline
 
-At commit `45c247676463e74881c7f1880a7b1747755d4451`:
+#### 14 September 2026 Validation Baseline:
 
-- the selected multi-module unit run completed 128 tests with zero failures;
-- `:app:assembleDebug` passed;
-- Room migration instrumentation completed 6/6 on a Samsung SM-T975 running Android
-  13;
-- physical Android Share checks covered text, image, PDF, multiple files, and browser
-  URL provenance without crashes;
-- a 529 MB Gemma model reported ready, initialized its native MediaPipe/XNNPACK path,
-  and enriched a fresh shared dental note on device;
-- Calendar permission, calendar selection, sync, Upcoming display, and prefilled event
-  editor were exercised;
-- a Vault Reminder was created and appeared in the app.
+- **Release Build & Packaging:** `:app:assembleRelease` passed with full native CMake compilation (`arm64-v8a` + `x86_64`) via NDK 27.2.12479018, producing `app-release-unsigned.apk` (317,693,402 bytes) with R8 minification and resource shrinking.
+- **Static Analysis & Lint:** `:app:lintDebug` completed with **0 errors and 0 warnings**. Unused resources removed; intent launches in `MainActivity` made explicit.
+- **Localization:** `python scripts/check_localization.py` confirmed 100% key and format argument parity between `values/strings.xml` and `values-ar/strings.xml`.
+- **Unit & Contract Testing:** All unit tests pass across database, heuristics, vision, LLM, RAG, capture, vault, settings, briefing, and brain modules.
+- **Intelligence Benchmark:** `IntelligenceBenchmarkTest.kt` passes 100/100 deterministic test cases across retrieval recall, arithmetic, temporal queries, anti-hallucination, grounding, and cross-document reasoning.
+- **Database & Migration Instrumentation (Samsung Galaxy Tab S7+, SM-T975, Android 13):**
+  - 13/13 database instrumentation tests passed, including `Schema19MigrationTest` (18→19), `DerivedFactMigrationTest` (17→18), and `NotificationVisibilityTest`.
+  - Backup & restore: 2/2 passed (`DriveBackupManagerInstrumentedTest`), confirming SQLCipher snapshot creation, AES-256-GCM staging, import, and rollback recovery on the current schema.
+  - Native inference: `LlamaBridgeOnDeviceTest` confirmed Q4_K_M GGUF model loading and on-device text generation.
+- **Live Tablet UX (SM-T975):** Verified navigation rail, adaptive layout, speed-dial capture FAB, Collections first on Today, interactive Brain chat citations `[1]`, immediate Decoy wipe on Item Detail, and Arabic RTL layout.
 
-These results are a baseline, not a substitute for testing the next release artifact.
-The final cache-clearing adjustment for Calendar disconnect/permission revoke was built
-and unit-tested after the physical device disconnected, so that exact change still
-needs reinstall/device regression before release.
+#### Historical baseline (commit `45c24767`):
+- 128 unit tests with zero failures;
+- Room migration instrumentation completed 6/6 on SM-T975;
+- Physical Android Share checks covered text, image, PDF, and multiple files;
+- Calendar sync and prefilled event editor exercised;
+- Vault Reminder created and delivered.
 
 ---
 
@@ -1169,34 +1218,36 @@ Suggested Arabic release notes:
 
 ## 11. Roadmap
 
-### 11.1 Completed foundations
+> **Nemory Intelligence V1 architecture is complete. V1.1 is the Quality, Performance, Validation and Release-Hardening milestone. Full CPU Qwen-VL vision is experimental and disabled for normal production use.**
 
-- local encrypted vault and security gate;
-- multimodal capture and Android Share;
-- deterministic extraction and experience taxonomy;
-- personal collections;
-- FTS and vector retrieval;
-- Brain RAG and deterministic action foundations;
-- optional Nano/Gemma on-device LLM tiers;
-- Today/briefing;
-- external-context schema and connector framework;
-- Calendar connector and Vault Reminders.
+### 11.1 Completed foundations (V1 Architecture)
 
-### 11.2 Near-term engineering priorities
+- Local encrypted vault (Room schema 20 + SQLCipher) and biometric/PIN security gate with Decoy mode;
+- Multimodal capture, PDF parsing, OCR, heuristics, and Android Share integration;
+- Personal collections (manual-first, many-to-many, non-destructive);
+- FTS + ObjectBox vector hybrid retrieval;
+- Extractive knowledge graph (`derived_facts`, `knowledge_entities`, `item_entities`, `relationships` via `RelationshipType`);
+- Brain RAG with `LocalAgent` bounded retrieval loop (`ReasoningBudget`: FAST/NORMAL/DEEP);
+- `ClaimVerifier` verbatim evidence checking;
+- `PendingWriteCard` structured write confirmation (`PROPOSE -> VALIDATE -> CONFIRM -> EXECUTE`);
+- Tiered on-device LLM runtime (Tier 1 Qwen3-VL-2B via llama.cpp JNI, Tier 2 Gemini Nano, Tier 3 Gemma 3 1B fallback);
+- Deterministic Today engine and `DailyIntelligence` proactive scoring;
+- Vault Reminders and read-only Android Calendar connector;
+- Encrypted portable SAF backup/restore with staged rollback.
 
-Priorities should be selected from evidence rather than old bot numbering. Reasonable
-next candidates are:
+### 11.2 Nemory Intelligence V1.1 Quality & Release Hardening Plan
 
-1. complete physical regression for Calendar cache clearing and reminder notification
-   actions;
-2. harden release/privacy auditing and signed-artifact tests;
-3. improve Brain source transparency and deterministic action confirmation;
-4. strengthen accessibility, Arabic UX, and large-screen layouts;
-5. measure capture latency, memory, and model thermal impact on mid-range devices;
-6. complete physical-device export/restore interruption tests and a cross-device restore;
-7. supply and verify a production Gmail OAuth client only after consent, privacy, and
-   restricted-scope release requirements are complete;
-8. obtain and evaluate a licensed semantic visual model before enabling visual vectors.
+| Phase | Priority | Objective | Focus & Exit Condition |
+|---|---|---|---|
+| **0. Truth-sync** | Immediate | Reconcile docs and source claims | Single authoritative story across all docs; verified source alignment. |
+| **1. Real Intelligence Evaluation** | Critical | `QwenEndToEndBenchmark` | Real-model evaluation on controlled vault; Nemory Intelligence Score (Target ≥80) and retrieval/agent/graph ablations. |
+| **2. Latency & True Streaming** | Critical | Interactive Brain UX | Verify native token streaming; instrument Tsearch/TTFT/Tanswer/Tverify/Tfinal; keep status messages ephemeral. |
+| **3. Agent Action Hardening** | High | Safe idempotent actions | `PendingWriteCard` lifecycle: stable IDs, idempotency, rotation, process death, source revision revalidation, decoy invalidation. |
+| **4. Proactive Intelligence** | High | Selective Today insights | Deterministic eligibility gates, persistent dedupe fingerprint (`type+sourceIds+coreFact`), suppression lifecycle (≤3 insights). |
+| **5. Knowledge Quality** | Medium-High | Graph precision over size | Measure relationship precision for `RelationshipType`; alias resolution; bounded Brain prompt context. |
+| **6. Device / Release Matrix** | Critical | Release candidate verification | Test signed/minified APK/AAB on low/mid (API 29–31), SM-T975, and AICore hardware; test model download/retry and cross-device restore. |
+| **7. Arabic OCR / Vulkan** | R&D | Future multimodal capabilities | Dedicated lightweight Arabic OCR model; Vulkan GPU acceleration experiments (separate non-blocking track). |
+| **8. External Connectors** | Later | Expansion integrations | Gmail OAuth, Tasks, Contacts, Cloud AI — strictly deferred until V1.1 quality is proven. |
 
 ### 11.3 Future connectors
 

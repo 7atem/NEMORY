@@ -1,6 +1,9 @@
 package com.vaultbrain.feature.vault.components
 
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -38,7 +41,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.vaultbrain.core.common.theme.*
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.VaultItem
 import com.vaultbrain.core.common.ui.VaultItemPresenter
 import com.vaultbrain.core.common.ui.VaultCardDateKind
@@ -56,14 +59,22 @@ import java.util.Locale
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import com.vaultbrain.core.common.ui.LocalSharedTransitionScope
 import com.vaultbrain.core.common.ui.LocalAnimatedVisibilityScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.awaitEachGesture
+import com.vaultbrain.core.common.ui.softShadow
+import androidx.compose.material3.CardElevation
 
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class, ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun VaultItemCard(
     item: VaultItem,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    onArchive: () -> Unit = {},
+    onArchive: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     extraContent: @Composable (ColumnScope.() -> Unit)? = null
 ) {
     val presentation = VaultItemPresenter.present(item)
@@ -90,7 +101,7 @@ fun VaultItemCard(
         confirmValueChange = {
             if (it == SwipeToDismissBoxValue.EndToStart) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onArchive()
+                onArchive?.invoke()
                 true
             } else false
         }
@@ -98,6 +109,20 @@ fun VaultItemCard(
 
     val sharedTransitionScope = LocalSharedTransitionScope.current
     val animatedVisibilityScope = LocalAnimatedVisibilityScope.current
+
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val isHovered by interactionSource.collectIsHoveredAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
+        label = "card_scale"
+    )
+    val shadowElevation by animateDpAsState(
+        targetValue = if (isHovered) 8.dp else 2.dp,
+        animationSpec = tween(200),
+        label = "card_shadow"
+    )
 
     SwipeToDismissBox(
         state = dismissState,
@@ -116,16 +141,19 @@ fun VaultItemCard(
             ) {
                 Icon(
                     Icons.Default.Archive,
-                    contentDescription = "Archive",
+                    contentDescription = stringResource(R.string.detail_archive),
                     tint = MaterialTheme.colorScheme.onSecondary
                 )
             }
         },
-        enableDismissFromStartToEnd = false
+        enableDismissFromStartToEnd = false,
+        enableDismissFromEndToStart = onArchive != null
     ) {
         Card(
             modifier = modifier
                 .fillMaxWidth()
+                .scale(scale)
+                .softShadow(blurRadius = shadowElevation, offsetY = if (isHovered) 6.dp else 2.dp)
                 .semantics {
                     contentDescription = listOfNotNull(
                         item.title,
@@ -134,12 +162,12 @@ fun VaultItemCard(
                         statusText
                     ).joinToString(". ")
                 }
-                .clickable(onClick = onClick),
+                .combinedClickable(interactionSource = interactionSource, indication = androidx.compose.material3.ripple(), onClick = onClick, onLongClick = onLongClick),
             shape = MaterialTheme.shapes.medium,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -419,11 +447,6 @@ private fun VaultItemCardPreview() {
             onClick = {}
         )
     }
-}
-
-@Composable
-fun BannerAd(modifier: Modifier = Modifier) {
-    // The first public release is ad-free; no banner is rendered.
 }
 
 @Composable

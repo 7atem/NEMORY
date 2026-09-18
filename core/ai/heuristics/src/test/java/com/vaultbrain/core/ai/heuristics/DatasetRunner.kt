@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.heuristics
 
 import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.LensId
+import com.vaultbrain.shared.domain.LensId
 
 fun main() {
     val datasets = mapOf(
