@@ -9,79 +9,116 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  # Pinned toolchain. The workflow queries the runner to confirm it exists.
-  XCODE_VERSION: '16.1'
+  XCODE_VERSION: '16.4'
+  IOS_RUNTIME: '18.5'
 
 jobs:
   ios:
     runs-on: macos-15
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-
-      - name: Make Gradle wrapper executable
-        run: chmod +x ./gradlew
-
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-
       - uses: gradle/actions/setup-gradle@v4
-
-      - name: Print toolchain and available simulators
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+      - name: Install Android SDK required by Gradle configuration
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Select and record Apple toolchain
         run: |
           set -euo pipefail
-          echo '=== Installed Xcode versions ==='
-          ls -1 /Applications | grep '^Xcode' || true
-          echo "=== Selecting Xcode ${XCODE_VERSION} ==="
+          mkdir -p iosApp/build shared/build/logs
           sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
-          xcode-select -p
-          xcodebuild -version
-          echo '=== Available SDKs ==='
-          xcodebuild -showsdks
-          echo '=== Available runtimes ==='
-          xcrun simctl list runtimes
-          echo '=== Available devices ==='
-          xcrun simctl list devices available
-
-      - name: Install XcodeGen
-        run: brew install xcodegen
-
+          uname -m | tee iosApp/build/architecture.txt
+          xcodebuild -version | tee iosApp/build/xcode-version.txt
+          xcrun simctl list runtimes | tee iosApp/build/runtimes.txt
+          xcrun simctl list devices available -j > iosApp/build/devices.json
+          DEVICE_ID=$(python3 - <<'PY'
+          import json, os
+          runtime = 'com.apple.CoreSimulator.SimRuntime.iOS-' + os.environ['IOS_RUNTIME'].replace('.', '-')
+          devices = json.load(open('iosApp/build/devices.json'))['devices'].get(runtime, [])
+          matches = [d['udid'] for d in devices if d['name'] == 'iPhone 16 Pro' and d['isAvailable']]
+          if not matches:
+              raise SystemExit('Required iPhone 16 Pro / ' + runtime + ' is unavailable')
+          print(matches[0])
+          PY
+          )
+          echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
       - name: Generate Xcode project
-        working-directory: iosApp
-        run: xcodegen generate
-
-      - name: Build shared Kotlin framework for iOS simulator
         run: |
           set -euo pipefail
-          mkdir -p shared/build/logs
-          ./gradlew :shared:embedAndSignAppleFrameworkForXcode --console=plain 2>&1 | tee shared/build/logs/embed-framework.log
-
-      - name: Run shared Kotlin/Native tests
+          brew install xcodegen
+          xcodegen --version | tee iosApp/build/xcodegen-version.txt
+          cd iosApp
+          xcodegen generate
+      - name: Run shared Kotlin Native tests
         run: |
           set -euo pipefail
-          ./gradlew :shared:iosSimulatorArm64Test --console=plain 2>&1 | tee shared/build/logs/ios-simulator-test.log
-
-      - name: Build iOS app
+          bash ./gradlew :shared:iosSimulatorArm64Test -Pnemory.skipNativeForTests=true --console=plain 2>&1 | tee shared/build/logs/ios-simulator-test.log
+      - name: Build, launch and test bilingual iOS sample
         run: |
           set -euo pipefail
-          mkdir -p iosApp/build
           xcodebuild \
             -project iosApp/iosApp.xcodeproj \
             -scheme iosApp \
-            -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+            -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_ID" \
             -derivedDataPath iosApp/build/DerivedData \
             -resultBundlePath iosApp/build/iosApp.xcresult \
-            build 2>&1 | tee iosApp/build/xcodebuild.log
-
-      - name: Upload iOS build artifacts
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO \
+            test 2>&1 | tee iosApp/build/xcodebuild.log
+      - name: Build and package iOS IPA for USB Sideloading
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath iosApp/build/DerivedDataRelease \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tee iosApp/build/xcodebuild-release.log
+          mkdir -p iosApp/build/Payload
+          cp -R iosApp/build/DerivedDataRelease/Build/Products/Release-iphoneos/iosApp.app iosApp/build/Payload/
+          cd iosApp/build
+          zip -r Nemory-iOS.ipa Payload
+      - name: Upload Nemory iOS IPA for USB Sideloading
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nemory-iOS-IPA
+          retention-days: 7
+          path: iosApp/build/Nemory-iOS.ipa
+      - name: Export UI screenshots
+        if: always()
+        run: |
+          if [ -d iosApp/build/iosApp.xcresult ]; then
+            xcrun xcresulttool export attachments --path iosApp/build/iosApp.xcresult --output-path iosApp/build/screenshots
+          fi
+      - name: Upload iOS evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-build-logs
+          name: ios-validation-${{ github.sha }}
+          retention-days: 7
           path: |
-            iosApp/build/
+            iosApp/build/*.txt
+            iosApp/build/*.json
+            iosApp/build/*.log
+            iosApp/build/iosApp.xcresult
+            iosApp/build/screenshots/
             shared/build/logs/
             shared/build/reports/
-            shared/build/bin/
+            shared/build/test-results/
