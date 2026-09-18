@@ -78,6 +78,35 @@ jobs:
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO \
             test 2>&1 | tee iosApp/build/xcodebuild.log
+      - name: Build and package iOS IPA for USB Sideloading
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath iosApp/build/DerivedDataRelease \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tee iosApp/build/xcodebuild-release.log
+          mkdir -p iosApp/build/Payload
+          cp -R iosApp/build/DerivedDataRelease/Build/Products/Release-iphoneos/iosApp.app iosApp/build/Payload/
+          cd iosApp/build
+          zip -r Nemory-iOS.ipa Payload
+      - name: Upload Nemory iOS IPA for USB Sideloading
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nemory-iOS-IPA
+          retention-days: 7
+          path: iosApp/build/Nemory-iOS.ipa
+      - name: Export UI screenshots
+        if: always()
+        run: |
+          if [ -d iosApp/build/iosApp.xcresult ]; then
+            xcrun xcresulttool export attachments --path iosApp/build/iosApp.xcresult --output-path iosApp/build/screenshots
+          fi
       - name: Upload iOS evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -89,6 +118,7 @@ jobs:
             iosApp/build/*.json
             iosApp/build/*.log
             iosApp/build/iosApp.xcresult
+            iosApp/build/screenshots/
             shared/build/logs/
             shared/build/reports/
             shared/build/test-results/
