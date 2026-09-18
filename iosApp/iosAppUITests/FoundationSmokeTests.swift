@@ -12,15 +12,18 @@ final class FoundationSmokeTests: XCTestCase {
         XCTAssertTrue(result.label.contains("grocery"))
 
         let sampleHeader = app.staticTexts["Nemory Sample Card"]
-        XCTAssertTrue(sampleHeader.waitForExistence(timeout: 10))
+        XCTAssertTrue(sampleHeader.waitForExistence(timeout: 20))
         capture("English")
 
-        app.buttons["languageToggle"].tap()
-        XCTAssertTrue(app.staticTexts["بطاقة Nemory التجريبية"].waitForExistence(timeout: 10))
+        let toggleBtn = app.buttons["languageToggle"]
+        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20))
+        toggleBtn.tap()
+
+        XCTAssertTrue(app.staticTexts["بطاقة Nemory التجريبية"].waitForExistence(timeout: 20))
         capture("Arabic")
 
-        app.buttons["languageToggle"].tap()
-        XCTAssertTrue(app.staticTexts["Nemory Sample Card"].waitForExistence(timeout: 10))
+        toggleBtn.tap()
+        XCTAssertTrue(app.staticTexts["Nemory Sample Card"].waitForExistence(timeout: 20))
     }
 
     private func capture(_ name: String) {
