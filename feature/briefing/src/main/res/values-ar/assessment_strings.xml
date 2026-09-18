@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_action_snooze">تأجيل</string>
+    <string name="today_action_done">تم</string>
+    <string name="today_action_view_details">التفاصيل</string>
+    <string name="today_action_renew">تجديد</string>
+    <string name="today_action_cancel">إلغاء</string>
+</resources>

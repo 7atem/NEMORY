@@ -1,0 +1,92 @@
+name: iOS validation
+on:
+  push:
+    branches: [main, ios-kmp-foundation]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  XCODE_VERSION: '16.4'
+  IOS_RUNTIME: '18.5'
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v3
+      - name: Install Android SDK required by Gradle configuration
+        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - name: Select and record Apple toolchain
+        run: |
+          set -euo pipefail
+          mkdir -p iosApp/build shared/build/logs
+          sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+          uname -m | tee iosApp/build/architecture.txt
+          xcodebuild -version | tee iosApp/build/xcode-version.txt
+          xcrun simctl list runtimes | tee iosApp/build/runtimes.txt
+          xcrun simctl list devices available -j > iosApp/build/devices.json
+          DEVICE_ID=$(python3 - <<'PY'
+          import json, os
+          runtime = 'com.apple.CoreSimulator.SimRuntime.iOS-' + os.environ['IOS_RUNTIME'].replace('.', '-')
+          devices = json.load(open('iosApp/build/devices.json'))['devices'].get(runtime, [])
+          matches = [d['udid'] for d in devices if d['name'] == 'iPhone 16 Pro' and d['isAvailable']]
+          if not matches:
+              raise SystemExit('Required iPhone 16 Pro / ' + runtime + ' is unavailable')
+          print(matches[0])
+          PY
+          )
+          echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+      - name: Generate Xcode project
+        run: |
+          set -euo pipefail
+          brew install xcodegen
+          xcodegen --version | tee iosApp/build/xcodegen-version.txt
+          cd iosApp
+          xcodegen generate
+      - name: Run shared Kotlin Native tests
+        run: |
+          set -euo pipefail
+          bash ./gradlew :shared:iosSimulatorArm64Test -Pnemory.skipNativeForTests=true --console=plain 2>&1 | tee shared/build/logs/ios-simulator-test.log
+      - name: Build, launch and test bilingual iOS sample
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -destination "platform=iOS Simulator,id=$IOS_SIMULATOR_ID" \
+            -derivedDataPath iosApp/build/DerivedData \
+            -resultBundlePath iosApp/build/iosApp.xcresult \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO \
+            test 2>&1 | tee iosApp/build/xcodebuild.log
+      - name: Upload iOS evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-validation-${{ github.sha }}
+          retention-days: 7
+          path: |
+            iosApp/build/*.txt
+            iosApp/build/*.json
+            iosApp/build/*.log
+            iosApp/build/iosApp.xcresult
+            shared/build/logs/
+            shared/build/reports/
+            shared/build/test-results/

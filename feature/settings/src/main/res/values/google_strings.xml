@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_device_sync_body">Link Gmail or Google Tasks for read-only context in Brain. Sync runs on this device. Suggested actions require your confirmation. Disconnect removes both services for that Google account.</string>
+    <string name="google_link_gmail">Link Gmail</string>
+    <string name="google_link_tasks">Link Google Tasks</string>
+    <string name="google_sync_now">Sync linked Google accounts</string>
+    <string name="google_reconnect">Reconnect %1$s</string>
+    <string name="google_disconnect_account">Disconnect Google account: %1$s</string>
+    <string name="google_setup_required">Google linking is not configured for this version of Nemory. The developer must register this app with Google. Your vault is still available.</string>
+    <string name="google_consent_required">Access was not granted. Tap Link when you are ready to choose an account and allow read access.</string>
+    <string name="google_connection_failed">Could not connect to Google. Check your connection and try again. If this continues, Google linking may need developer configuration.</string>
+</resources>

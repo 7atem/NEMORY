@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="money_stat_title">عدسة المال</string>
+    <string name="money_stat_receipts">الإيصالات: %1$d</string>
+    <string name="money_stat_valued">عناصر ذات قيمة: %1$d</string>
+    <string name="money_stat_total">إجمالي العناصر: %1$d</string>
+    <string name="money_stat_total_spent">إجمالي المنفق: %1$.2f</string>
+    <string name="money_stat_subscriptions">الاشتراكات النشطة: %1$d</string>
+    <string name="money_stat_next_payment">الدفع القادم: %1$s</string>
+    <string name="money_quick_add_title">إضافة سريعة</string>
+    <string name="money_quick_add_receipt">إيصال</string>
+    <string name="money_quick_add_bill">فاتورة</string>
+    <string name="money_quick_add_warranty">ضمان</string>
+    <string name="money_items_title">عناصر المال</string>
+    <string name="money_item_price">القيمة: %1$.2f</string>
+    <string name="money_item_recurring">متكرر</string>
+    <string name="money_export_csv">تصدير CSV</string>
+    <string name="money_lens_view_subtitle">عرض لخزنتك — يمكن أن تظهر العناصر في أكثر من عدسة.</string>
+    <string name="money_empty_message">لا توجد عناصر مالية أو تسوق بعد</string>
+    <string name="money_section_recent">الأخيرة</string>
+    <string name="money_section_older">الأقدم</string>
+    <string name="money_iban_validator">التحقق من الآيبان (IBAN)</string>
+    <string name="money_trial_expiring_title">فترة تجريبية تنتهي قريباً!</string>
+    <string name="money_trial_expiring_message">قم بإلغاء %1$s خلال %2$d أيام لتجنب الرسوم</string>
+</resources>

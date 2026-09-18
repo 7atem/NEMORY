@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_good_morning">Good morning</string>
+    <string name="today_good_afternoon">Good afternoon</string>
+    <string name="today_good_evening">Good evening</string>
+    <string name="today_good_night">Good night</string>
+    <string name="today_title">Today</string>
+    <string name="today_clear">Nothing needs your attention right now.</string>
+    <string name="today_priority_radar">Worth a look</string>
+    <string name="today_review">Review</string>
+    <string name="today_on_device_note">On-device AI note</string>
+    <string name="today_summary_loading">Generating your daily summary…</string>
+    <string name="today_why_seeing_this">Why am I seeing this?</string>
+    <string name="today_note_expiring">This document is approaching its expiration date.</string>
+    <string name="today_note_duplicates">The on-device duplicate detector found exact text matches across these captures.</string>
+    <string name="today_note_spending">Your latest capture showed a price increase compared to previous records.</string>
+    <string name="today_note_travel">You have upcoming travel based on your captured bookings and tickets.</string>
+    <string name="today_note_media">You have unreviewed media items waiting in your backlog.</string>
+    <string name="today_expires_today">%1$s expires today</string>
+    <string name="today_travel_today">%1$s is today</string>
+    <string name="today_charge_increased">%1$s recurring charge increased</string>
+    <string name="today_charge_change_detail">%1$s %2$s → %3$s %4$s (up %5$s %6$s)</string>
+    <string name="today_duplicates_detail">Open the newest capture to compare it. Nothing will be deleted automatically.</string>
+    <string name="today_date_label">Date: %1$s</string>
+    <string name="today_media_sample">Oldest saved item: %1$s</string>
+    <plurals name="today_expires_in_days">
+        <item quantity="one">%1$s expires in %2$d day</item>
+        <item quantity="other">%1$s expires in %2$d days</item>
+    </plurals>
+    <plurals name="today_possible_duplicates">
+        <item quantity="one">%1$d capture may be a duplicate</item>
+        <item quantity="other">%1$d captures may be duplicates</item>
+    </plurals>
+    <plurals name="today_travel_in_days">
+        <item quantity="one">%1$s is in %2$d day</item>
+        <item quantity="other">%1$s is in %2$d days</item>
+    </plurals>
+    <plurals name="today_watch_backlog">
+        <item quantity="one">%1$d item is waiting on your watchlist</item>
+        <item quantity="other">%1$d items are waiting on your watchlist</item>
+    </plurals>
+    <plurals name="today_reading_backlog">
+        <item quantity="one">%1$d item is waiting on your reading list</item>
+        <item quantity="other">%1$d items are waiting on your reading list</item>
+    </plurals>
+    <string name="today_action_snooze">Snooze</string>
+    <string name="today_action_done">Done</string>
+    <string name="today_action_view_details">Details</string>
+    <string name="today_action_renew">Renew</string>
+    <string name="today_action_cancel">Cancel</string>
+</resources>

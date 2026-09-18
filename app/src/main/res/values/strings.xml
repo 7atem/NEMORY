@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nemory</string>
+    <string name="quick_capture_tile_label">Nemory Scan</string>
+    <string name="nav_today">Today</string>
+    <string name="nav_brain">Brain Chat</string>
+    <string name="nav_vault">Vault</string>
+    <string name="nav_capture">Capture</string>
+    <string name="shortcut_capture_long">Capture to vault</string>
+    <string name="shortcut_expiring">Expiring items</string>
+    <string name="crash_log_found">CRASH LOG FOUND:</string>
+    <string name="crash_clear_restart">Clear &amp; Restart</string>
+    <string name="crash_copy_log">Copy Log</string>
+    <string name="crash_copy_warning">WARNING: May contain sensitive keys or PII!</string>
+    <string name="crash_copied_toast">Copied to clipboard. Beware of sensitive data!</string>
+</resources>

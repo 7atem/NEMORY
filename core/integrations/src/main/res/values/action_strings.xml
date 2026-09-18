@@ -1,0 +1,14 @@
+<resources>
+    <string name="action_no_total">No total amount found</string>
+    <string name="action_total">Total amount</string>
+    <string name="action_copied">Copied to clipboard</string>
+    <string name="action_event">Event from Nemory</string>
+    <string name="action_calendar_error">Could not open Calendar</string>
+    <string name="action_reminder_saved">Reminder scheduled</string>
+    <string name="action_reminder_error">Could not schedule reminder</string>
+    <string name="action_contacts_error">Could not open the contacts editor</string>
+    <string name="action_url_missing">No valid link found</string>
+    <string name="action_link_error">Could not open the link</string>
+    <string name="action_search_error">Could not open search</string>
+    <string name="action_unavailable">This action is unavailable</string>
+</resources>

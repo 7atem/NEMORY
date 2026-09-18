@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_lens_title">قائمة المشاهدة والقراءة</string>
+    <string name="media_lens_subtitle">أفلام ومسلسلات وكتب حفظتها لوقت لاحق — عرض لخزنتك، ويمكن أن تظهر العناصر في أكثر من عدسة.</string>
+    <string name="media_stat_saved">المحفوظة</string>
+    <string name="media_stat_waiting">لاحقاً</string>
+    <string name="media_stat_books">الكتب</string>
+    <plurals name="media_movie_count">
+        <item quantity="zero">%d أفلام</item>
+        <item quantity="one">%d فيلم</item>
+        <item quantity="two">%d فيلمان</item>
+        <item quantity="few">%d أفلام</item>
+        <item quantity="many">%d فيلمًا</item>
+        <item quantity="other">%d فيلم</item>
+    </plurals>
+    <plurals name="media_series_count">
+        <item quantity="zero">%d مسلسلات</item>
+        <item quantity="one">%d مسلسل</item>
+        <item quantity="two">%d مسلسلان</item>
+        <item quantity="few">%d مسلسلات</item>
+        <item quantity="many">%d مسلسلًا</item>
+        <item quantity="other">%d مسلسل</item>
+    </plurals>
+    <plurals name="media_book_count">
+        <item quantity="zero">%d كتب</item>
+        <item quantity="one">%d كتاب</item>
+        <item quantity="two">%d كتابان</item>
+        <item quantity="few">%d كتب</item>
+        <item quantity="many">%d كتابًا</item>
+        <item quantity="other">%d كتاب</item>
+    </plurals>
+    <string name="media_empty_title">احفظ شيئاً لوقت لاحق</string>
+    <string name="media_empty_body">التقط صورة لملصق أو غلاف كتاب، أو شارك مراجعة، أو أرسل رابطاً منسوخاً إلى Nemory. سيظهر هنا.</string>
+    <string name="media_type_movie">فيلم</string>
+    <string name="media_type_series">مسلسل</string>
+    <string name="media_type_book">كتاب</string>
+    <string name="media_type_other">وسائط</string>
+    <string name="media_status_watch">أريد مشاهدته</string>
+    <string name="media_status_read">أريد قراءته</string>
+    <string name="media_status_watching">قيد المشاهدة</string>
+    <string name="media_status_reading">قيد القراءة</string>
+    <string name="media_status_watched">تمت مشاهدته</string>
+    <string name="media_status_finished">مكتمل</string>
+    <string name="media_status_paused">متوقف مؤقتاً</string>
+    <string name="media_author">بقلم %1$s</string>
+    <string name="media_saved_from">محفوظ من %1$s</string>
+    <string name="media_reminder_set">تذكير: %1$s</string>
+    <string name="media_open_details">التفاصيل</string>
+    <string name="media_open_source">فتح المصدر</string>
+    <string name="media_mark_watched">تمت المشاهدة</string>
+    <string name="media_mark_finished">تمت القراءة</string>
+    <string name="media_remind_week">ذكّرني بعد 7 أيام</string>
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vault_reminder_channel">Vault reminders</string>
+    <string name="vault_reminder_due">Due now</string>
+    <string name="vault_reminder_snooze">Snooze 15 min</string>
+    <string name="vault_reminder_complete">Complete</string>
+    <string name="gemma_prompt_channel_name">Model download</string>
+    <string name="gemma_prompt_channel_description">One-time suggestion to download the optional on-device model</string>
+    <string name="gemma_prompt_title">Smarter document understanding available</string>
+    <string name="gemma_prompt_body">Get better private capture organization with a one-time ~1.6 GB on-device model download. Use Wi-Fi; it works fully offline afterwards.</string>
+    <string name="gemma_prompt_download">Download</string>
+    <string name="alert_vaccine_title">Vaccine booster due</string>
+    <string name="alert_vaccine_body">It\'s time for %1$s\'s %2$s booster shot.</string>
+    <string name="alert_invoice_title">Invoice due soon</string>
+    <string name="alert_invoice_body">%1$s is approaching its due date. Tap to review.</string>
+    <string name="alert_vaccine_default_patient">Your pet</string>
+    <string name="calendar_notification_channel">Calendar Events</string>
+    <string name="calendar_notification_channel_desc">Alerts for upcoming meetings and calendar events</string>
+    <string name="gmail_notification_channel">Gmail Updates</string>
+    <string name="gmail_notification_channel_desc">Notifications for synced receipts, orders, and emails</string>
+    <string name="alert_action_snooze">Snooze 24 hours</string>
+    <string name="alert_action_dismiss">Dismiss</string>
+    <string name="alert_private_title">Nemory reminder</string>
+    <string name="alert_private_body">Open Nemory to review your reminders.</string>
+</resources>

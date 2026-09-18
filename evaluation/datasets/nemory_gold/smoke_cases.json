@@ -1,0 +1,40 @@
+[
+  {
+    "id": "insurance_001",
+    "source_type": "synthetic",
+    "language": ["en"],
+    "document_type": "CAR_INSURANCE",
+    "primary_lens": "AUTOMOTIVE",
+    "ground_truth_text": "Allianz Car Insurance\nPolicy Number: AB123456\nIssue Date: 2026-01-12\nExpiry Date: 2027-01-11\nAmount: 4750.00 EGP",
+    "fields": {
+      "issuer": "Allianz",
+      "policy_number": "AB123456",
+      "issue_date": "2026-01-12",
+      "expiry_date": "2027-01-11",
+      "amount": "4750.00",
+      "currency": "EGP"
+    },
+    "critical_fields": [
+      "policy_number",
+      "expiry_date"
+    ]
+  },
+  {
+    "id": "receipt_001",
+    "source_type": "synthetic",
+    "language": ["en"],
+    "document_type": "RECEIPT",
+    "primary_lens": "MONEY",
+    "ground_truth_text": "Coffee Shop\nLatte $4.50\nTotal: $4.50\nDate: 2026-09-04",
+    "fields": {
+      "merchant": "Coffee Shop",
+      "total": "4.50",
+      "currency": "USD",
+      "issue_date": "2026-09-04"
+    },
+    "critical_fields": [
+      "total",
+      "merchant"
+    ]
+  }
+]

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="today_good_morning">صباح الخير</string>
+    <string name="today_good_afternoon">مساء الخير</string>
+    <string name="today_good_evening">مساء الخير</string>
+    <string name="today_good_night">ليلة سعيدة</string>
+    <string name="today_title">اليوم</string>
+    <string name="today_clear">لا يوجد ما يحتاج إلى انتباهك الآن.</string>
+    <string name="today_priority_radar">يستحق المراجعة</string>
+    <string name="today_review">مراجعة</string>
+    <string name="today_on_device_note">ملاحظة ذكاء اصطناعي على الجهاز</string>
+    <string name="today_summary_loading">جارٍ إنشاء ملخصك اليومي…</string>
+    <string name="today_why_seeing_this">لماذا أرى هذا؟</string>
+    <string name="today_note_expiring">تقترب صلاحية هذا المستند من الانتهاء.</string>
+    <string name="today_note_duplicates">وجد كاشف التكرار على الجهاز تطابقًا نصيًا تامًا بين هذه اللقطات.</string>
+    <string name="today_note_spending">أظهرت أحدث لقطاتك زيادة في السعر مقارنة بالسجلات السابقة.</string>
+    <string name="today_note_travel">لديك سفر قادم بناءً على حجوزاتك وتذاكرك المحفوظة.</string>
+    <string name="today_note_media">لديك عناصر وسائط غير مراجعة في قائمة الانتظار.</string>
+    <string name="today_expires_today">تنتهي صلاحية %1$s اليوم</string>
+    <string name="today_travel_today">موعد %1$s اليوم</string>
+    <string name="today_charge_increased">ارتفعت دفعة %1$s المتكررة</string>
+    <string name="today_charge_change_detail">%1$s %2$s ← %3$s %4$s (زيادة %5$s %6$s)</string>
+    <string name="today_duplicates_detail">افتح أحدث عنصر للمقارنة. لن يُحذف أي شيء تلقائيًا.</string>
+    <string name="today_date_label">التاريخ: %1$s</string>
+    <string name="today_media_sample">أقدم عنصر محفوظ: %1$s</string>
+    <plurals name="today_expires_in_days">
+        <item quantity="one">تنتهي صلاحية %1$s خلال يوم واحد</item>
+        <item quantity="two">تنتهي صلاحية %1$s خلال يومين</item>
+        <item quantity="few">تنتهي صلاحية %1$s خلال %2$d أيام</item>
+        <item quantity="many">تنتهي صلاحية %1$s خلال %2$d يومًا</item>
+        <item quantity="other">تنتهي صلاحية %1$s خلال %2$d يوم</item>
+    </plurals>
+    <plurals name="today_possible_duplicates">
+        <item quantity="one">قد يكون عنصر واحد مكررًا</item>
+        <item quantity="two">قد يكون عنصران مكررين</item>
+        <item quantity="few">قد تكون %1$d عناصر مكررة</item>
+        <item quantity="many">قد يكون %1$d عنصرًا مكررًا</item>
+        <item quantity="other">قد تكون %1$d عناصر مكررة</item>
+    </plurals>
+    <plurals name="today_travel_in_days">
+        <item quantity="one">موعد %1$s خلال يوم واحد</item>
+        <item quantity="two">موعد %1$s خلال يومين</item>
+        <item quantity="few">موعد %1$s خلال %2$d أيام</item>
+        <item quantity="many">موعد %1$s خلال %2$d يومًا</item>
+        <item quantity="other">موعد %1$s خلال %2$d يوم</item>
+    </plurals>
+    <plurals name="today_watch_backlog">
+        <item quantity="one">عنصر واحد ينتظر في قائمة المشاهدة</item>
+        <item quantity="two">عنصران ينتظران في قائمة المشاهدة</item>
+        <item quantity="few">%1$d عناصر تنتظر في قائمة المشاهدة</item>
+        <item quantity="many">%1$d عنصرًا ينتظر في قائمة المشاهدة</item>
+        <item quantity="other">%1$d عنصر ينتظر في قائمة المشاهدة</item>
+    </plurals>
+    <plurals name="today_reading_backlog">
+        <item quantity="one">عنصر واحد ينتظر في قائمة القراءة</item>
+        <item quantity="two">عنصران ينتظران في قائمة القراءة</item>
+        <item quantity="few">%1$d عناصر تنتظر في قائمة القراءة</item>
+        <item quantity="many">%1$d عنصرًا ينتظر في قائمة القراءة</item>
+        <item quantity="other">%1$d عنصر ينتظر في قائمة القراءة</item>
+    </plurals>
+</resources>

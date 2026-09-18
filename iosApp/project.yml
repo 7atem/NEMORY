@@ -1,0 +1,58 @@
+name: iosApp
+options:
+  bundleIdPrefix: com.nemory
+  deploymentTarget:
+    iOS: 17.0
+settings:
+  base:
+    # Gradle needs to write the framework outside the Xcode sandbox.
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+    LD_RUNPATH_SEARCH_PATHS:
+      - $(inherited)
+      - "@executable_path/Frameworks"
+    SWIFT_VERSION: "6.0"
+targets:
+  iosApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: iosApp
+    info:
+      path: iosApp/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.nemory.ios.sample
+        OTHER_LDFLAGS:
+          - $(inherited)
+          - -framework
+          - shared
+        FRAMEWORK_SEARCH_PATHS:
+          - $(inherited)
+          - $(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+    preBuildScripts:
+      - name: Build Shared Kotlin Framework
+        basedOnDependencyAnalysis: false
+        shell: /bin/sh
+        script: |
+          set -e
+          cd "$SRCROOT/.."
+          bash ./gradlew :shared:embedAndSignAppleFrameworkForXcode -Pnemory.skipNativeForTests=true
+  iosAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: iosAppUITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.nemory.ios.sample.uitests
+    dependencies:
+      - target: iosApp
+schemes:
+  iosApp:
+    build:
+      targets:
+        iosApp: all
+    test:
+      targets:
+        - iosAppUITests

@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="feature_capture_share_label">Save to Nemory</string>
+    <string name="feature_capture_camera_permission_title">Camera permission</string>
+    <string name="feature_capture_camera_permission_body">Nemory needs camera access to capture items.</string>
+    <string name="feature_capture_grant">Grant</string>
+    <string name="feature_capture_pick_image">Pick image or PDF</string>
+    <string name="feature_capture_capture">Capture</string>
+    <string name="feature_capture_title">Title</string>
+    <string name="feature_capture_summary">Summary</string>
+    <string name="feature_capture_notes">Notes</string>
+    <string name="feature_capture_save">Save to vault</string>
+    <string name="feature_capture_retry">Retry</string>
+    <string name="feature_capture_processing">Analyzing…</string>
+    <string name="feature_capture_saving">Saving…</string>
+    <string name="feature_capture_confidence">Confidence: %1$d%%</string>
+    <string name="feature_capture_classification">Classification: %1$s</string>
+    <string name="feature_capture_suggested_lenses">Suggested lenses</string>
+    <string name="feature_capture_review_title">Review &amp; save</string>
+    <string name="feature_capture_review_hint">Check the important details before saving. Automatic text recognition does not support Arabic script and may miss small print.</string>
+    <string name="feature_capture_arabic_ocr_notice">Automatic text recognition is Latin-optimized. Add an Arabic title and notes for quick searching.</string>
+    <string name="feature_capture_ready">Looks ready</string>
+    <string name="feature_capture_check">A quick check is recommended</string>
+    <string name="feature_capture_ready_body">Nemory found a strong match. You can still adjust anything below.</string>
+    <string name="feature_capture_check_body">Some details were uncertain. Confirm the title and smart spaces.</string>
+    <string name="feature_capture_detected_details">Detected details</string>
+    <string name="feature_capture_spaces">Save to smart spaces</string>
+    <string name="feature_capture_spaces_hint">Choose every place where you want this item to appear.</string>
+    <string name="feature_capture_image_preview">Captured item preview</string>
+    <string name="feature_capture_title_required">Add a title before saving</string>
+    <string name="feature_capture_discard">Discard</string>
+    <string name="feature_capture_save_next">Save &amp; review next</string>
+    <string name="feature_capture_item_position">Item %1$d of %2$d</string>
+    <string name="feature_capture_pdf_doc">PDF document</string>
+    <string name="feature_capture_pdf_desc">Text was extracted from the first 5 pages</string>
+    <string name="feature_capture_share_saved">Saved — will be analyzed shortly</string>
+    <string name="feature_capture_share_review_title">Review shared content</string>
+    <string name="feature_capture_share_save">Save</string>
+    <string name="feature_capture_share_save_without_ai">Save without AI</string>
+    <string name="feature_capture_share_collection_label">Add to collection</string>
+    <string name="feature_capture_share_no_collection">No collection</string>
+    <string name="feature_capture_share_source">From: %1$s</string>
+    <string name="feature_capture_share_attachments">Attachments</string>
+
+    <!-- Experience picker -->
+    <string name="feature_capture_experience_picker_title">What is this?</string>
+    <string name="feature_capture_experience_picker_hint">Choose how you want to use this item. Nemory will extract the right details.</string>
+    <string name="feature_capture_experience_search">Search experiences...</string>
+    <string name="feature_capture_experience_top_matches">Top matches</string>
+    <string name="feature_capture_experience_see_all">See all experiences</string>
+    <string name="feature_capture_experience_all">All</string>
+    <string name="feature_capture_experience_just_save">Just save</string>
+    <string name="feature_capture_experience_just_save_hint">No special experience now. You can organize it later.</string>
+
+    <!-- Money experiences -->
+    <string name="experience_expense">Expense</string>
+    <string name="experience_expense_hint">Track spending with merchant, total, and date.</string>
+    <string name="experience_subscription">Subscription</string>
+    <string name="experience_subscription_hint">Recurring charge with billing cycle and provider.</string>
+    <string name="experience_bill">Bill</string>
+    <string name="experience_bill_hint">Generic bill or payment due notice.</string>
+    <string name="experience_invoice_for_work">Invoice for work</string>
+    <string name="experience_invoice_for_work_hint">Client invoice for billing or tax.</string>
+
+    <!-- Health experiences -->
+    <string name="experience_prescription">Prescription</string>
+    <string name="experience_prescription_hint">Medication, dosage, pharmacy, and doctor.</string>
+    <string name="experience_lab_result">Lab result</string>
+    <string name="experience_lab_result_hint">Blood test, urine test, or diagnostics.</string>
+    <string name="experience_vaccination_record">Vaccination record</string>
+    <string name="experience_vaccination_record_hint">Vaccine name and date.</string>
+    <string name="experience_doctor_note">Doctor note</string>
+    <string name="experience_doctor_note_hint">Visit summary or medical advice.</string>
+
+    <!-- Travel experiences -->
+    <string name="experience_flight_ticket">Flight ticket</string>
+    <string name="experience_flight_ticket_hint">Flight number, route, and departure.</string>
+    <string name="experience_hotel_booking">Hotel booking</string>
+    <string name="experience_hotel_booking_hint">Reservation, dates, and confirmation.</string>
+    <string name="experience_boarding_pass">Boarding pass</string>
+    <string name="experience_boarding_pass_hint">Gate, seat, and flight details.</string>
+
+    <!-- Bureaucracy experiences -->
+    <string name="experience_passport">Passport</string>
+    <string name="experience_passport_hint">Passport info and expiry.</string>
+    <string name="experience_id_card">ID card</string>
+    <string name="experience_id_card_hint">National ID or residence card.</string>
+    <string name="experience_drivers_license">Driver\'s license</string>
+    <string name="experience_drivers_license_hint">License number and expiry.</string>
+    <string name="experience_business_card">Business card</string>
+    <string name="experience_business_card_hint">Contact name, phone, email, company.</string>
+
+    <!-- Home experiences -->
+    <string name="experience_warranty">Warranty</string>
+    <string name="experience_warranty_hint">Product warranty and serial number.</string>
+    <string name="experience_utility_bill">Utility bill</string>
+    <string name="experience_utility_bill_hint">Generic utility services.</string>
+    <string name="experience_electricity_bill">Electricity bill</string>
+    <string name="experience_electricity_bill_hint">Power consumption and billing.</string>
+    <string name="experience_water_bill">Water bill</string>
+    <string name="experience_water_bill_hint">Water usage and services.</string>
+    <string name="experience_gas_bill">Gas bill</string>
+    <string name="experience_gas_bill_hint">Natural gas consumption.</string>
+    <string name="experience_internet_bill">Internet bill</string>
+    <string name="experience_internet_bill_hint">Broadband or fiber connection.</string>
+    <string name="experience_telecom_bill">Telecom bill</string>
+    <string name="experience_telecom_bill_hint">Mobile or landline phone services.</string>
+
+    <!-- Car experiences -->
+    <string name="experience_car_insurance">Car insurance</string>
+    <string name="experience_car_insurance_hint">Policy and expiry.</string>
+
+    <!-- Shopping experiences -->
+
+    <!-- Media experiences -->
+    <string name="experience_web_article">Web Article</string>
+    <string name="experience_web_article_hint">Articles, blogs, and web links.</string>
+    <string name="experience_watchlist">Watchlist</string>
+    <string name="experience_watchlist_hint">Movie or show to watch.</string>
+    <string name="experience_already_watched">Already watched</string>
+    <string name="experience_already_watched_hint">Movie or show you watched.</string>
+    <string name="experience_already_read">Already read</string>
+    <string name="experience_already_read_hint">Book you finished.</string>
+
+    <!-- Productivity experiences -->
+    <string name="experience_note">Note</string>
+    <string name="experience_note_hint">Plain note or idea.</string>
+
+    <!-- Services experiences -->
+    <string name="experience_service_contract">Service contract</string>
+    <string name="experience_service_contract_hint">Service agreement details.</string>
+
+    <!-- Scam guard experiences -->
+    <string name="experience_suspicious_message">Suspicious message</string>
+    <string name="experience_suspicious_message_hint">Spam, phishing, or scam text.</string>
+
+    <!-- Money experiences (extended) -->
+    <string name="experience_bank_statement">Bank statement</string>
+    <string name="experience_bank_statement_hint">Account statement, balances, transactions.</string>
+    <string name="experience_grocery_receipt">Grocery receipt</string>
+    <string name="experience_grocery_receipt_hint">Supermarket or grocery store receipt.</string>
+
+    <!-- Health experiences (extended) -->
+
+    <!-- Travel experiences (extended) -->
+    <string name="experience_train_ticket">Train ticket</string>
+    <string name="experience_train_ticket_hint">Rail journey details.</string>
+    <string name="experience_bus_ticket">Bus ticket</string>
+    <string name="experience_bus_ticket_hint">Bus or coach trip.</string>
+
+    <!-- Bureaucracy experiences (extended) -->
+
+    <!-- Home experiences (extended) -->
+
+    <!-- Car experiences (extended) -->
+    <string name="experience_car_registration">Car registration</string>
+    <string name="experience_car_registration_hint">Registration card and expiry.</string>
+
+    <!-- Shopping experiences (extended) -->
+
+    <!-- Media experiences (extended) -->
+
+    <!-- Productivity experiences (extended) -->
+
+    <!-- Services experiences (extended) -->
+
+    <!-- Scam guard experiences (extended) -->
+    <!-- Post-save suggestions -->
+    <string name="followup_add_hotel">Add hotel booking</string>
+    <string name="followup_add_car_rental">Add car rental</string>
+    <string name="followup_add_travel_insurance">Add travel insurance</string>
+    <string name="followup_add_itinerary">Add itinerary</string>
+    <string name="followup_add_travel_expense">Add travel expense</string>
+    <string name="followup_add_lounge">Add airport lounge pass</string>
+    <string name="followup_set_med_reminder">Set medication reminder</string>
+    <string name="followup_file_insurance_claim">File insurance claim</string>
+    <string name="followup_add_doctor_note">Add doctor note</string>
+    <string name="followup_book_followup">Book follow-up appointment</string>
+    <string name="followup_add_prescription">Add prescription</string>
+    <string name="followup_save_warranty">Save warranty</string>
+    <string name="followup_save_return_policy">Save return policy</string>
+    <string name="followup_track_budget">Track budget</string>
+    <string name="followup_check_car_insurance">Check car insurance</string>
+    <string name="followup_check_car_inspection">Check car inspection</string>
+    <string name="followup_check_car_registration">Check car registration</string>
+    <string name="followup_add_tracking">Add shipping tracking</string>
+    <string name="followup_register_product">Register appliance</string>
+    <string name="followup_save_manual">Save manual</string>
+    <string name="followup_add_visa">Add visa</string>
+    <string name="followup_save_for_taxes">Save for taxes</string>
+    <string name="experience_appliance_manual">Appliance manual</string>
+    <string name="experience_appliance_manual_hint">Model number and instructions.</string>
+    <string name="experience_appointment">Appointment</string>
+    <string name="experience_appointment_hint">Booking confirmation and time.</string>
+    <string name="experience_bookmark">Bookmark</string>
+    <string name="experience_bookmark_hint">Link or reference to revisit.</string>
+    <string name="experience_budget_tracker">Budget tracker</string>
+    <string name="experience_budget_tracker_hint">Track a category budget over time.</string>
+    <string name="experience_car_rental">Car rental</string>
+    <string name="experience_car_rental_hint">Rental agreement and dates.</string>
+    <string name="experience_car_service">Car service</string>
+    <string name="experience_car_service_hint">Maintenance or repair record.</string>
+    <string name="experience_coupon">Coupon</string>
+    <string name="experience_coupon_hint">Discount code or voucher.</string>
+    <string name="experience_fine_ticket">Fine ticket</string>
+    <string name="experience_fine_ticket_hint">Traffic or violation fine.</string>
+    <string name="experience_fitness_tracker">Fitness tracker</string>
+    <string name="experience_fitness_tracker_hint">Workout, diet, or body measurement.</string>
+    <string name="experience_fraud_record">Fraud record</string>
+    <string name="experience_fraud_record_hint">Document fraud or suspicious activity.</string>
+    <string name="experience_fuel_receipt">Fuel receipt</string>
+    <string name="experience_fuel_receipt_hint">Fuel type, volume, and cost.</string>
+    <string name="experience_game_wishlist">Game wishlist</string>
+    <string name="experience_game_wishlist_hint">Game to buy or play.</string>
+    <string name="experience_gift_idea">Gift idea</string>
+    <string name="experience_gift_idea_hint">Gift for someone and budget.</string>
+    <string name="experience_health_insurance_claim">Health insurance claim</string>
+    <string name="experience_health_insurance_claim_hint">Medical claim with provider and amount.</string>
+    <string name="experience_home_inventory">Home inventory</string>
+    <string name="experience_home_inventory_hint">Item for insurance or inventory.</string>
+    <string name="experience_income">Income</string>
+    <string name="experience_income_hint">Salary, freelance, refund, or deposit.</string>
+    <string name="experience_insurance_payment">Insurance payment</string>
+    <string name="experience_insurance_payment_hint">Premium receipt or claim payment.</string>
+    <string name="experience_investment_record">Investment record</string>
+    <string name="experience_investment_record_hint">Stock, crypto, or savings statement.</string>
+    <string name="experience_itinerary">Itinerary</string>
+    <string name="experience_itinerary_hint">Trip plan with dates and activities.</string>
+    <string name="experience_medication_schedule">Medication schedule</string>
+    <string name="experience_medication_schedule_hint">Track when to take medication.</string>
+    <string name="experience_meeting_notes">Meeting notes</string>
+    <string name="experience_meeting_notes_hint">Notes from a meeting.</string>
+    <string name="experience_music_playlist">Music playlist</string>
+    <string name="experience_music_playlist_hint">Song or album to remember.</string>
+    <string name="experience_parking_ticket">Parking ticket</string>
+    <string name="experience_parking_ticket_hint">Paid parking receipt or garage ticket.</string>
+    <string name="experience_phishing_report">Phishing report</string>
+    <string name="experience_phishing_report_hint">Report a phishing attempt.</string>
+    <string name="experience_price_compare">Price compare</string>
+    <string name="experience_price_compare_hint">Compare prices across stores.</string>
+    <string name="experience_quote">Quote</string>
+    <string name="experience_quote_hint">Price quote or estimate.</string>
+    <string name="experience_reading_list">Reading list</string>
+    <string name="experience_reading_list_hint">Book to read.</string>
+    <string name="experience_recipe">Recipe</string>
+    <string name="experience_recipe_hint">Ingredients and instructions.</string>
+    <string name="experience_reminder">Reminder</string>
+    <string name="experience_reminder_hint">Something to remember later.</string>
+    <string name="experience_rent_contract">Rent contract</string>
+    <string name="experience_rent_contract_hint">Lease dates and terms.</string>
+    <string name="experience_residence_permit">Residence permit</string>
+    <string name="experience_residence_permit_hint">Permit number and validity.</string>
+    <string name="experience_return_policy">Return policy</string>
+    <string name="experience_return_policy_hint">Return window and conditions.</string>
+    <string name="experience_study_material">Study material</string>
+    <string name="experience_study_material_hint">Notes, flashcards, or reference.</string>
+    <string name="experience_tax_document">Tax document</string>
+    <string name="experience_tax_document_hint">Tax receipt, deduction, or official form.</string>
+    <string name="experience_travel_expense">Travel expense</string>
+    <string name="experience_travel_expense_hint">Taxi, meal, or transport receipt.</string>
+    <string name="experience_visa">Visa</string>
+    <string name="experience_visa_hint">Visa document or application.</string>
+    <string name="experience_credit_card_statement">Credit card statement</string>
+    <string name="experience_credit_card_statement_hint">Card transactions and balance.</string>
+    <string name="experience_loan_payment">Loan payment</string>
+    <string name="experience_loan_payment_hint">Installment, interest, and balance.</string>
+    <string name="experience_grocery_list">Shopping / grocery list</string>
+    <string name="experience_grocery_list_hint">Shopping or grocery items to buy.</string>
+    <string name="experience_pet_expense">Pet expense</string>
+    <string name="experience_pet_expense_hint">Vet visit, food, or supplies.</string>
+    <string name="experience_tuition_fee">Tuition fee</string>
+    <string name="experience_tuition_fee_hint">School or course payment.</string>
+    <string name="experience_dental_visit">Dental visit</string>
+    <string name="experience_dental_visit_hint">Dentist appointment or treatment.</string>
+    <string name="experience_optical_prescription">Optical prescription</string>
+    <string name="experience_optical_prescription_hint">Glasses or lens prescription.</string>
+    <string name="experience_allergy_record">Allergy record</string>
+    <string name="experience_allergy_record_hint">Allergies and reactions.</string>
+    <string name="experience_physiotherapy_plan">Physiotherapy plan</string>
+    <string name="experience_physiotherapy_plan_hint">Exercises and sessions.</string>
+    <string name="experience_mental_health_note">Mental health note</string>
+    <string name="experience_mental_health_note_hint">Therapy or wellness note.</string>
+    <string name="experience_blood_donation">Blood donation</string>
+    <string name="experience_blood_donation_hint">Donation date and center.</string>
+    <string name="experience_ferry_ticket">Ferry ticket</string>
+    <string name="experience_ferry_ticket_hint">Route, date, and seat.</string>
+    <string name="experience_travel_insurance">Travel insurance</string>
+    <string name="experience_travel_insurance_hint">Coverage and policy number.</string>
+    <string name="experience_travel_checklist">Travel checklist</string>
+    <string name="experience_travel_checklist_hint">Packing or preparation list.</string>
+    <string name="experience_airport_lounge">Airport lounge</string>
+    <string name="experience_airport_lounge_hint">Lounge access pass.</string>
+    <string name="experience_birth_certificate">Birth certificate</string>
+    <string name="experience_birth_certificate_hint">Official birth record.</string>
+    <string name="experience_marriage_certificate">Marriage certificate</string>
+    <string name="experience_marriage_certificate_hint">Official marriage record.</string>
+    <string name="experience_notarized_document">Notarized document</string>
+    <string name="experience_notarized_document_hint">Certified or notarized paper.</string>
+    <string name="experience_tax_residency_certificate">Tax residency certificate</string>
+    <string name="experience_tax_residency_certificate_hint">Proof of tax residency.</string>
+    <string name="experience_professional_license">Professional license</string>
+    <string name="experience_professional_license_hint">License number and expiry.</string>
+    <string name="experience_property_deed">Property deed</string>
+    <string name="experience_property_deed_hint">Ownership document.</string>
+    <string name="experience_mortgage_statement">Mortgage statement</string>
+    <string name="experience_mortgage_statement_hint">Loan balance and payments.</string>
+    <string name="experience_home_insurance_policy">Home insurance policy</string>
+    <string name="experience_home_insurance_policy_hint">Coverage and policy number.</string>
+    <string name="experience_insurance_policy">Insurance policy</string>
+    <string name="experience_insurance_policy_hint">Insurance policy — car, home, travel, or health.</string>
+    <string name="experience_event_ticket">Event ticket</string>
+    <string name="experience_event_ticket_hint">Concert, museum, theater, or event entry.</string>
+    <string name="experience_health_insurance_card">Health insurance card</string>
+    <string name="experience_health_insurance_card_hint">Health insurance card — member ID and policy.</string>
+    <string name="experience_appliance_registration">Appliance registration</string>
+    <string name="experience_appliance_registration_hint">Product registration details.</string>
+    <string name="experience_utility_setup">Utility setup</string>
+    <string name="experience_utility_setup_hint">New utility account or transfer.</string>
+    <string name="experience_car_loan">Car loan</string>
+    <string name="experience_car_loan_hint">Loan terms and payments.</string>
+    <string name="experience_toll_receipt">Toll receipt</string>
+    <string name="experience_toll_receipt_hint">Road or bridge toll.</string>
+    <string name="experience_parking_permit">Parking permit</string>
+    <string name="experience_parking_permit_hint">Permit number and validity.</string>
+    <string name="experience_car_inspection">Car inspection</string>
+    <string name="experience_car_inspection_hint">Inspection date and result.</string>
+    <string name="experience_order_confirmation">Order confirmation</string>
+    <string name="experience_order_confirmation_hint">Order number and items.</string>
+    <string name="experience_shipping_tracking">Shipping tracking</string>
+    <string name="experience_shipping_tracking_hint">Tracking number and status.</string>
+    <string name="experience_loyalty_card">Loyalty card</string>
+    <string name="experience_loyalty_card_hint">Membership or points card.</string>
+    <string name="experience_gift_receipt">Gift receipt</string>
+    <string name="experience_gift_receipt_hint">Receipt without price.</string>
+    <string name="experience_wishlist">Wishlist</string>
+    <string name="experience_wishlist_hint">Thing you want to buy.</string>
+    <string name="experience_podcast">Podcast</string>
+    <string name="experience_podcast_hint">Episode or show to listen to.</string>
+    <string name="experience_audiobook">Audiobook</string>
+    <string name="experience_audiobook_hint">Audiobook to listen to.</string>
+    <string name="experience_ebook">Ebook</string>
+    <string name="experience_ebook_hint">Ebook to read.</string>
+    <string name="experience_online_course">Online course</string>
+    <string name="experience_online_course_hint">Course to take.</string>
+    <string name="experience_concert_ticket">Concert ticket</string>
+    <string name="experience_concert_ticket_hint">Event date and seat.</string>
+    <string name="experience_museum_ticket">Museum ticket</string>
+    <string name="experience_museum_ticket_hint">Visit date and entry.</string>
+    <string name="experience_theater_ticket">Theater ticket</string>
+    <string name="experience_theater_ticket_hint">Show date and seat.</string>
+    <string name="experience_todo_list">To-do list</string>
+    <string name="experience_todo_list_hint">Tasks to complete.</string>
+    <string name="experience_habit_tracker">Habit tracker</string>
+    <string name="experience_habit_tracker_hint">Daily habit to track.</string>
+    <string name="experience_goal">Goal</string>
+    <string name="experience_goal_hint">Personal goal and progress.</string>
+    <string name="experience_project_plan">Project plan</string>
+    <string name="experience_project_plan_hint">Milestones and tasks.</string>
+    <string name="experience_journal">Journal</string>
+    <string name="experience_journal_hint">Personal journal entry.</string>
+    <string name="experience_gratitude_log">Gratitude log</string>
+    <string name="experience_gratitude_log_hint">Things you are grateful for.</string>
+    <string name="experience_phone_plan">Phone plan</string>
+    <string name="experience_phone_plan_hint">Carrier plan and renewal.</string>
+    <string name="experience_internet_plan">Internet plan</string>
+    <string name="experience_internet_plan_hint">ISP plan and renewal.</string>
+    <string name="experience_gym_membership">Gym membership</string>
+    <string name="experience_gym_membership_hint">Membership and renewal.</string>
+    <string name="experience_streaming_service">Streaming service</string>
+    <string name="experience_streaming_service_hint">Subscription and renewal.</string>
+    <string name="experience_cloud_storage">Cloud storage</string>
+    <string name="experience_cloud_storage_hint">Storage plan and renewal.</string>
+    <string name="experience_cleaning_service">Cleaning service</string>
+    <string name="experience_cleaning_service_hint">Service schedule and cost.</string>
+    <string name="experience_fake_invoice">Fake invoice</string>
+    <string name="experience_fake_invoice_hint">Invoice that looks fraudulent.</string>
+    <string name="experience_fake_check">Fake check</string>
+    <string name="experience_fake_check_hint">Check that looks fraudulent.</string>
+    <string name="experience_advance_fee_fraud">Advance-fee fraud</string>
+    <string name="experience_advance_fee_fraud_hint">Requests upfront payment.</string>
+    <string name="experience_lottery_scam">Lottery scam</string>
+    <string name="experience_lottery_scam_hint">Fake prize or winnings.</string>
+    <string name="experience_tech_support_scam">Tech support scam</string>
+    <string name="experience_tech_support_scam_hint">Fake support or virus alert.</string>
+    <string name="experience_romance_scam">Romance scam</string>
+    <string name="experience_romance_scam_hint">Online relationship scam.</string>
+    <string name="feature_capture_on_device_ai_hint">Get smarter titles and auto-filled details — download on-device AI</string>
+    <string name="local_ai_channel_name">Private AI organization</string>
+    <string name="local_ai_channel_description">Progress while on-device AI improves saved vault items</string>
+    <string name="local_ai_activating">Activating on-device AI…</string>
+    <string name="local_ai_processing">Improving your saved items…</string>
+    <string name="local_ai_preparing_vault">Preparing your vault for private AI</string>
+    <string name="local_ai_processing_progress">Processed %1$d of %2$d items</string>
+    <string name="local_ai_active">On-device AI is active</string>
+    <string name="local_ai_no_items_to_improve">Your vault is up to date. New captures will use the model automatically.</string>
+    <plurals name="local_ai_items_improved">
+        <item quantity="one">Improved %d saved item. New captures will use the model automatically.</item>
+        <item quantity="other">Improved %d saved items. New captures will use the model automatically.</item>
+    </plurals>
+    <string name="local_ai_activation_failed">On-device AI could not start</string>
+    <string name="local_ai_activation_failed_body">The model was downloaded but could not be loaded. Open Settings to retry.</string>
+    <string name="feature_capture_semantic_context">Useful context</string>
+    <string name="feature_capture_subtype">Type</string>
+    <string name="feature_capture_topics">Topics</string>
+    <string name="feature_capture_entities">People and things</string>
+    <string name="feature_capture_tags">Tags</string>
+    <string name="feature_capture_suggestions">Suggestions</string>
+    <string name="feature_capture_view_original">View original</string>
+    <string name="feature_capture_reset_zoom">Reset zoom</string>
+    <string name="feature_capture_close_preview">Close preview</string>
+    <string name="feature_capture_zoom_hint">Pinch to zoom and drag to inspect the document.</string>
+    <string name="feature_capture_verify_details">Check the extracted details against the original before saving.</string>
+    <string name="feature_capture_ai_highlights">AI highlights</string>
+    <string name="feature_capture_summary_notes">Summary &amp; notes</string>
+    <string name="feature_capture_discard_confirm_title">Discard capture?</string>
+    <string name="feature_capture_discard_confirm_body">Are you sure you want to discard this item? All extracted details will be lost.</string>
+    <string name="feature_capture_discard_confirm">Discard</string>
+    <string name="feature_capture_cancel">Cancel</string>
+    <string name="feature_capture_saved_success">Saved successfully!</string>
+    <string name="feature_capture_reminder_prompt_title">Need a reminder for this trip?</string>
+    <string name="feature_capture_reminder_prompt_body">We\'ve scheduled an automatic alert before the date.</string>
+    <string name="feature_capture_got_it">Got it</string>
+    <string name="feature_capture_suggested_followups">Suggested follow-ups:</string>
+    <string name="feature_capture_done">Done</string>
+    <string name="feature_capture_camera_perm_req_title">Camera Permission Required</string>
+    <string name="feature_capture_camera_perm_req_body">Please grant camera permission in settings to take photos, or pick an image from your gallery.</string>
+    <string name="feature_capture_open_settings">Open Settings</string>
+    <string name="feature_capture_pick_from_gallery">Pick from Gallery</string>
+</resources>

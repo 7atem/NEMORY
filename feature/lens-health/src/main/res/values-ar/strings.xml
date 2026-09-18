@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_stat_title">عدسة الصحة</string>
+    <string name="health_stat_total">إجمالي السجلات: %1$d</string>
+    <string name="health_stat_alerts">سجلات مع تنبيهات: %1$d</string>
+    <string name="health_stat_expiring_soon">تنتهي خلال 7 أيام: %1$d</string>
+    <string name="health_stat_prescriptions">وصفات طبية: %1$d</string>
+    <string name="health_stat_documents">مستندات: %1$d</string>
+    <string name="health_stat_next_dose">الجرعة القادمة: %1$s</string>
+    <plurals name="health_stat_lab_trends">
+        <item quantity="zero">اتجاهات المختبر: لا توجد نتائج متتبعة</item>
+        <item quantity="one">اتجاهات المختبر: نتيجة واحدة متتبعة</item>
+        <item quantity="two">اتجاهات المختبر: نتيجتان متتبعتان</item>
+        <item quantity="few">اتجاهات المختبر: %1$d نتائج متتبعة</item>
+        <item quantity="many">اتجاهات المختبر: %1$d نتيجة متتبعة</item>
+        <item quantity="other">اتجاهات المختبر: %1$d نتيجة متتبعة</item>
+    </plurals>
+    <string name="health_quick_add_title">إضافة سريعة</string>
+    <string name="health_quick_add_prescription">وصفة طبية</string>
+    <string name="health_quick_add_test">نتيجة فحص</string>
+    <string name="health_quick_add_insurance">تأمين</string>
+    <string name="health_quick_add_appointment">موعد</string>
+    <string name="health_items_title">السجلات الصحية</string>
+    <string name="health_item_expiry">تنتهي في: %1$s</string>
+    <string name="health_lens_view_subtitle">عرض لخزنتك — يمكن أن تظهر العناصر في أكثر من عدسة.</string>
+    <string name="health_empty_message">لا توجد سجلات صحية بعد</string>
+    <string name="health_section_recent">الأخيرة</string>
+    <string name="health_section_older">الأقدم</string>
+    <string name="health_vitals_trend">مؤشرات العلامات الحيوية</string>
+    <string name="health_vitals_insufficient">لا توجد بيانات كافية لمؤشرات العلامات الحيوية</string>
+</resources>

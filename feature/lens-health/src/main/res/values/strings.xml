@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="health_stat_title">Health Lens</string>
+    <string name="health_stat_total">Total records: %1$d</string>
+    <string name="health_stat_alerts">Records with alerts: %1$d</string>
+    <string name="health_stat_expiring_soon">Expiring in 7 days: %1$d</string>
+    <string name="health_stat_prescriptions">Prescriptions: %1$d</string>
+    <string name="health_stat_documents">Documents: %1$d</string>
+    <string name="health_stat_next_dose">Next Dose: %1$s</string>
+    <plurals name="health_stat_lab_trends">
+        <item quantity="one">Lab Trends: %1$d tracked result</item>
+        <item quantity="other">Lab Trends: %1$d tracked results</item>
+    </plurals>
+    <string name="health_quick_add_title">Quick add</string>
+    <string name="health_quick_add_prescription">Prescription</string>
+    <string name="health_quick_add_test">Test result</string>
+    <string name="health_quick_add_insurance">Insurance</string>
+    <string name="health_quick_add_appointment">Appointment</string>
+    <string name="health_items_title">Health records</string>
+    <string name="health_item_expiry">Expires: %1$s</string>
+    <string name="health_lens_view_subtitle">View over your vault — items can appear in multiple lenses.</string>
+    <string name="health_empty_message">No health records yet</string>
+    <string name="health_section_recent">Recent</string>
+    <string name="health_section_older">Older</string>
+    <string name="health_vitals_trend">Vitals Trend</string>
+    <string name="health_vitals_insufficient">Not enough data for Vitals Trend</string>
+</resources>

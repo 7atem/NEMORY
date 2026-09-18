@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="travel_stat_title">Travel &amp; Vehicles Lens</string>
+    <string name="travel_stat_total">Travel &amp; Vehicles items: %1$d</string>
+    <string name="travel_stat_places">Places recorded: %1$d</string>
+    <string name="travel_stat_upcoming">Upcoming trips: %1$d</string>
+    <string name="travel_stat_flights">Flights: %1$d</string>
+    <string name="travel_stat_hotels">Hotels: %1$d</string>
+    <string name="travel_quick_add_title">Quick add</string>
+    <string name="travel_quick_add_ticket">Ticket</string>
+    <string name="travel_quick_add_passport">Passport</string>
+    <string name="travel_quick_add_boarding">Boarding pass</string>
+    <string name="travel_quick_add_hotel">Hotel</string>
+    <string name="travel_items_title">Travel &amp; Vehicles items</string>
+    <string name="travel_item_location">Location: %1$s</string>
+    <string name="travel_lens_view_subtitle">View over your vault — items can appear in multiple lenses.</string>
+    <string name="travel_empty_message">No travel items yet</string>
+    <string name="travel_section_recent">Recent</string>
+    <string name="travel_section_older">Older</string>
+    <string name="travel_stat_hero_upcoming">Upcoming</string>
+    <string name="travel_stat_hero_flights">Flights</string>
+    <string name="travel_stat_hero_hotels">Hotels</string>
+    <string name="travel_splitter_title">Group Bill Splitter</string>
+    <string name="travel_splitter_total_cost">Total Trip Cost:</string>
+    <string name="travel_splitter_travelers">Travelers:</string>
+    <string name="travel_splitter_per_person">Per Person</string>
+    <string name="travel_splitter_decrease">Decrease</string>
+    <string name="travel_splitter_increase">Increase</string>
+</resources>

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="media_lens_title">Watchlist &amp; Reading List</string>
+    <string name="media_lens_subtitle">Movies, TV series and books you saved for later — a view over your vault; items can appear in multiple lenses.</string>
+    <string name="media_stat_saved">Saved</string>
+    <string name="media_stat_waiting">For later</string>
+    <string name="media_stat_books">Books</string>
+    <plurals name="media_movie_count">
+        <item quantity="one">%d movie</item>
+        <item quantity="other">%d movies</item>
+    </plurals>
+    <plurals name="media_series_count">
+        <item quantity="one">%d series</item>
+        <item quantity="other">%d series</item>
+    </plurals>
+    <plurals name="media_book_count">
+        <item quantity="one">%d book</item>
+        <item quantity="other">%d books</item>
+    </plurals>
+    <string name="media_empty_title">Save something for later</string>
+    <string name="media_empty_body">Snap a poster or book cover, share a review, or send Nemory a copied link. It will appear here.</string>
+    <string name="media_type_movie">Movie</string>
+    <string name="media_type_series">TV series</string>
+    <string name="media_type_book">Book</string>
+    <string name="media_type_other">Media</string>
+    <string name="media_status_watch">Want to watch</string>
+    <string name="media_status_read">Want to read</string>
+    <string name="media_status_watching">Watching</string>
+    <string name="media_status_reading">Reading</string>
+    <string name="media_status_watched">Watched</string>
+    <string name="media_status_finished">Finished</string>
+    <string name="media_status_paused">Paused</string>
+    <string name="media_author">By %1$s</string>
+    <string name="media_saved_from">Saved from %1$s</string>
+    <string name="media_reminder_set">Reminder: %1$s</string>
+    <string name="media_open_details">Details</string>
+    <string name="media_open_source">Open source</string>
+    <string name="media_mark_watched">Mark watched</string>
+    <string name="media_mark_finished">Mark finished</string>
+    <string name="media_remind_week">Remind in 7 days</string>
+</resources>

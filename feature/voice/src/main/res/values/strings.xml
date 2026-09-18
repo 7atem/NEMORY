@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_title">Private voice capture</string>
+    <string name="voice_checking">Checking for private speech recognition…</string>
+    <string name="voice_permission">Microphone permission is needed only while you speak.</string>
+    <string name="voice_listening">Listening on this device…</string>
+    <string name="voice_processing">Turning your speech into text on this device…</string>
+    <string name="voice_unavailable">This phone does not currently provide on-device speech recognition. Nemory will not substitute a network recognizer.</string>
+    <string name="voice_privacy_receipt">Audio stays with the Android on-device recognition service. You will review the resulting text before saving.</string>
+    <string name="voice_type_instead">Type instead</string>
+    <string name="voice_try_again">Try again</string>
+    <string name="voice_cancel">Cancel</string>
+    <string name="voice_error_no_speech">I didn’t catch that. Try again or type the item instead.</string>
+    <string name="voice_error_permission">Microphone permission was not granted. You can type the item instead.</string>
+    <string name="voice_error_language">The on-device model for this language is not installed yet. You can ask Android to prepare it.</string>
+    <string name="voice_error_language_not_supported">This device does not support private speech recognition for the selected language.</string>
+    <string name="voice_error_busy">The private speech recognizer is busy. Please try again.</string>
+    <string name="voice_error_failed">Private voice capture could not start. No network recognizer was used.</string>
+    <string name="voice_prepare_language">Prepare language</string>
+    <string name="voice_prepare_try_again">Retry preparation</string>
+    <string name="voice_model_downloading">Android is preparing the on-device language model. Voice capture will retry when it is ready.</string>
+    <string name="voice_model_download_progress">%1$d%% downloaded</string>
+    <string name="voice_model_scheduled">Android scheduled this language model for preparation. You can retry voice capture later or type now.</string>
+    <string name="voice_model_download_failed">Android could not prepare this language model. Check your connection or device settings, then retry.</string>
+</resources>

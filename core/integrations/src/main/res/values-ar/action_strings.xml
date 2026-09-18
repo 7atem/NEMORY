@@ -1,0 +1,14 @@
+<resources>
+    <string name="action_no_total">لم يُعثر على مبلغ إجمالي</string>
+    <string name="action_total">المبلغ الإجمالي</string>
+    <string name="action_copied">تم النسخ إلى الحافظة</string>
+    <string name="action_event">حدث من نيموري</string>
+    <string name="action_calendar_error">تعذّر فتح التقويم</string>
+    <string name="action_reminder_saved">تمت جدولة التذكير</string>
+    <string name="action_reminder_error">تعذّرت جدولة التذكير</string>
+    <string name="action_contacts_error">تعذّر فتح محرر جهات الاتصال</string>
+    <string name="action_url_missing">لم يُعثر على رابط صالح</string>
+    <string name="action_link_error">تعذّر فتح الرابط</string>
+    <string name="action_search_error">تعذّر فتح البحث</string>
+    <string name="action_unavailable">هذا الإجراء غير متاح</string>
+</resources>

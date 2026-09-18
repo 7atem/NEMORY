@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="meta_license_plate">رقم لوحة السيارة</string>
+    <string name="meta_odometer">عداد المسافة</string>
+    <string name="meta_deadline">الموعد النهائي</string>
+    <string name="meta_loyalty_card">بطاقة الولاء</string>
+    <string name="meta_policy_number">رقم وثيقة التأمين</string>
+    <string name="meta_pickup_code">رمز الاستلام</string>
+    <string name="meta_return_by">آخر موعد للإرجاع</string>
+    <string name="meta_provider_url">رابط مقدم الخدمة</string>
+    <string name="meta_release_year">سنة الإصدار</string>
+</resources>

@@ -1,0 +1,6 @@
+<resources>
+    <string name="rag_checking_evidence">جارٍ التحقق من الأدلة المحفوظة…</string>
+    <string name="rag_searching">جارٍ البحث في خزنتك…</string>
+    <string name="rag_found">تم العثور على %1$d عناصر ذات صلة. جارٍ التفكير…</string>
+    <string name="rag_thinking">جارٍ التفكير…</string>
+</resources>

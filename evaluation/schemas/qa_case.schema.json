@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QA Case",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "question": { "type": "string" },
+    "relevant_documents": { "type": "array", "items": { "type": "string" } },
+    "required_facts": { "type": "array", "items": { "type": "string" } },
+    "acceptable_answers": { "type": "array", "items": { "type": "string" } },
+    "must_abstain": { "type": "boolean" },
+    "citation_requirements": {
+      "type": "object",
+      "properties": {
+        "require_citations": { "type": "boolean" },
+        "allow_unsupported": { "type": "boolean" }
+      }
+    }
+  },
+  "required": ["id", "question", "relevant_documents", "required_facts"]
+}

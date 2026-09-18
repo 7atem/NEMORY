@@ -1,0 +1,43 @@
+*.iml
+.gradle
+.kotlin
+/local.properties
+/.idea/
+.DS_Store
+build/
+captures
+.externalNativeBuild
+.cxx
+local.properties
+*.jks
+*.keystore
+keystore.properties
+# Signing certificates archive — never commit.
+certificates.zip
+# Build/agent log dumps
+out.txt
+# Downloaded benchmark datasets (regenerate via download_datasets.py / download_extended_dataset.py)
+/test_data/
+# On-device downloaded models must never be committed
+models/
+*.task
+# ObjectBox model files MUST be committed (they hold stable entity/property IDs).
+# but their backup artifacts must not.
+objectbox-models/*.bak
+# Room schemas are intentionally NOT ignored; they should be committed to version control.
+# /schemas/
+
+# Generated evaluation reports
+evaluation/reports/generated/
+
+# Local validation/toolchain artifacts (source, Room and ObjectBox schemas stay tracked).
+/.toolchain-tmp/
+/*.log
+/localization-gaps.json
+/remediation-artifacts/
+
+# Local credentials and generated release bundles are never source artifacts.
+/.tmp/
+.git-credentials
+/app/release/
+/iosApp/*.xcodeproj/

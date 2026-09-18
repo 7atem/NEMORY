@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nemory</string>
+    <string name="quick_capture_tile_label">مسح Nemory</string>
+    <string name="nav_today">اليوم</string>
+    <string name="nav_brain">دردشة الذكاء</string>
+    <string name="nav_vault">الخزنة</string>
+    <string name="nav_capture">التقاط</string>
+    <string name="shortcut_capture_long">إضافة إلى الخزنة</string>
+    <string name="shortcut_expiring">عناصر تقترب من الانتهاء</string>
+    <string name="crash_log_found">تم العثور على سجل الانهيار:</string>
+    <string name="crash_clear_restart">مسح وإعادة تشغيل</string>
+    <string name="crash_copy_log">نسخ السجل</string>
+    <string name="crash_copy_warning">تحذير: قد يحتوي على مفاتيح حساسة أو بيانات شخصية!</string>
+    <string name="crash_copied_toast">تم النسخ إلى الحافظة. احذر من البيانات الحساسة!</string>
+</resources>

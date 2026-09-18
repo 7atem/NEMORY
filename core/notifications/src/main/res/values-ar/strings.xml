@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="vault_reminder_channel">تذكيرات الخزنة</string>
+    <string name="vault_reminder_due">حان الموعد</string>
+    <string name="vault_reminder_snooze">تأجيل 15 دقيقة</string>
+    <string name="vault_reminder_complete">إكمال</string>
+    <string name="gemma_prompt_channel_name">تنزيل النموذج</string>
+    <string name="gemma_prompt_channel_description">اقتراح لمرة واحدة لتنزيل النموذج الاختياري على الجهاز</string>
+    <string name="gemma_prompt_title">فهم أذكى للمستندات متاح</string>
+    <string name="gemma_prompt_body">احصل على تنظيم خاص أفضل للقطات مع تنزيل نموذج على الجهاز بحجم ~1.6 غيغابايت لمرة واحدة. استخدم Wi-Fi؛ ويعمل دون اتصال بالكامل بعد ذلك.</string>
+    <string name="gemma_prompt_download">تنزيل</string>
+    <string name="alert_vaccine_title">حان موعد الجرعة المعززة</string>
+    <string name="alert_vaccine_body">حان وقت الجرعة المعززة %2$s لـ %1$s.</string>
+    <string name="alert_invoice_title">فاتورة تقترب من الاستحقاق</string>
+    <string name="alert_invoice_body">%1$s يقترب من تاريخ استحقاقه. اضغط للمراجعة.</string>
+    <string name="alert_vaccine_default_patient">حيوانك الأليف</string>
+    <string name="calendar_notification_channel">أحداث التقويم</string>
+    <string name="calendar_notification_channel_desc">تنبيهات للاجتماعات والأحداث القادمة في التقويم</string>
+    <string name="gmail_notification_channel">تحديثات Gmail</string>
+    <string name="gmail_notification_channel_desc">إشعارات للإيصالات والطلبات والرسائل المتزامنة من Gmail</string>
+    <string name="alert_action_snooze">تأجيل ٢٤ ساعة</string>
+    <string name="alert_action_dismiss">تجاهل</string>
+    <string name="alert_private_title">تذكير من نيموري</string>
+    <string name="alert_private_body">افتح نيموري لمراجعة تذكيراتك.</string>
+</resources>

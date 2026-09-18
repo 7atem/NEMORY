@@ -1,0 +1,6 @@
+<resources>
+    <string name="rag_checking_evidence">Checking saved evidence…</string>
+    <string name="rag_searching">Searching your vault…</string>
+    <string name="rag_found">Found %1$d relevant items. Thinking…</string>
+    <string name="rag_thinking">Thinking…</string>
+</resources>

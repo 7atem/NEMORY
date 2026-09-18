@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="money_stat_title">Finance &amp; Shopping Lens</string>
+    <string name="money_stat_receipts">Receipts: %1$d</string>
+    <string name="money_stat_valued">Items with value: %1$d</string>
+    <string name="money_stat_total">Total items: %1$d</string>
+    <string name="money_stat_total_spent">Total spent: %1$.2f</string>
+    <string name="money_stat_subscriptions">Active Subscriptions: %1$d</string>
+    <string name="money_stat_next_payment">Next Payment: %1$s</string>
+    <string name="money_quick_add_title">Quick add</string>
+    <string name="money_quick_add_receipt">Receipt</string>
+    <string name="money_quick_add_bill">Bill</string>
+    <string name="money_quick_add_warranty">Warranty</string>
+    <string name="money_items_title">Finance &amp; Shopping items</string>
+    <string name="money_item_price">Value: %1$.2f</string>
+    <string name="money_item_recurring">Recurring</string>
+    <string name="money_export_csv">Export CSV</string>
+    <string name="money_lens_view_subtitle">View over your vault — items can appear in multiple lenses.</string>
+    <string name="money_empty_message">No finance or shopping items yet</string>
+    <string name="money_section_recent">Recent</string>
+    <string name="money_section_older">Older</string>
+    <string name="money_iban_validator">IBAN Validator</string>
+    <string name="money_trial_expiring_title">Trial expiring soon!</string>
+    <string name="money_trial_expiring_message">Cancel %1$s in %2$d days to avoid charges</string>
+</resources>

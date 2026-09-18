@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="google_device_sync_body">اربط Gmail أو مهام Google لإتاحة سياق للقراءة فقط في العقل. تعمل المزامنة على هذا الجهاز. تتطلب الإجراءات المقترحة تأكيدك. يؤدي قطع الاتصال إلى إزالة الخدمتين لحساب Google المحدد.</string>
+    <string name="google_link_gmail">ربط Gmail</string>
+    <string name="google_link_tasks">ربط مهام Google</string>
+    <string name="google_sync_now">مزامنة حسابات Google المرتبطة</string>
+    <string name="google_reconnect">إعادة ربط %1$s</string>
+    <string name="google_disconnect_account">قطع اتصال حساب Google: %1$s</string>
+    <string name="google_setup_required">ربط Google غير مهيأ لهذا الإصدار من نيموري. يجب على المطور تسجيل التطبيق لدى Google. لا تزال خزنتك متاحة.</string>
+    <string name="google_consent_required">لم يتم منح الإذن. اضغط على ربط عندما تكون مستعدًا لاختيار حساب والسماح بالقراءة.</string>
+    <string name="google_connection_failed">تعذر الاتصال بـ Google. تحقق من اتصالك وحاول مجددًا. إذا استمرت المشكلة، فقد يحتاج ربط Google إلى إعداد من المطور.</string>
+</resources>
