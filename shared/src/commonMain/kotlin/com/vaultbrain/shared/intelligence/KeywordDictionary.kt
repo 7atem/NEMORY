@@ -100,7 +100,7 @@ object KeywordDictionary {
             subModules.map { sub ->
                 val sorted = sub.keywords.sortedByDescending { it.length }
                 val pattern = sorted.joinToString("|") { Regex.escape(it.lowercase()) }
-                sub.name to Regex("(?i)(?<=^|[^\\p{L}\\p{N}])(?:$pattern)(?=[^\\p{L}\\p{N}]|$)")
+                sub.name to Regex("(?i)(?<=^|[^a-zA-Z0-9_])(?:$pattern)(?=[^a-zA-Z0-9_]|$)")
             }
         }
     }
