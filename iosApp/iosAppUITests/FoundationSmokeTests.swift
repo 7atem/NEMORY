@@ -1,5 +1,6 @@
 import XCTest
 
+@MainActor
 final class FoundationSmokeTests: XCTestCase {
     func testSharedDetectionAndLanguageSwitch() {
         let app = XCUIApplication()
