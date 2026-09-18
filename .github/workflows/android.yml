@@ -2,6 +2,9 @@ name: Android validation
 on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -12,12 +15,15 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
       - name: Install native toolchain
         run: sdkmanager 'ndk;27.2.12479018' 'cmake;3.22.1' 'platforms;android-36' 'build-tools;36.0.0'
       - name: Validate bilingual resources
         run: python3 scripts/check_localization.py
       - name: Build and test including native runtime
-        run: bash gradlew :app:assembleDebug testDebugUnitTest :app:lintDebug :app:assembleRelease --console=plain
+        run: bash ./gradlew :app:assembleDebug testDebugUnitTest :app:lintDebug :app:assembleRelease --console=plain
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -32,6 +38,9 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
       - name: Enable KVM
         run: sudo chmod 666 /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
@@ -39,4 +48,4 @@ jobs:
           api-level: 35
           arch: x86_64
           disable-animations: true
-          script: bash gradlew :core:database:connectedDebugAndroidTest :sync:drive:connectedDebugAndroidTest --console=plain
+          script: bash ./gradlew :core:database:connectedDebugAndroidTest :sync:drive:connectedDebugAndroidTest --console=plain
