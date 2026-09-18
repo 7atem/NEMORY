@@ -6,6 +6,7 @@ import com.vaultbrain.core.ai.embeddings.TextEmbeddingModel
 import com.vaultbrain.core.ai.embeddings.VisionEmbeddingModel
 import com.vaultbrain.core.ai.llm.*
 import com.vaultbrain.core.common.model.*
+import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.core.common.model.external.ExternalRecordType
 import com.vaultbrain.core.common.model.external.ExternalSource
 import com.vaultbrain.core.database.entity.RelationshipEntity
