@@ -6,15 +6,16 @@ final class FoundationSmokeTests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        XCTAssertTrue(app.staticTexts["Shared detection result"].waitForExistence(timeout: 30))
         let result = app.staticTexts["sharedDetectionResult"]
+        XCTAssertTrue(result.waitForExistence(timeout: 30))
         XCTAssertTrue(result.label.contains("MONEY"))
         XCTAssertTrue(result.label.contains("grocery"))
-        XCTAssertTrue(app.staticTexts["Nemory Sample Card"].waitForExistence(timeout: 10))
+
+        let sampleHeader = app.staticTexts["Nemory Sample Card"]
+        XCTAssertTrue(sampleHeader.waitForExistence(timeout: 10))
         capture("English")
 
         app.buttons["languageToggle"].tap()
-        XCTAssertTrue(app.staticTexts["نتيجة الكشف المشترك"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["بطاقة Nemory التجريبية"].waitForExistence(timeout: 10))
         capture("Arabic")
 

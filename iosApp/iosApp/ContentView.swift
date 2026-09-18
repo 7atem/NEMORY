@@ -17,20 +17,23 @@ struct ContentView: View {
                 }
                 .accessibilityLabel(isArabic ? "Switch language to English" : "Switch language to Arabic")
                 .accessibilityHint("Toggles the sample between English and Arabic")
+                .accessibilityIdentifier("languageToggle")
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(isArabic ? "نتيجة الكشف المشترك" : "Shared detection result")
                         .font(.headline)
+                        .accessibilityIdentifier("sharedDetectionHeader")
                     Text(detectorResult)
                         .font(.body)
                         .accessibilityLabel("Detected lenses: \(detectorResult)")
+                        .accessibilityIdentifier("sharedDetectionResult")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
 
                 ComposeSampleView(isArabic: isArabic)
                     .id(isArabic)
-                    .frame(minHeight: 320, maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, minHeight: 400)
             }
             .padding(.vertical)
         }
