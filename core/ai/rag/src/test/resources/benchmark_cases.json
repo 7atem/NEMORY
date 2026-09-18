@@ -1,0 +1,842 @@
+[
+  {
+    "category": "Retrieval",
+    "query": "What was my last monthly rent?",
+    "expectedSubstrings": [
+      "monthly"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the monthly rent?",
+    "expectedSubstrings": [
+      "monthly"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the insurance?",
+    "expectedSubstrings": [
+      "insurance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Find the document about flight to Dubai.",
+    "expectedSubstrings": [
+      "flight"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "When did I purchase the insurance?",
+    "expectedSubstrings": [
+      "insurance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "When did I purchase the flight to Dubai?",
+    "expectedSubstrings": [
+      "flight"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "What was my last car service?",
+    "expectedSubstrings": [
+      "car"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the insurance?",
+    "expectedSubstrings": [
+      "insurance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "When did I purchase the flight to Dubai?",
+    "expectedSubstrings": [
+      "flight"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "What was my last tax return?",
+    "expectedSubstrings": [
+      "tax"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the flight to Dubai?",
+    "expectedSubstrings": [
+      "flight"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "What was my last electricity bill?",
+    "expectedSubstrings": [
+      "electricity"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "When did I purchase the monthly rent?",
+    "expectedSubstrings": [
+      "monthly"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the water bill?",
+    "expectedSubstrings": [
+      "water"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the monthly rent?",
+    "expectedSubstrings": [
+      "monthly"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Find the document about tax return.",
+    "expectedSubstrings": [
+      "tax"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the water bill?",
+    "expectedSubstrings": [
+      "water"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the vet visit?",
+    "expectedSubstrings": [
+      "vet"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the tax return?",
+    "expectedSubstrings": [
+      "tax"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Retrieval",
+    "query": "Where is the receipt for the flight to Dubai?",
+    "expectedSubstrings": [
+      "flight"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "Who is the provider for Vodafone internet?",
+    "expectedSubstrings": [
+      "Vodafone"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "What is the policy number for Netflix subscription?",
+    "expectedSubstrings": [
+      "Netflix"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "What is the exact expiry date of Netflix subscription?",
+    "expectedSubstrings": [
+      "Netflix"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "Who is the provider for Netflix subscription?",
+    "expectedSubstrings": [
+      "Netflix"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "How much did I pay for Allianz insurance?",
+    "expectedSubstrings": [
+      "Allianz"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "What is the policy number for Emirates flight?",
+    "expectedSubstrings": [
+      "Emirates"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "What is the exact expiry date of car registration?",
+    "expectedSubstrings": [
+      "car"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "Who is the provider for Allianz insurance?",
+    "expectedSubstrings": [
+      "Allianz"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "How much did I pay for Netflix subscription?",
+    "expectedSubstrings": [
+      "Netflix"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "How much did I pay for Allianz insurance?",
+    "expectedSubstrings": [
+      "Allianz"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "What is the exact expiry date of Netflix subscription?",
+    "expectedSubstrings": [
+      "Netflix"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "What is the exact expiry date of gym membership?",
+    "expectedSubstrings": [
+      "gym"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "What is the exact expiry date of Allianz insurance?",
+    "expectedSubstrings": [
+      "Allianz"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "What is the policy number for Amazon Prime?",
+    "expectedSubstrings": [
+      "Amazon"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "Who is the provider for Vodafone internet?",
+    "expectedSubstrings": [
+      "Vodafone"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "What is the exact expiry date of Vodafone internet?",
+    "expectedSubstrings": [
+      "Vodafone"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "Who is the provider for Amazon Prime?",
+    "expectedSubstrings": [
+      "Amazon"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "Who is the provider for gym membership?",
+    "expectedSubstrings": [
+      "gym"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "Who is the provider for Amazon Prime?",
+    "expectedSubstrings": [
+      "Amazon"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Factual",
+    "query": "Who is the provider for gym membership?",
+    "expectedSubstrings": [
+      "gym"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Tools",
+    "query": "Remind me one month before my driving license expires.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Remind me one month before my health checkup expires.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all insurance documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Set an alert for the driving license renewal.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all passport documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Set an alert for the health checkup renewal.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all passport documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all insurance documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Remind me one month before my visa expires.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Set an alert for the health checkup renewal.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Remind me one month before my passport expires.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all tax deadline documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all visa documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Set an alert for the visa renewal.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Remind me one month before my visa expires.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all driving license documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all passport documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Remind me one month before my visa expires.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "propose_reminder"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all passport documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Tools",
+    "query": "Create a collection for all visa documents.",
+    "expectedSubstrings": [],
+    "expectedProposals": [
+      "create_collection"
+    ]
+  },
+  {
+    "category": "Cross-document",
+    "query": "What documents relate to my freelance work?",
+    "expectedSubstrings": [
+      "freelance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "How many times did I renew freelance work in 2026?",
+    "expectedSubstrings": [
+      "freelance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for freelance work.",
+    "expectedSubstrings": [
+      "freelance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for Duster.",
+    "expectedSubstrings": [
+      "Duster"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for freelance work.",
+    "expectedSubstrings": [
+      "freelance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "What documents relate to my pet dog?",
+    "expectedSubstrings": [
+      "pet"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "What documents relate to my health insurance?",
+    "expectedSubstrings": [
+      "health"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for freelance work.",
+    "expectedSubstrings": [
+      "freelance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for pet dog.",
+    "expectedSubstrings": [
+      "pet"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "How many times did I renew apartment in 2026?",
+    "expectedSubstrings": [
+      "apartment"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for Duster.",
+    "expectedSubstrings": [
+      "Duster"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for vacation.",
+    "expectedSubstrings": [
+      "vacation"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "How many times did I renew freelance work in 2026?",
+    "expectedSubstrings": [
+      "freelance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "What documents relate to my Duster?",
+    "expectedSubstrings": [
+      "Duster"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for vacation.",
+    "expectedSubstrings": [
+      "vacation"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for freelance work.",
+    "expectedSubstrings": [
+      "freelance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "Summarize all expenses for vacation.",
+    "expectedSubstrings": [
+      "vacation"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "What documents relate to my vacation?",
+    "expectedSubstrings": [
+      "vacation"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "What documents relate to my freelance work?",
+    "expectedSubstrings": [
+      "freelance"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Cross-document",
+    "query": "What documents relate to my health insurance?",
+    "expectedSubstrings": [
+      "health"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "When does my Mars plot deed expire?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "What is my Rolex warranty?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "When does my private jet lease expire?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "Who do I owe money for Bugatti insurance?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "Who do I owe money for Rolex warranty?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "What is my private jet lease?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "What is my private jet lease?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "What is my Bugatti insurance?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "Who do I owe money for Bugatti insurance?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "When does my Bugatti insurance expire?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "Who do I owe money for Bugatti insurance?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "When does my Rolex warranty expire?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "What is my private jet lease?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "What is my Rolex warranty?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "When does my Mars plot deed expire?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "What is my Bugatti insurance?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "When does my Mars plot deed expire?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "What is my Mars plot deed?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "Who do I owe money for private jet lease?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  },
+  {
+    "category": "Hallucination",
+    "query": "Who do I owe money for Rolex warranty?",
+    "expectedSubstrings": [
+      "I couldn't find",
+      "not found",
+      "no record"
+    ],
+    "expectedProposals": []
+  }
+]

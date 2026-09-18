@@ -1,0 +1,8 @@
+<resources>
+    <string name="privacy_overview_title">Privacy and storage</string>
+    <string name="privacy_back">Back</string>
+    <string name="privacy_local_ai">Text recognition, extraction, and optional Qwen or Gemini Nano processing run on this device. Cloud AI is disabled in this build.</string>
+    <string name="privacy_storage">Saved records use an encrypted database. Media and search vectors use app-private storage protected by Android; they are outside that database encryption. Widgets show shortcuts only, and reminder previews hide document details.</string>
+    <string name="privacy_network">Model downloads, links you open, sharing, and exports can use the network or another app. This screen describes the configured behavior; it does not measure network traffic.</string>
+    <string name="privacy_calendar">Calendar access is optional and read-only. Selected events are cached locally; disconnecting clears the cached records.</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="brain_agent_proposal">Suggested action — review before confirming</string>
+    <string name="brain_agent_reminder">Create a Nemory reminder: %1$s\nDue: %2$s\nDate-only reminders use 09:00 local time. This does not create a Google Task.</string>
+    <string name="brain_agent_calendar">Open Calendar editor: %1$s\nFrom %2$s to %3$s\n%4$s\nYou will review and save the event in Calendar.</string>
+    <string name="brain_agent_confirm">Confirm</string>
+    <string name="brain_agent_dismiss">Dismiss</string>
+</resources>

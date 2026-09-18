@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="brain_agent_proposal">إجراء مقترح — راجعه قبل التأكيد</string>
+    <string name="brain_agent_reminder">إنشاء تذكير في نيموري: %1$s\nالموعد: %2$s\nالتذكيرات ذات التاريخ فقط تكون الساعة 09:00 بالتوقيت المحلي. لا ينشئ هذا مهمة في مهام Google.</string>
+    <string name="brain_agent_calendar">فتح محرر التقويم: %1$s\nمن %2$s إلى %3$s\n%4$s\nستراجع الحدث وتحفظه في التقويم.</string>
+    <string name="brain_agent_confirm">تأكيد</string>
+    <string name="brain_agent_dismiss">تجاهل</string>
+</resources>
