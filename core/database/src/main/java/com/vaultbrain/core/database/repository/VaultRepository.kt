@@ -527,7 +527,21 @@ open class VaultRepository @Inject constructor(
         }
 
         val sql = "SELECT id FROM vault_items WHERE ${conditions.joinToString(" AND ")}"
-        return vaultItemDao.filterByMetadata(SimpleSQLiteQuery(sql, bindArgs.toTypedArray()))
+        return vaultItemDao.filterByMetadata(androidx.room.RoomRawQuery(sql) { stmt ->
+            bindArgs.forEachIndexed { index, arg ->
+                val bindIndex = index + 1
+                when (arg) {
+                    is String -> stmt.bindText(bindIndex, arg)
+                    is Long -> stmt.bindLong(bindIndex, arg)
+                    is Int -> stmt.bindLong(bindIndex, arg.toLong())
+                    is Boolean -> stmt.bindLong(bindIndex, if (arg) 1L else 0L)
+                    is Float -> stmt.bindDouble(bindIndex, arg.toDouble())
+                    is Double -> stmt.bindDouble(bindIndex, arg)
+                    is ByteArray -> stmt.bindBlob(bindIndex, arg)
+                    else -> stmt.bindNull(bindIndex)
+                }
+            }
+        })
     }
 
     suspend fun getExpiringSoon(now: Long, limit: Int): List<VaultItem> =

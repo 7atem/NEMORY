@@ -26,7 +26,7 @@ import com.vaultbrain.shared.database.entity.PersonalCollectionSuggestionEntity
 import com.vaultbrain.shared.database.entity.VaultItemEntity
 import com.vaultbrain.shared.database.entity.VaultItemFts
 import com.vaultbrain.shared.database.entity.VaultReminderEntity
-import com.vaultbrain.core.database.util.RoomTypeConverters
+import com.vaultbrain.shared.database.util.RoomTypeConverters
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 /**

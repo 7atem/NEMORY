@@ -43,6 +43,7 @@ ksp {
 
 dependencies {
     implementation(project(":core:common"))
+    api(project(":shared"))
     implementation(project(":core:security"))
 
     implementation(libs.androidx.core.ktx)
