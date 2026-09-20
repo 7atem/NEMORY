@@ -31,7 +31,7 @@ import com.vaultbrain.shared.database.dao.*
     exportSchema = false // Handled by Android
 )
 @androidx.room.TypeConverters(com.vaultbrain.shared.database.util.RoomTypeConverters::class)
-abstract class SharedVaultDatabase : RoomDatabase() {
+internal abstract class SharedVaultDatabase : RoomDatabase() {
     abstract fun knowledgeGraphDao(): KnowledgeGraphDao
     abstract fun derivedFactDao(): DerivedFactDao
     abstract fun vaultItemDao(): VaultItemDao
