@@ -35,7 +35,6 @@ kotlin {
             baseName = "shared"
             isStatic = false
             binaryOption("bundleId", "com.vaultbrain.shared")
-            export(libs.room.runtime)
         }
     }
 
