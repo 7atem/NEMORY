@@ -1,0 +1,23 @@
+workflows:
+  ios-build:
+    name: Build iOS IPA
+    instance_type: mac_mini_m2
+    environment:
+      java: 21
+      vars:
+        XCODE_WORKSPACE: "iosApp/iosApp.xcodeproj"
+        XCODE_SCHEME: "iosApp"
+    scripts:
+      - name: Generate Xcode Project
+        script: |
+          brew install xcodegen
+          cd iosApp && xcodegen generate
+      - name: Build IPA (Unsigned)
+        script: |
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -sdk iphoneos -configuration Release -derivedDataPath iosApp/build/DerivedDataRelease CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO build
+          mkdir -p iosApp/build/Payload
+          cp -R iosApp/build/DerivedDataRelease/Build/Products/Release-iphoneos/iosApp.app iosApp/build/Payload/
+          cd iosApp/build
+          zip -r Nemory-iOS.ipa Payload
+    artifacts:
+      - iosApp/build/Nemory-iOS.ipa
