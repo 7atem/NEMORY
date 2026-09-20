@@ -35,6 +35,7 @@ kotlin {
             baseName = "shared"
             isStatic = false
             binaryOption("bundleId", "com.vaultbrain.shared")
+            linkerOpts("-lsqlite3")
         }
     }
 

@@ -29,6 +29,8 @@ targets:
         FRAMEWORK_SEARCH_PATHS:
           - $(inherited)
           - $(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)
+    dependencies:
+      - sdk: libsqlite3.tbd
     preBuildScripts:
       - name: Build Shared Kotlin Framework
         basedOnDependencyAnalysis: false
