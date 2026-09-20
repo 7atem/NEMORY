@@ -35,6 +35,7 @@ kotlin {
             baseName = "shared"
             isStatic = false
             binaryOption("bundleId", "com.vaultbrain.shared")
+            export(libs.room.runtime)
         }
     }
 
@@ -44,7 +45,7 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
-            implementation(libs.room.runtime)
+            api(libs.room.runtime)
             implementation(libs.kotlinx.serialization.json)
         }
 
