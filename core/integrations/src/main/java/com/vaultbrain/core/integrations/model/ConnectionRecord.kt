@@ -1,12 +1,12 @@
 package com.vaultbrain.core.integrations.model
 
-import com.vaultbrain.core.common.model.external.ConnectionState
-import com.vaultbrain.core.common.model.external.ConnectorCapability
+import com.vaultbrain.shared.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectorCapability
 
 /**
  * User-readable runtime state for a connector/account pair.
  *
- * Mirrors [com.vaultbrain.core.database.entity.ExternalConnectionEntity].
+ * Mirrors [com.vaultbrain.shared.database.entity.ExternalConnectionEntity].
  */
 data class ConnectionRecord(
     val connectorId: String,

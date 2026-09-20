@@ -1,8 +1,8 @@
 package com.vaultbrain.feature.vault.review
 
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.EnrichmentState
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.EnrichmentState
+import com.vaultbrain.shared.model.VaultItem
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

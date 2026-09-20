@@ -1,8 +1,8 @@
 package com.vaultbrain.core.ai.rag
 
 import com.vaultbrain.core.ai.llm.LlmClient
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 import io.mockk.mockk
 import io.mockk.every
 import io.mockk.coEvery

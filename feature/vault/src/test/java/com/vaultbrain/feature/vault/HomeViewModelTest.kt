@@ -4,8 +4,8 @@ import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.ai.llm.gemma.GemmaDownloadEligibility
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
 import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
-import com.vaultbrain.core.common.model.PersonalCollection
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.PersonalCollection
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.notifications.GemmaBannerStore
 import com.vaultbrain.core.notifications.VaultReminderManager

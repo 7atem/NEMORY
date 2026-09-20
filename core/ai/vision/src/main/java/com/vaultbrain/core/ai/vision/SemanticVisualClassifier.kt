@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.vision
 
 import android.graphics.Bitmap
-import com.vaultbrain.core.common.model.ScoredLabel
+import com.vaultbrain.shared.model.ScoredLabel
 
 /**
  * Boundary for a genuine zero-shot/semantic image model (for example MobileCLIP).

@@ -4,7 +4,7 @@ import android.content.Context
 import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.ai.embeddings.TextEmbeddingModel
 import com.vaultbrain.core.ai.embeddings.VisionEmbeddingModel
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.vectorstore.VectorStore
 import com.vaultbrain.core.vectorstore.entity.VaultEmbedding
 import com.vaultbrain.feature.capture.collections.CollectionSuggestionMatcher

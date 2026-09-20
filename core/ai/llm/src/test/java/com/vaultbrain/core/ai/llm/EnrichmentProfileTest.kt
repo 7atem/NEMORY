@@ -1,8 +1,8 @@
 package com.vaultbrain.core.ai.llm
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.ScoredLabel
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.ScoredLabel
 import org.junit.Test
 
 class EnrichmentProfileTest {

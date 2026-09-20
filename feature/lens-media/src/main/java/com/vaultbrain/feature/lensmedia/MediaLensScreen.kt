@@ -27,8 +27,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.VaultItem
 import androidx.core.net.toUri
 import java.text.SimpleDateFormat
 import java.util.Date

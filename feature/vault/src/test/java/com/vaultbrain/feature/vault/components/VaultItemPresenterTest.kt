@@ -1,7 +1,7 @@
 package com.vaultbrain.feature.vault.components
 
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.VaultItem
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import com.vaultbrain.core.common.ui.VaultItemPresenter

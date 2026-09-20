@@ -2,8 +2,8 @@ package com.vaultbrain.feature.vault
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vaultbrain.core.common.model.PersonalCollection
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.PersonalCollection
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job

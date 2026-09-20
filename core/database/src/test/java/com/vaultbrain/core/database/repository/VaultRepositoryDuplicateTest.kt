@@ -1,11 +1,11 @@
 package com.vaultbrain.core.database.repository
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.database.dao.AuditLogDao
-import com.vaultbrain.core.database.dao.NotificationQueueDao
-import com.vaultbrain.core.database.dao.PersonalCollectionDao
-import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
-import com.vaultbrain.core.database.dao.VaultItemDao
+import com.vaultbrain.shared.database.dao.AuditLogDao
+import com.vaultbrain.shared.database.dao.NotificationQueueDao
+import com.vaultbrain.shared.database.dao.PersonalCollectionDao
+import com.vaultbrain.shared.database.dao.PersonalCollectionSuggestionDao
+import com.vaultbrain.shared.database.dao.VaultItemDao
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

@@ -78,7 +78,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.feature.vault.components.EmptyState
 import com.vaultbrain.feature.vault.components.VaultItemCard
 import kotlinx.coroutines.launch

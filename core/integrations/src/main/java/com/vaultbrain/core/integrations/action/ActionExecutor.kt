@@ -9,9 +9,9 @@ import android.net.Uri
 import android.provider.CalendarContract
 import android.provider.ContactsContract
 import android.widget.Toast
-import com.vaultbrain.core.common.model.ProactiveAction
-import com.vaultbrain.core.common.model.VaultItem
-import com.vaultbrain.core.common.model.VaultReminder
+import com.vaultbrain.shared.model.ProactiveAction
+import com.vaultbrain.shared.model.VaultItem
+import com.vaultbrain.shared.model.VaultReminder
 import com.vaultbrain.core.notifications.VaultReminderManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers

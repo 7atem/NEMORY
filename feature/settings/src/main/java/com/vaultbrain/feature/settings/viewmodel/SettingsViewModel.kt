@@ -8,8 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
-import com.vaultbrain.core.database.dao.AuditLogDao
-import com.vaultbrain.core.database.entity.AuditLogEntity
+import com.vaultbrain.shared.database.dao.AuditLogDao
+import com.vaultbrain.shared.database.entity.AuditLogEntity
 import com.vaultbrain.core.security.AuthManager
 import com.vaultbrain.sync.drive.DriveBackupManager
 import com.vaultbrain.core.ai.llm.AiCapabilityManager
@@ -17,7 +17,7 @@ import com.vaultbrain.core.ai.llm.OnDeviceModelStatus as PrivateAiStatus
 import com.vaultbrain.core.ai.llm.CloudConsentStore
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
 import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus as GemmaModelStatus
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import com.vaultbrain.core.billing.AdEntitlement
 import com.vaultbrain.core.billing.BillingManager
 import com.vaultbrain.core.billing.FeatureGate

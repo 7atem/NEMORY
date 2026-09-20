@@ -1,9 +1,9 @@
 package com.vaultbrain.core.ai.heuristics.experience
 
 import com.vaultbrain.core.ai.heuristics.experience.parsers.*
-import com.vaultbrain.core.common.model.ExperienceId
+import com.vaultbrain.shared.model.ExperienceId
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import javax.inject.Inject
 import javax.inject.Singleton
 

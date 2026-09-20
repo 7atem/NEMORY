@@ -10,8 +10,8 @@ import com.vaultbrain.core.ai.llm.CloudConsentStore
 import com.vaultbrain.core.ai.llm.HybridAiCoordinator
 import com.vaultbrain.core.ai.llm.HybridAiRequest
 import com.vaultbrain.core.ai.llm.HybridAiResult
-import com.vaultbrain.core.common.model.VaultItem
-import com.vaultbrain.core.common.model.PersonalCollection
+import com.vaultbrain.shared.model.VaultItem
+import com.vaultbrain.shared.model.PersonalCollection
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.notifications.UnifiedAlertManager
 import com.vaultbrain.core.integrations.action.ActionExecutor
@@ -29,7 +29,7 @@ import javax.inject.Inject
  */
 data class ItemDetailUiState(
     val relatedItems: List<VaultItem> = emptyList(),
-    val sourceFacts: List<com.vaultbrain.core.database.entity.DerivedFactEntity> = emptyList(),
+    val sourceFacts: List<com.vaultbrain.shared.database.entity.DerivedFactEntity> = emptyList(),
     val item: VaultItem? = null,
     val possibleDuplicateTitle: String? = null,
     val isLoading: Boolean = true,
@@ -41,11 +41,11 @@ data class ItemDetailUiState(
     val translationMessage: TranslationMessage? = null,
     val activeCollections: List<PersonalCollection> = emptyList(),
     val itemCollections: List<PersonalCollection> = emptyList(),
-    val suggestedCollections: List<com.vaultbrain.core.common.model.PersonalCollectionSuggestion> = emptyList(),
+    val suggestedCollections: List<com.vaultbrain.shared.model.PersonalCollectionSuggestion> = emptyList(),
     val isGeneratingAiSummary: Boolean = false,
     val aiSummary: String? = null,
     val aiSummaryOrigin: AiResponseOrigin? = null,
-    val proactiveActions: List<com.vaultbrain.core.common.model.ProactiveAction> = emptyList()
+    val proactiveActions: List<com.vaultbrain.shared.model.ProactiveAction> = emptyList()
 )
 
 enum class TranslationMessage {
@@ -66,7 +66,7 @@ class ItemDetailViewModel @Inject constructor(
     private val knowledge: com.vaultbrain.core.database.repository.KnowledgeRepository? = null
 ) : ViewModel() {
 
-    fun executeAction(action: com.vaultbrain.core.common.model.ProactiveAction) {
+    fun executeAction(action: com.vaultbrain.shared.model.ProactiveAction) {
         val item = _uiState.value.item ?: return
         viewModelScope.launch {
             actionExecutor.execute(action, item)
@@ -105,7 +105,7 @@ class ItemDetailViewModel @Inject constructor(
                 item = item,
                 possibleDuplicateTitle = duplicateTitle,
                 isLoading = false,
-                proactiveActions = item?.let { com.vaultbrain.core.common.model.ProactiveActionResolver.resolve(it) } ?: emptyList()
+                proactiveActions = item?.let { com.vaultbrain.shared.model.ProactiveActionResolver.resolve(it) } ?: emptyList()
             )
             if (item != null) {
                 collectionsJob = viewModelScope.launch {
@@ -183,11 +183,11 @@ class ItemDetailViewModel @Inject constructor(
     fun createReminder(title: String, dueAt: Long, itemId: String) {
         viewModelScope.launch {
             vaultReminderManager.create(
-                com.vaultbrain.core.common.model.VaultReminder(
+                com.vaultbrain.shared.model.VaultReminder(
                     id = java.util.UUID.nameUUIDFromBytes("$itemId:$dueAt".toByteArray()).toString(),
                     title = title,
                     dueAt = dueAt,
-                    status = com.vaultbrain.core.common.model.VaultReminderStatus.SCHEDULED,
+                    status = com.vaultbrain.shared.model.VaultReminderStatus.SCHEDULED,
                     createdAt = System.currentTimeMillis(),
                     vaultItemId = itemId
                 )
@@ -213,7 +213,7 @@ class ItemDetailViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(
                 item = updated, 
                 possibleDuplicateTitle = null,
-                proactiveActions = com.vaultbrain.core.common.model.ProactiveActionResolver.resolve(updated)
+                proactiveActions = com.vaultbrain.shared.model.ProactiveActionResolver.resolve(updated)
             )
         }
     }

@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.vaultbrain.core.common.security.DecoySessionState
-import com.vaultbrain.core.database.dao.VaultReminderDao
+import com.vaultbrain.shared.database.dao.VaultReminderDao
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository
 import dagger.assisted.Assisted
@@ -35,7 +35,7 @@ class ProactiveInsightWorker @AssistedInject constructor(
         return try {
             withTimeout(90_000) {
                 intelligence.select(vault.getActive(), external.observeRecords().first(), reminders.observeActive().first().map {
-                    com.vaultbrain.core.common.model.VaultReminder(it.id, it.title, it.dueAt, it.status,
+                    com.vaultbrain.shared.model.VaultReminder(it.id, it.title, it.dueAt, it.status,
                         it.vaultItemId, it.externalConnectorId, it.externalAccountId, it.externalRecordId,
                         it.personalCollectionId, it.createdAt, it.updatedAt)
                 })

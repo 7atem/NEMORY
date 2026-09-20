@@ -17,7 +17,7 @@ import com.vaultbrain.core.ai.llm.HybridAiResult
 import com.vaultbrain.core.ai.llm.LlmClient
 import com.vaultbrain.core.ai.llm.TokenBudget
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.vectorstore.VectorStore
 import com.vaultbrain.core.vectorstore.entity.VaultEmbedding
@@ -402,7 +402,7 @@ class RagEngine @Inject constructor(
         sources: List<VaultItem>,
         conversationContext: String? = null,
         externalSources: List<ExternalRecord> = emptyList(),
-        relationships: Map<String, List<com.vaultbrain.core.database.entity.RelationshipEntity>> = emptyMap()
+        relationships: Map<String, List<com.vaultbrain.shared.database.entity.RelationshipEntity>> = emptyMap()
     ): String {
         val cloudHeader = """
             System Role: You are Nemory, a personal vault assistant.
@@ -423,7 +423,7 @@ class RagEngine @Inject constructor(
         sources: List<VaultItem>,
         conversationContext: String? = null,
         externalSources: List<ExternalRecord> = emptyList(),
-        relationships: Map<String, List<com.vaultbrain.core.database.entity.RelationshipEntity>> = emptyMap()
+        relationships: Map<String, List<com.vaultbrain.shared.database.entity.RelationshipEntity>> = emptyMap()
     ): String {
         val relationshipsSection = buildRelationshipsSection(relationships, sources)
         val hasRelationships = relationshipsSection.isNotEmpty()
@@ -510,14 +510,14 @@ class RagEngine @Inject constructor(
     }
 
     internal fun buildRelationshipsSection(
-        relationships: Map<String, List<com.vaultbrain.core.database.entity.RelationshipEntity>>,
+        relationships: Map<String, List<com.vaultbrain.shared.database.entity.RelationshipEntity>>,
         sources: List<VaultItem>
     ): String {
         val numbers = sources.mapIndexed { index, item -> item.id to index + 1 }.toMap()
         val lines = relationships.values.flatten().distinctBy { it.id }.mapNotNull { relation ->
             val source = numbers[relation.sourceItemId] ?: return@mapNotNull null
             val target = numbers[relation.targetItemId] ?: return@mapNotNull null
-            val type = com.vaultbrain.core.common.model.RelationshipType.entries
+            val type = com.vaultbrain.shared.model.RelationshipType.entries
                 .firstOrNull { it.name == relation.type } ?: return@mapNotNull null
             "[$source] ${type.name} [$target]"
         }.take(12)

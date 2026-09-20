@@ -1,7 +1,7 @@
 package com.vaultbrain.feature.briefing
 
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.VaultItem
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.ZoneId

@@ -3,10 +3,10 @@ package com.vaultbrain.feature.capture
 import com.vaultbrain.core.ai.llm.DocumentUnderstandingV2
 import com.vaultbrain.core.ai.llm.LlmClient
 import com.vaultbrain.core.ai.llm.ReasoningBudget
-import com.vaultbrain.core.common.model.EnrichmentState
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.EnrichmentState
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.common.security.DecoySessionState
-import com.vaultbrain.core.database.entity.DerivedFactEntity
+import com.vaultbrain.shared.database.entity.DerivedFactEntity
 import com.vaultbrain.core.database.repository.KnowledgeRepository
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject

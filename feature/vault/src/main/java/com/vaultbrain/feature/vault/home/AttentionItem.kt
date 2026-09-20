@@ -1,10 +1,10 @@
 package com.vaultbrain.feature.vault.home
 
-import com.vaultbrain.core.common.model.VaultReminder
+import com.vaultbrain.shared.model.VaultReminder
 import com.vaultbrain.core.integrations.model.ExternalRecord
-import com.vaultbrain.core.common.model.ProactiveAction
-import com.vaultbrain.core.common.model.ProactiveActionResolver
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.ProactiveAction
+import com.vaultbrain.shared.model.ProactiveActionResolver
+import com.vaultbrain.shared.model.VaultItem
 
 /** A document with an approaching expiry/alert date, surfaced in "Needs attention". */
 data class ExpiringDocument(

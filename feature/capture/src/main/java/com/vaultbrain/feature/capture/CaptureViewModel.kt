@@ -23,10 +23,10 @@ import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import com.vaultbrain.core.ai.vision.VisionAnalyzer
 import com.vaultbrain.core.common.UserExperienceFrequency
 import com.vaultbrain.core.ai.heuristics.experience.ExperienceParserRegistry
-import com.vaultbrain.core.common.model.ExperienceId
+import com.vaultbrain.shared.model.ExperienceId
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.notifications.UnifiedAlertManager
 import com.vaultbrain.feature.capture.ui.components.KeywordDisplayItem
@@ -290,7 +290,7 @@ class CaptureViewModel @Inject constructor(
                     // Show post-save suggestions
                     val followUps = PostSaveSuggestionEngine.suggestFollowUps(item.experienceId)
                     val expiry = item.expiryDate
-                    val needsReminderNudge = item.effectiveClassification in setOf(com.vaultbrain.core.common.model.Classification.TICKET, com.vaultbrain.core.common.model.Classification.HOTEL) 
+                    val needsReminderNudge = item.effectiveClassification in setOf(com.vaultbrain.shared.model.Classification.TICKET, com.vaultbrain.shared.model.Classification.HOTEL) 
                         && expiry != null && expiry > System.currentTimeMillis()
 
                     if (followUps.isNotEmpty() || needsReminderNudge) {
@@ -352,9 +352,9 @@ class CaptureViewModel @Inject constructor(
             data class VisionBundle(
                 val colors: List<String>,
                 val objects: List<String>,
-                val scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel>,
+                val scoredLabels: List<com.vaultbrain.shared.model.ScoredLabel>,
                 val barcodes: List<String>,
-                val neuralClassification: com.vaultbrain.core.common.model.Classification?,
+                val neuralClassification: com.vaultbrain.shared.model.Classification?,
                 val neuralConfidence: Float
             )
 
@@ -448,7 +448,7 @@ class CaptureViewModel @Inject constructor(
             
             val llmStart = System.currentTimeMillis()
             val result = if (input.skipLlmEnrichment) item.copy(
-                enrichmentState = com.vaultbrain.core.common.model.EnrichmentState.SKIPPED_PRIVACY
+                enrichmentState = com.vaultbrain.shared.model.EnrichmentState.SKIPPED_PRIVACY
             ) else {
                 val enriched = enrichWithLlm(
                     item,
@@ -461,7 +461,7 @@ class CaptureViewModel @Inject constructor(
                 
                 // Fallback: If LLM is entirely unavailable, the heuristic extraction was already
                 // run earlier and applied to `item`.
-                val settled = if (llmUnavailableAtAnalysis && enriched === item && enriched.aiClassification == com.vaultbrain.core.common.model.Classification.UNKNOWN) {
+                val settled = if (llmUnavailableAtAnalysis && enriched === item && enriched.aiClassification == com.vaultbrain.shared.model.Classification.UNKNOWN) {
                     android.util.Log.w("CaptureLatency", "LLM unavailable; relying on deterministic heuristics")
                     val fallbackHeuristic = heuristicExtractor.extract(
                         text = primaryText,
@@ -514,7 +514,7 @@ class CaptureViewModel @Inject constructor(
         item: VaultItem,
         ocrText: String,
         visionObjects: List<String>,
-        scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel>,
+        scoredLabels: List<com.vaultbrain.shared.model.ScoredLabel>,
         barcodes: List<String>,
         imageBitmap: Bitmap?
     ): VaultItem = try {
@@ -713,8 +713,8 @@ class CaptureViewModel @Inject constructor(
             secondaryAlertDate = heuristic.alertDate,
             aiConfidence = heuristic.confidence.coerceIn(0f, 1f),
             aiClassification = heuristic.inferredClassification,
-            extractionState = com.vaultbrain.core.common.model.ProcessingState.COMPLETE,
-            indexingState = com.vaultbrain.core.common.model.ProcessingState.PENDING,
+            extractionState = com.vaultbrain.shared.model.ProcessingState.COMPLETE,
+            indexingState = com.vaultbrain.shared.model.ProcessingState.PENDING,
             dominantColors = visionColors,
             detectedObjects = visionObjects,
             needsReview = heuristic.confidence < 0.5f

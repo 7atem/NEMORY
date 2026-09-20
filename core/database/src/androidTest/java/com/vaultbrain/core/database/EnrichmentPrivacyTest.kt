@@ -3,9 +3,9 @@ package com.vaultbrain.core.database
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.vaultbrain.core.common.model.EnrichmentState
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.database.entity.VaultItemEntity
+import com.vaultbrain.shared.model.EnrichmentState
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.database.entity.VaultItemEntity
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Test

@@ -4,9 +4,9 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.vaultbrain.core.common.model.ProcessingState
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.ProcessingState
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

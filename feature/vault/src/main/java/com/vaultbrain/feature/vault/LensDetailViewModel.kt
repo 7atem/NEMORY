@@ -3,7 +3,7 @@ package com.vaultbrain.feature.vault
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.notifications.UnifiedAlertManager
 import com.vaultbrain.feature.vault.components.lensTitle
@@ -19,7 +19,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import java.util.UUID
-import com.vaultbrain.core.common.model.SourceType
+import com.vaultbrain.shared.model.SourceType
 
 /**
  * UI state for the lens detail screen.

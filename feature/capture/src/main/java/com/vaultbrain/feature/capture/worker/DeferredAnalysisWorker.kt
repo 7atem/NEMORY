@@ -14,7 +14,7 @@ import androidx.work.ForegroundInfo
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.vaultbrain.core.common.model.ProcessingState
+import com.vaultbrain.shared.model.ProcessingState
 import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
 import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import com.vaultbrain.core.database.repository.VaultRepository

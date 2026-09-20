@@ -1,9 +1,9 @@
 package com.vaultbrain.feature.briefing
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 import java.time.Instant
 import org.junit.Test
 

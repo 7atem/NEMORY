@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.vision
 
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.ScoredLabel
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.ScoredLabel
 
 /**
  * Lightweight visual analysis result for a captured image.

@@ -6,26 +6,26 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.vaultbrain.core.database.dao.AuditLogDao
-import com.vaultbrain.core.database.dao.BrainMessageDao
-import com.vaultbrain.core.database.dao.ExternalConnectionDao
-import com.vaultbrain.core.database.dao.ExternalRecordDao
-import com.vaultbrain.core.database.dao.NotificationQueueDao
-import com.vaultbrain.core.database.dao.PersonalCollectionDao
-import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
-import com.vaultbrain.core.database.dao.VaultItemDao
-import com.vaultbrain.core.database.dao.VaultReminderDao
-import com.vaultbrain.core.database.entity.AuditLogEntity
-import com.vaultbrain.core.database.entity.BrainMessageEntity
-import com.vaultbrain.core.database.entity.ExternalConnectionEntity
-import com.vaultbrain.core.database.entity.ExternalRecordEntity
-import com.vaultbrain.core.database.entity.NotificationQueueEntity
-import com.vaultbrain.core.database.entity.PersonalCollectionEntity
-import com.vaultbrain.core.database.entity.PersonalCollectionMembershipEntity
-import com.vaultbrain.core.database.entity.PersonalCollectionSuggestionEntity
-import com.vaultbrain.core.database.entity.VaultItemEntity
-import com.vaultbrain.core.database.entity.VaultItemFts
-import com.vaultbrain.core.database.entity.VaultReminderEntity
+import com.vaultbrain.shared.database.dao.AuditLogDao
+import com.vaultbrain.shared.database.dao.BrainMessageDao
+import com.vaultbrain.shared.database.dao.ExternalConnectionDao
+import com.vaultbrain.shared.database.dao.ExternalRecordDao
+import com.vaultbrain.shared.database.dao.NotificationQueueDao
+import com.vaultbrain.shared.database.dao.PersonalCollectionDao
+import com.vaultbrain.shared.database.dao.PersonalCollectionSuggestionDao
+import com.vaultbrain.shared.database.dao.VaultItemDao
+import com.vaultbrain.shared.database.dao.VaultReminderDao
+import com.vaultbrain.shared.database.entity.AuditLogEntity
+import com.vaultbrain.shared.database.entity.BrainMessageEntity
+import com.vaultbrain.shared.database.entity.ExternalConnectionEntity
+import com.vaultbrain.shared.database.entity.ExternalRecordEntity
+import com.vaultbrain.shared.database.entity.NotificationQueueEntity
+import com.vaultbrain.shared.database.entity.PersonalCollectionEntity
+import com.vaultbrain.shared.database.entity.PersonalCollectionMembershipEntity
+import com.vaultbrain.shared.database.entity.PersonalCollectionSuggestionEntity
+import com.vaultbrain.shared.database.entity.VaultItemEntity
+import com.vaultbrain.shared.database.entity.VaultItemFts
+import com.vaultbrain.shared.database.entity.VaultReminderEntity
 import com.vaultbrain.core.database.util.RoomTypeConverters
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
@@ -52,19 +52,19 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         ExternalRecordEntity::class,
         ExternalConnectionEntity::class,
         VaultReminderEntity::class,
-        com.vaultbrain.core.database.entity.DerivedFactEntity::class,
-        com.vaultbrain.core.database.entity.KnowledgeEntityEntity::class,
-        com.vaultbrain.core.database.entity.ItemEntityCrossRef::class,
-        com.vaultbrain.core.database.entity.RelationshipEntity::class
+        com.vaultbrain.shared.database.entity.DerivedFactEntity::class,
+        com.vaultbrain.shared.database.entity.KnowledgeEntityEntity::class,
+        com.vaultbrain.shared.database.entity.ItemEntityCrossRef::class,
+        com.vaultbrain.shared.database.entity.RelationshipEntity::class
     ],
     version = 20,
     exportSchema = true
 )
 @TypeConverters(RoomTypeConverters::class)
 abstract class VaultDatabase : RoomDatabase() {
-    abstract fun knowledgeGraphDao(): com.vaultbrain.core.database.dao.KnowledgeGraphDao
+    abstract fun knowledgeGraphDao(): com.vaultbrain.shared.database.dao.KnowledgeGraphDao
 
-    abstract fun derivedFactDao(): com.vaultbrain.core.database.dao.DerivedFactDao
+    abstract fun derivedFactDao(): com.vaultbrain.shared.database.dao.DerivedFactDao
 
     abstract fun vaultItemDao(): VaultItemDao
 

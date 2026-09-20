@@ -1,8 +1,8 @@
 package com.vaultbrain.feature.brain.worker
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import org.junit.Test
 

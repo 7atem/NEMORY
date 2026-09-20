@@ -3,9 +3,9 @@ package com.vaultbrain.core.ai.rag
 import android.content.Context
 import com.vaultbrain.core.ai.embeddings.TextEmbeddingModel
 import com.vaultbrain.core.ai.llm.LlmClient
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import io.mockk.*
 import kotlinx.coroutines.test.runTest

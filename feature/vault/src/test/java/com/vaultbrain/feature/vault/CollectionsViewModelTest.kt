@@ -1,8 +1,8 @@
 package com.vaultbrain.feature.vault
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.PersonalCollection
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.PersonalCollection
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import io.mockk.coEvery
 import io.mockk.coVerify

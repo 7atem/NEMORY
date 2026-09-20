@@ -21,7 +21,7 @@ class WidgetDataRepository @Inject constructor(
 
         return items.filter { !it.isArchived && !it.isStealth }
             .filter { it.needsReview || it.isExpiringSoon(now) }
-            .sortedWith(compareBy<com.vaultbrain.core.common.model.VaultItem> { it.expiryDate ?: Long.MAX_VALUE }.thenByDescending { it.updatedAt })
+            .sortedWith(compareBy<com.vaultbrain.shared.model.VaultItem> { it.expiryDate ?: Long.MAX_VALUE }.thenByDescending { it.updatedAt })
             .take(2)
             .map { 
                 WidgetAttentionItem(
@@ -32,7 +32,7 @@ class WidgetDataRepository @Inject constructor(
             }
     }
 
-    private fun com.vaultbrain.core.common.model.VaultItem.isExpiringSoon(now: Long): Boolean {
+    private fun com.vaultbrain.shared.model.VaultItem.isExpiringSoon(now: Long): Boolean {
         val expiry = expiryDate ?: return false
         val weekMillis = 7L * 24 * 60 * 60 * 1000
         return expiry in now..(now + weekMillis)

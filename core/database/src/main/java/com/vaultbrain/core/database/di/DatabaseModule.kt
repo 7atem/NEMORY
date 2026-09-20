@@ -2,15 +2,15 @@ package com.vaultbrain.core.database.di
 
 import android.content.Context
 import com.vaultbrain.core.database.VaultDatabase
-import com.vaultbrain.core.database.dao.AuditLogDao
-import com.vaultbrain.core.database.dao.BrainMessageDao
-import com.vaultbrain.core.database.dao.ExternalConnectionDao
-import com.vaultbrain.core.database.dao.ExternalRecordDao
-import com.vaultbrain.core.database.dao.NotificationQueueDao
-import com.vaultbrain.core.database.dao.PersonalCollectionDao
-import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
-import com.vaultbrain.core.database.dao.VaultItemDao
-import com.vaultbrain.core.database.dao.VaultReminderDao
+import com.vaultbrain.shared.database.dao.AuditLogDao
+import com.vaultbrain.shared.database.dao.BrainMessageDao
+import com.vaultbrain.shared.database.dao.ExternalConnectionDao
+import com.vaultbrain.shared.database.dao.ExternalRecordDao
+import com.vaultbrain.shared.database.dao.NotificationQueueDao
+import com.vaultbrain.shared.database.dao.PersonalCollectionDao
+import com.vaultbrain.shared.database.dao.PersonalCollectionSuggestionDao
+import com.vaultbrain.shared.database.dao.VaultItemDao
+import com.vaultbrain.shared.database.dao.VaultReminderDao
 import com.vaultbrain.core.security.KeystoreManager
 import dagger.Module
 import dagger.Provides

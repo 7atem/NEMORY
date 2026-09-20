@@ -1,8 +1,8 @@
-package com.vaultbrain.core.database.dao
+package com.vaultbrain.shared.database.dao
 
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
-import com.vaultbrain.core.database.entity.ExternalRecordEntity
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
+import com.vaultbrain.shared.database.entity.ExternalRecordEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

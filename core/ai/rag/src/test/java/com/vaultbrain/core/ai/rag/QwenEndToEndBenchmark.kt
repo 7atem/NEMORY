@@ -5,11 +5,11 @@ import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.ai.embeddings.TextEmbeddingModel
 import com.vaultbrain.core.ai.embeddings.VisionEmbeddingModel
 import com.vaultbrain.core.ai.llm.*
-import com.vaultbrain.core.common.model.*
+import com.vaultbrain.shared.model.*
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
-import com.vaultbrain.core.database.entity.RelationshipEntity
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
+import com.vaultbrain.shared.database.entity.RelationshipEntity
 import com.vaultbrain.core.database.repository.KnowledgeRepository
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.integrations.context.PersonalContextEngine

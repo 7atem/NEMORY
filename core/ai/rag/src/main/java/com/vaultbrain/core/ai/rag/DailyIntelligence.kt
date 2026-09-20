@@ -3,7 +3,7 @@ package com.vaultbrain.core.ai.rag
 import com.vaultbrain.core.ai.llm.LlmClient
 import com.vaultbrain.core.ai.llm.ModelOutput
 import com.vaultbrain.core.ai.llm.ReasoningBudget
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.common.security.DecoySessionState
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.*
@@ -19,7 +19,7 @@ class DailyIntelligence @Inject constructor(
     suspend fun select(
         items: List<VaultItem>,
         events: List<com.vaultbrain.core.integrations.model.ExternalRecord>,
-        reminders: List<com.vaultbrain.core.common.model.VaultReminder>
+        reminders: List<com.vaultbrain.shared.model.VaultReminder>
     ): List<DailyInsight> {
         if (DecoySessionState.isDecoy.value) return emptyList()
         if (store == null) return selectFresh(items, events, reminders)
@@ -37,21 +37,21 @@ class DailyIntelligence @Inject constructor(
     private suspend fun selectFresh(
         items: List<VaultItem>,
         events: List<com.vaultbrain.core.integrations.model.ExternalRecord>,
-        reminders: List<com.vaultbrain.core.common.model.VaultReminder>
+        reminders: List<com.vaultbrain.shared.model.VaultReminder>
     ): List<DailyInsight> {
         if (!model.isAvailable() || DecoySessionState.isDecoy.value) return emptyList()
         val now = System.currentTimeMillis()
         
         // 1. Gather context from Vault, Calendar, Reminders
         val eligible = items.filter { !it.isArchived && !it.isStealth &&
-            it.enrichmentState != com.vaultbrain.core.common.model.EnrichmentState.SKIPPED_PRIVACY }
+            it.enrichmentState != com.vaultbrain.shared.model.EnrichmentState.SKIPPED_PRIVACY }
         val curatedItems = (eligible.filter { (it.expiryDate ?: Long.MAX_VALUE) in now..(now + 90L * 86_400_000) }
             .sortedBy { it.expiryDate } + eligible.sortedByDescending { it.updatedAt }).distinctBy { it.id }.take(8)
         val curatedEvents = events.filter { !it.isResolved && (it.expiresAt?.let { expiry -> expiry > now } ?: true) }
             .sortedBy { it.startAt ?: it.dueAt ?: Long.MAX_VALUE }.take(6)
         val curatedReminders = reminders.filter {
-            it.status == com.vaultbrain.core.common.model.VaultReminderStatus.SCHEDULED ||
-                it.status == com.vaultbrain.core.common.model.VaultReminderStatus.SNOOZED
+            it.status == com.vaultbrain.shared.model.VaultReminderStatus.SCHEDULED ||
+                it.status == com.vaultbrain.shared.model.VaultReminderStatus.SNOOZED
         }.sortedBy { it.dueAt }.take(6)
             
         // 2. Execute deterministic proactive tools

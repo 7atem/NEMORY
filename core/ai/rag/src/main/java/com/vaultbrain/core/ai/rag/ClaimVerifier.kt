@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.rag
 
 import com.vaultbrain.core.ai.llm.LlmClient
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException

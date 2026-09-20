@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.rag
 
 import com.vaultbrain.core.ai.llm.LlmClient
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.common.security.DecoySessionState
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull

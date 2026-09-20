@@ -39,8 +39,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.common.permissions.PermissionHelper
 import com.vaultbrain.feature.capture.ui.components.CameraPreview
 import com.vaultbrain.feature.capture.ui.components.ExperiencePickerScreen

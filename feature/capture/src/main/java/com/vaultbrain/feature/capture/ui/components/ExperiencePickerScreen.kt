@@ -37,7 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.vaultbrain.core.ai.heuristics.experience.ExperienceKeywordLibrary
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.feature.capture.ExperienceDefinitions
 import com.vaultbrain.feature.capture.R
 
@@ -276,7 +276,7 @@ private data class HeroSuggestion(
 )
 
 private data class ExperienceRowInfo(
-    val experience: com.vaultbrain.core.common.model.PersonalExperience,
+    val experience: com.vaultbrain.shared.model.PersonalExperience,
     val title: String,
     val hint: String
 )

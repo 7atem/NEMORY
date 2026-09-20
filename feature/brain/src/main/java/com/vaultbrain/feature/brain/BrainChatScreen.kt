@@ -94,7 +94,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.core.ai.rag.RagEvidence
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.feature.brain.model.ChatMessage
 import com.vaultbrain.feature.voice.OnDeviceVoiceCaptureDialog
 import android.app.Activity

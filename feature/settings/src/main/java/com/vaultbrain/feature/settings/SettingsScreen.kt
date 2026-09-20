@@ -70,7 +70,7 @@ import com.vaultbrain.feature.settings.viewmodel.SettingsViewModel
 import com.vaultbrain.core.ai.llm.OnDeviceModelStatus as PrivateAiStatus
 import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus as GemmaModelStatus
 
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import androidx.compose.ui.res.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)

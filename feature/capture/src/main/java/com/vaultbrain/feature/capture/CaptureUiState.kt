@@ -1,7 +1,7 @@
 package com.vaultbrain.feature.capture
 
 import com.vaultbrain.core.ai.heuristics.experience.ExperienceKeywordLibrary
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.feature.capture.ui.components.KeywordDisplayItem
 
 /**

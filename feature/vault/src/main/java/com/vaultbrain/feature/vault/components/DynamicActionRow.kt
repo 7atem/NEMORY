@@ -11,9 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.vaultbrain.core.common.model.ProactiveAction
-import com.vaultbrain.core.common.model.ProactiveActionResolver
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.ProactiveAction
+import com.vaultbrain.shared.model.ProactiveActionResolver
+import com.vaultbrain.shared.model.VaultItem
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

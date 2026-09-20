@@ -11,9 +11,9 @@ import com.vaultbrain.core.ai.llm.CloudConsentDisclosure
 import com.vaultbrain.core.ai.llm.HybridAiCoordinator
 import com.vaultbrain.core.ai.llm.HybridAiResult
 import com.vaultbrain.core.ai.llm.TokenBudget
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.vectorstore.VectorStore
 import com.vaultbrain.core.vectorstore.entity.VaultEmbedding
@@ -51,9 +51,9 @@ class RagEngineTest {
     @Test
     fun `relationship context references only retrieved endpoints and known types`() {
         val relationships = listOf(
-            com.vaultbrain.core.database.entity.RelationshipEntity("r1", "a", "b", "RENEWS"),
-            com.vaultbrain.core.database.entity.RelationshipEntity("r2", "a", "hidden", "REPLACES"),
-            com.vaultbrain.core.database.entity.RelationshipEntity("r3", "a", "b", "untrusted text")
+            com.vaultbrain.shared.database.entity.RelationshipEntity("r1", "a", "b", "RENEWS"),
+            com.vaultbrain.shared.database.entity.RelationshipEntity("r2", "a", "hidden", "REPLACES"),
+            com.vaultbrain.shared.database.entity.RelationshipEntity("r3", "a", "b", "untrusted text")
         )
         val section = engine.buildRelationshipsSection(mapOf("a" to relationships),
             listOf(sampleItem("a", "Renewal"), sampleItem("b", "Original")))
@@ -249,8 +249,8 @@ class RagEngineTest {
     @Test
     fun `calendar only evidence reaches both answer paths without a vault document`() = runTest {
         val event = com.vaultbrain.core.integrations.model.ExternalRecord("calendar", "device", "event",
-            com.vaultbrain.core.common.model.external.ExternalSource.CALENDAR,
-            com.vaultbrain.core.common.model.external.ExternalRecordType.EVENT, title = "Dentist appointment")
+            com.vaultbrain.shared.model.external.ExternalSource.CALENDAR,
+            com.vaultbrain.shared.model.external.ExternalRecordType.EVENT, title = "Dentist appointment")
         every { textEmbeddingModel.isAvailable() } returns false
         coEvery { personalContextEngine.assembleContext(any()) } returns ContextResult(records = listOf(event))
         coEvery { llmClient.generate(any()) } returns "Dentist appointment [1]"

@@ -1,6 +1,6 @@
 package com.vaultbrain.feature.capture
 
-import com.vaultbrain.core.common.model.ExperienceId
+import com.vaultbrain.shared.model.ExperienceId
 
 /**
  * Deterministic engine that suggests contextual follow-up captures after saving.

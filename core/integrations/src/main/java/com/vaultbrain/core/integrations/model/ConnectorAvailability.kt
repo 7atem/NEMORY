@@ -1,7 +1,7 @@
 package com.vaultbrain.core.integrations.model
 
-import com.vaultbrain.core.common.model.external.ConnectionState
-import com.vaultbrain.core.common.model.external.ConnectorCapability
+import com.vaultbrain.shared.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectorCapability
 
 /**
  * Static + runtime metadata for a connector, used by the Connections UI.

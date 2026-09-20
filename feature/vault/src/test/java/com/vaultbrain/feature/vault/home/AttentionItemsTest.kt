@@ -1,10 +1,10 @@
 package com.vaultbrain.feature.vault.home
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.VaultReminder
+import com.vaultbrain.shared.model.VaultReminder
 import com.vaultbrain.core.integrations.model.ExternalRecord
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
 import org.junit.Test
 
 class AttentionItemsTest {

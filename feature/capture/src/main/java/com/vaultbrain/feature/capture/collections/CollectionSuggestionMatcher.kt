@@ -1,8 +1,8 @@
 package com.vaultbrain.feature.capture.collections
 
 import com.vaultbrain.core.ai.embeddings.TextEmbeddingModel
-import com.vaultbrain.core.common.model.CollectionSuggestionStatus
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.CollectionSuggestionStatus
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.vectorstore.CollectionVectorStore
 import kotlinx.coroutines.Dispatchers

@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.heuristics
 
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.ScoredLabel
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.ScoredLabel
 
 /**
  * Conservatively turns confidence-bearing vision labels into document candidates.

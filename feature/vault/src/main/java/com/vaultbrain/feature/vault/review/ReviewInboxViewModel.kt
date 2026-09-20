@@ -2,7 +2,7 @@ package com.vaultbrain.feature.vault.review
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject

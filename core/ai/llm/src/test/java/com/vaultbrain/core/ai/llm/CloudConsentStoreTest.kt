@@ -3,7 +3,7 @@ package com.vaultbrain.core.ai.llm
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk

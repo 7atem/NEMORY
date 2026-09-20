@@ -4,11 +4,11 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.VaultReminder
-import com.vaultbrain.core.common.model.VaultReminderStatus
+import com.vaultbrain.shared.model.VaultReminder
+import com.vaultbrain.shared.model.VaultReminderStatus
 import com.vaultbrain.core.common.security.DecoySessionState
-import com.vaultbrain.core.database.dao.VaultReminderDao
-import com.vaultbrain.core.database.entity.VaultReminderEntity
+import com.vaultbrain.shared.database.dao.VaultReminderDao
+import com.vaultbrain.shared.database.entity.VaultReminderEntity
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

@@ -185,7 +185,7 @@ fun ConnectionsScreen(
                         }
                     }
                     val googleConnections = nonCalendarConnections.filter { it.connectorId in setOf("gmail", "google_tasks") }
-                    googleConnections.filter { it.state != com.vaultbrain.core.common.model.external.ConnectionState.CONNECTED }.forEach { connection ->
+                    googleConnections.filter { it.state != com.vaultbrain.shared.model.external.ConnectionState.CONNECTED }.forEach { connection ->
                         TextButton(onClick = {
                             viewModel.connectGoogle(com.vaultbrain.core.integrations.google.GoogleService.entries.first {
                                 it.connectorId == connection.connectorId }, connection.accountId)

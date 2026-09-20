@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.llm
 
 import com.vaultbrain.core.ai.llm.di.Cloud
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -38,7 +38,7 @@ data class CloudConsentDisclosure(
     val provider: String,
     val exactText: String,
     val canRememberForCategory: Boolean,
-    val rememberableCategories: Set<com.vaultbrain.core.common.model.Classification> = emptySet()
+    val rememberableCategories: Set<com.vaultbrain.shared.model.Classification> = emptySet()
 )
 
 sealed interface HybridAiResult {

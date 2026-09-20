@@ -1,8 +1,8 @@
 package com.vaultbrain.feature.capture
 
-import com.vaultbrain.core.common.model.ExperienceId
+import com.vaultbrain.shared.model.ExperienceId
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.PersonalExperience
+import com.vaultbrain.shared.model.PersonalExperience
 
 /**
  * Canonical definitions for every personal experience available in the capture flow.

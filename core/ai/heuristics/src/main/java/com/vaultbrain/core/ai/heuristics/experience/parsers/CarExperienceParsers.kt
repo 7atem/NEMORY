@@ -1,8 +1,8 @@
 package com.vaultbrain.core.ai.heuristics.experience.parsers
 
 import com.vaultbrain.core.ai.heuristics.experience.ExperienceParser
-import com.vaultbrain.core.common.model.ExperienceId
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.ExperienceId
+import com.vaultbrain.shared.model.VaultItem
 
 /** Extracts car service / maintenance fields. */
 class CarServiceParser : ExperienceParser {

@@ -2,11 +2,11 @@ package com.vaultbrain.sync.gmail
 
 import kotlinx.coroutines.sync.withLock
 
-import com.vaultbrain.core.common.model.external.ConnectionState
-import com.vaultbrain.core.common.model.external.ConnectorCapability
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
-import com.vaultbrain.core.common.model.external.SensitivityLevel
+import com.vaultbrain.shared.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectorCapability
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
+import com.vaultbrain.shared.model.external.SensitivityLevel
 import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.integrations.connector.ExternalConnector
 import com.vaultbrain.core.integrations.model.*

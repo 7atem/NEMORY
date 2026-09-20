@@ -1,14 +1,14 @@
 package com.vaultbrain.core.integrations.repository
 
-import com.vaultbrain.core.common.model.external.ConnectionState
-import com.vaultbrain.core.common.model.external.ConnectorCapability
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
+import com.vaultbrain.shared.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectorCapability
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
 import com.vaultbrain.core.common.security.DecoySessionState
-import com.vaultbrain.core.database.dao.ExternalConnectionDao
-import com.vaultbrain.core.database.dao.ExternalRecordDao
-import com.vaultbrain.core.database.entity.ExternalConnectionEntity
-import com.vaultbrain.core.database.entity.ExternalRecordEntity
+import com.vaultbrain.shared.database.dao.ExternalConnectionDao
+import com.vaultbrain.shared.database.dao.ExternalRecordDao
+import com.vaultbrain.shared.database.entity.ExternalConnectionEntity
+import com.vaultbrain.shared.database.entity.ExternalRecordEntity
 import com.vaultbrain.core.integrations.model.ConnectionRecord
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import kotlinx.coroutines.flow.Flow

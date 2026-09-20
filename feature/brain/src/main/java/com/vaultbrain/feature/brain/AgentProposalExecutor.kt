@@ -1,8 +1,8 @@
 package com.vaultbrain.feature.brain
 
 import com.vaultbrain.core.ai.rag.LocalAgent
-import com.vaultbrain.core.common.model.VaultItem
-import com.vaultbrain.core.common.model.VaultReminder
+import com.vaultbrain.shared.model.VaultItem
+import com.vaultbrain.shared.model.VaultReminder
 import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.integrations.calendar.CalendarConnector

@@ -1,6 +1,6 @@
 package com.vaultbrain.core.common.ui
 
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 
 enum class VaultCardDateKind { SAVED, EXPIRES, DUE, EVENT }
 

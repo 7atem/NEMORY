@@ -1,18 +1,18 @@
 package com.vaultbrain.core.database.util
 
 import androidx.room.TypeConverter
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.EnrichmentState
-import com.vaultbrain.core.common.model.ProcessingState
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.Tier
-import com.vaultbrain.core.common.model.external.ConnectionState
-import com.vaultbrain.core.common.model.external.ConnectorCapability
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalRetention
-import com.vaultbrain.core.common.model.external.ExternalSource
-import com.vaultbrain.core.common.model.VaultReminderStatus
-import com.vaultbrain.core.common.model.external.SensitivityLevel
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.EnrichmentState
+import com.vaultbrain.shared.model.ProcessingState
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.Tier
+import com.vaultbrain.shared.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectorCapability
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalRetention
+import com.vaultbrain.shared.model.external.ExternalSource
+import com.vaultbrain.shared.model.VaultReminderStatus
+import com.vaultbrain.shared.model.external.SensitivityLevel
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 

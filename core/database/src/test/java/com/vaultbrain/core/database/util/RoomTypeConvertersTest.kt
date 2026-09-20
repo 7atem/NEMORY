@@ -1,9 +1,9 @@
 package com.vaultbrain.core.database.util
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.Tier
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.Tier
 import org.junit.Test
 
 class RoomTypeConvertersTest {

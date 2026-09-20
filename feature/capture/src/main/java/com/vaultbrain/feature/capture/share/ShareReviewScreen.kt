@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.vaultbrain.core.common.model.PersonalCollection
+import com.vaultbrain.shared.model.PersonalCollection
 import com.vaultbrain.feature.capture.R
 
 @OptIn(ExperimentalMaterial3Api::class)

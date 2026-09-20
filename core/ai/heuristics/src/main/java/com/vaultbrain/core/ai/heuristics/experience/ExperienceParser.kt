@@ -1,6 +1,6 @@
 package com.vaultbrain.core.ai.heuristics.experience
 
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 
 /**
  * Extracts experience-specific metadata from a partially processed item.

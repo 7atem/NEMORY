@@ -11,8 +11,8 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.RevokeAccessRequest
 import com.google.android.gms.common.api.Scope
 import com.google.android.gms.tasks.Task
-import com.vaultbrain.core.common.model.external.ConnectionState
-import com.vaultbrain.core.common.model.external.ConnectorCapability
+import com.vaultbrain.shared.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectorCapability
 import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.integrations.model.ConnectionRecord
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository

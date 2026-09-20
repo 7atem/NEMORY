@@ -7,8 +7,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.vaultbrain.core.ai.llm.AppForegroundChecker
 import com.vaultbrain.core.ai.llm.MlKitNanoRuntime
 import com.vaultbrain.core.ai.llm.NanoPromptClient
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 import org.junit.Test

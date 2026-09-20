@@ -1,6 +1,6 @@
 package com.vaultbrain.feature.briefing
 
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import com.vaultbrain.feature.brain.worker.RadarEngine
 import javax.inject.Inject

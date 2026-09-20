@@ -1,7 +1,7 @@
 package com.vaultbrain.core.integrations.model
 
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
 
 /**
  * Request to assemble personal context around a vault item, a free-text question,

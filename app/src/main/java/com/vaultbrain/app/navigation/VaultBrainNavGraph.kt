@@ -305,13 +305,13 @@ fun VaultBrainNavGraph(
             )
             val preferredLenses = preferredLens?.let(::setOf).orEmpty()
             val textSource = if (backStackEntry.arguments?.getString("source") == "voice") {
-                com.vaultbrain.core.common.model.SourceType.VOICE
-            } else com.vaultbrain.core.common.model.SourceType.TEXT_PASTE
+                com.vaultbrain.shared.model.SourceType.VOICE
+            } else com.vaultbrain.shared.model.SourceType.TEXT_PASTE
             com.vaultbrain.feature.capture.CaptureFlowScreen(
                 initialInput = when {
                     imageUris.isNotEmpty() -> com.vaultbrain.feature.capture.CaptureInput(
                         initialUris = imageUris.map(android.net.Uri::parse),
-                        sourceType = com.vaultbrain.core.common.model.SourceType.GALLERY,
+                        sourceType = com.vaultbrain.shared.model.SourceType.GALLERY,
                         preferredLensTags = preferredLenses
                     )
                     !pastedText.isNullOrBlank() -> com.vaultbrain.feature.capture.CaptureInput(

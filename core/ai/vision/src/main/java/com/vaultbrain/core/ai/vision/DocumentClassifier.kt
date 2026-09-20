@@ -3,7 +3,7 @@ package com.vaultbrain.core.ai.vision
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.core.graphics.scale
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withLock

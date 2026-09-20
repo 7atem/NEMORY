@@ -1,6 +1,6 @@
 package com.vaultbrain.core.ai.llm
 
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 

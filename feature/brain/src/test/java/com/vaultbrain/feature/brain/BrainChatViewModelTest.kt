@@ -11,8 +11,8 @@ import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.core.ai.llm.CloudAiOperation
 import com.vaultbrain.core.ai.llm.CloudConsentDisclosure
 import com.vaultbrain.core.ai.llm.CloudConsentStore
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.ai.llm.AiCapabilityManager
 import com.vaultbrain.core.ai.llm.TokenBudget
 import com.vaultbrain.core.database.repository.BrainConversationRepository
@@ -291,12 +291,12 @@ class BrainChatViewModelTest {
 
     @Test
     fun `collection creation executes successfully when confirmed`() = runTest(dispatcher) {
-        val collection = com.vaultbrain.core.common.model.PersonalCollection(
+        val collection = com.vaultbrain.shared.model.PersonalCollection(
             id = "collection-id",
             name = "Test Collection",
             createdAt = 100L,
             updatedAt = 100L,
-            source = com.vaultbrain.core.common.model.PersonalCollectionSource.USER
+            source = com.vaultbrain.shared.model.PersonalCollectionSource.USER
         )
         val items = listOf(VaultItem(id = "item1", title = "Item 1"))
 

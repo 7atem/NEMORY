@@ -4,7 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.vaultbrain.core.common.R
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 
 /**
  * Classification-aware ordering and human labels for parsed metadata keys,

@@ -1,6 +1,6 @@
 package com.vaultbrain.core.ai.heuristics
 
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 
 /**
  * Structured data extracted from raw text using regex-based heuristics.

@@ -20,11 +20,11 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.database.dao.NotificationQueueDao
-import com.vaultbrain.core.database.entity.NotificationQueueEntity
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.database.dao.NotificationQueueDao
+import com.vaultbrain.shared.database.entity.NotificationQueueEntity
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.qualifiers.ApplicationContext

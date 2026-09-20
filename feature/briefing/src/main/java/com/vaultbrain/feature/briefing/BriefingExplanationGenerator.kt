@@ -1,7 +1,7 @@
 package com.vaultbrain.feature.briefing
 
 import com.vaultbrain.core.ai.llm.LlmClient
-import com.vaultbrain.core.common.model.VaultReminder
+import com.vaultbrain.shared.model.VaultReminder
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -48,7 +48,7 @@ class BriefingExplanationGenerator @Inject constructor(
             }
         }
         
-        val calendarEvents = externalRecords.filter { it.source == com.vaultbrain.core.common.model.external.ExternalSource.CALENDAR }
+        val calendarEvents = externalRecords.filter { it.source == com.vaultbrain.shared.model.external.ExternalSource.CALENDAR }
         if (calendarEvents.isNotEmpty()) {
             contextBuilder.appendLine("Calendar Events:")
             calendarEvents.forEach { event ->
@@ -56,7 +56,7 @@ class BriefingExplanationGenerator @Inject constructor(
             }
         }
         
-        val healthRecords = externalRecords.filter { it.source == com.vaultbrain.core.common.model.external.ExternalSource.HEALTH_CONNECT }
+        val healthRecords = externalRecords.filter { it.source == com.vaultbrain.shared.model.external.ExternalSource.HEALTH_CONNECT }
         if (healthRecords.isNotEmpty()) {
             contextBuilder.appendLine("Health Data:")
             healthRecords.forEach { health ->

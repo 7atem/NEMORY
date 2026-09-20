@@ -52,7 +52,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.vaultbrain.core.common.model.PersonalCollection
+import com.vaultbrain.shared.model.PersonalCollection
 import com.vaultbrain.feature.vault.components.VaultItemCard
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,6 +1,6 @@
 package com.vaultbrain.core.ai.heuristics.experience.parsers
 
-import com.vaultbrain.core.common.model.ExperienceId
+import com.vaultbrain.shared.model.ExperienceId
 
 // Services parsers (subscriptions and household services).
 

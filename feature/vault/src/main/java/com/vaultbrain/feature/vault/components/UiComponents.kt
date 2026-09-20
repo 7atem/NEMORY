@@ -42,11 +42,11 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.vaultbrain.core.common.theme.*
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.common.ui.VaultItemPresenter
 import com.vaultbrain.core.common.ui.VaultCardDateKind
 import com.vaultbrain.core.common.ui.MetadataFields
-import com.vaultbrain.core.common.model.ItemProcessingStatus
+import com.vaultbrain.shared.model.ItemProcessingStatus
 import com.vaultbrain.feature.vault.R
 import androidx.compose.ui.res.stringResource
 import androidx.core.text.BidiFormatter

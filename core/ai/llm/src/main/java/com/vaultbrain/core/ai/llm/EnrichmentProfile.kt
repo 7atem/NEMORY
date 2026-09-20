@@ -1,8 +1,8 @@
 package com.vaultbrain.core.ai.llm
 
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.ProactiveAction
+import com.vaultbrain.shared.model.ProactiveAction
 import com.vaultbrain.core.common.metadata.MetadataFieldType
 import com.vaultbrain.core.common.metadata.MetadataValueNormalizer
 

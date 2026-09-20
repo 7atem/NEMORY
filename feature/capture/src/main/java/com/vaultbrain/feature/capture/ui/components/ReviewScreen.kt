@@ -63,8 +63,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.unit.IntOffset
 import coil.compose.AsyncImage
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.common.util.humanize
 import com.vaultbrain.feature.capture.ExperienceDefinitions
 import com.vaultbrain.feature.capture.R

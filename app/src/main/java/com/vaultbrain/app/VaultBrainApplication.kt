@@ -99,7 +99,7 @@ class VaultBrainApplication : Application(), Configuration.Provider, ImageLoader
     lateinit var externalContextRepository: com.vaultbrain.core.integrations.repository.ExternalContextRepository
 
     @Inject
-    lateinit var vaultReminderDao: com.vaultbrain.core.database.dao.VaultReminderDao
+    lateinit var vaultReminderDao: com.vaultbrain.shared.database.dao.VaultReminderDao
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val gemmaRuntimeActivated = MutableStateFlow(false)

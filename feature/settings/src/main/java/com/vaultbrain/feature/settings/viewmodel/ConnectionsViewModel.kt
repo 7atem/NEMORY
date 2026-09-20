@@ -2,7 +2,7 @@ package com.vaultbrain.feature.settings.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vaultbrain.core.common.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectionState
 import com.vaultbrain.core.integrations.calendar.CalendarConnector
 import com.vaultbrain.core.integrations.calendar.CalendarInfo
 

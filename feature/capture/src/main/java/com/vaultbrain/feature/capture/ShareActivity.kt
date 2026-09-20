@@ -12,7 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.vaultbrain.core.common.model.SourceType
+import com.vaultbrain.shared.model.SourceType
 import com.vaultbrain.feature.capture.share.IncomingShare
 import com.vaultbrain.feature.capture.share.IncomingShareParser
 import com.vaultbrain.feature.capture.share.ShareReviewScreen

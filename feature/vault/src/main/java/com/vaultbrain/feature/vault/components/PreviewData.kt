@@ -1,9 +1,9 @@
 package com.vaultbrain.feature.vault.components
 
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 
 object PreviewData {
 

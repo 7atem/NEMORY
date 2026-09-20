@@ -1,7 +1,7 @@
 package com.vaultbrain.feature.capture
 
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.vectorstore.VectorStore
 import com.vaultbrain.core.vectorstore.entity.VaultEmbedding

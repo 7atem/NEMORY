@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.work.OneTimeWorkRequest
 import androidx.work.ExistingWorkPolicy
 import androidx.work.WorkManager
-import com.vaultbrain.core.database.dao.NotificationQueueDao
+import com.vaultbrain.shared.database.dao.NotificationQueueDao
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

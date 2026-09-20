@@ -2,7 +2,7 @@ package com.vaultbrain.core.ai.llm
 
 import android.content.Context
 import android.content.SharedPreferences
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton

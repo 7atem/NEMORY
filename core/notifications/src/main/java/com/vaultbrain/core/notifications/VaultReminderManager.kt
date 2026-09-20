@@ -21,12 +21,12 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.vaultbrain.core.common.model.VaultReminder
-import com.vaultbrain.core.common.model.VaultReminderStatus
+import com.vaultbrain.shared.model.VaultReminder
+import com.vaultbrain.shared.model.VaultReminderStatus
 import com.vaultbrain.core.common.security.DecoySessionState
-import com.vaultbrain.core.database.dao.ExternalRecordDao
-import com.vaultbrain.core.database.dao.VaultReminderDao
-import com.vaultbrain.core.database.entity.VaultReminderEntity
+import com.vaultbrain.shared.database.dao.ExternalRecordDao
+import com.vaultbrain.shared.database.dao.VaultReminderDao
+import com.vaultbrain.shared.database.entity.VaultReminderEntity
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.AndroidEntryPoint

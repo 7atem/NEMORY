@@ -1,4 +1,4 @@
-package com.vaultbrain.core.common.model
+package com.vaultbrain.shared.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

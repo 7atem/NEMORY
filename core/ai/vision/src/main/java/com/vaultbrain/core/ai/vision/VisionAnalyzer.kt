@@ -5,7 +5,7 @@ import androidx.core.graphics.get
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.label.ImageLabeler
 import com.google.mlkit.vision.barcode.BarcodeScanner
-import com.vaultbrain.core.common.model.ScoredLabel
+import com.vaultbrain.shared.model.ScoredLabel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope

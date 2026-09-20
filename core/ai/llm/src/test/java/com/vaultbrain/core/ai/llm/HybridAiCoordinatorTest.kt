@@ -1,9 +1,9 @@
 package com.vaultbrain.core.ai.llm
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,10 +1,10 @@
 package com.vaultbrain.core.ai.rag
 
-import com.vaultbrain.core.common.model.VaultItem
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
+import com.vaultbrain.shared.model.VaultItem
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
 import com.vaultbrain.core.common.security.DecoySessionState
-import com.vaultbrain.core.database.dao.VaultReminderDao
+import com.vaultbrain.shared.database.dao.VaultReminderDao
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.integrations.context.PersonalContextEngine
 import com.vaultbrain.core.integrations.model.ContextQuery
@@ -99,7 +99,7 @@ class AgentToolExecutor @Inject constructor(
     private suspend fun eligible(items: List<VaultItem>, filters: SearchFilters): List<VaultItem> {
         val ids = vault.filterIds(items.map { it.id }, filters.lensTag, filters.dateFrom, filters.dateTo, filters.hasImage).toSet()
         return items.filter { it.id in ids && !it.isArchived && !it.isStealth &&
-            it.enrichmentState != com.vaultbrain.core.common.model.EnrichmentState.SKIPPED_PRIVACY }.take(10)
+            it.enrichmentState != com.vaultbrain.shared.model.EnrichmentState.SKIPPED_PRIVACY }.take(10)
     }
 }
 

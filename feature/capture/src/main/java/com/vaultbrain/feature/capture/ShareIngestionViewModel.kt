@@ -3,9 +3,9 @@ package com.vaultbrain.feature.capture
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vaultbrain.core.common.model.EnrichmentState
-import com.vaultbrain.core.common.model.ProcessingState
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.EnrichmentState
+import com.vaultbrain.shared.model.ProcessingState
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.feature.capture.worker.DeferredAnalysisWorker
 import dagger.hilt.android.lifecycle.HiltViewModel

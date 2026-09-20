@@ -3,7 +3,7 @@ package com.vaultbrain.sync.gmail
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
-import com.vaultbrain.core.common.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectionState
 import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.integrations.google.GoogleConsentRequired
 import com.vaultbrain.core.integrations.google.GoogleTasksConnector

@@ -3,7 +3,7 @@ package com.vaultbrain.feature.lensmoney
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import java.io.File
 import java.io.FileWriter
 import java.text.SimpleDateFormat

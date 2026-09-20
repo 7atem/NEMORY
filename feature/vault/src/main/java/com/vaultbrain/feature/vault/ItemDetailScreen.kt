@@ -107,13 +107,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import com.vaultbrain.shared.domain.LensId
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
-import com.vaultbrain.core.common.model.PersonalCollection
-import com.vaultbrain.core.common.model.PersonalCollectionSuggestion
-import com.vaultbrain.core.common.model.ItemProcessingStatus
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
+import com.vaultbrain.shared.model.PersonalCollection
+import com.vaultbrain.shared.model.PersonalCollectionSuggestion
+import com.vaultbrain.shared.model.ItemProcessingStatus
 import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.feature.vault.components.DynamicActionRow
 import java.time.Instant
@@ -276,7 +276,7 @@ internal fun ItemDetailContent(
     onDismissCloudConsent: () -> Unit,
     onDismissTranslationMessage: () -> Unit,
     onGenerateAiSummary: () -> Unit = {},
-    onExecuteAction: (com.vaultbrain.core.common.model.ProactiveAction) -> Unit = {}
+    onExecuteAction: (com.vaultbrain.shared.model.ProactiveAction) -> Unit = {}
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }

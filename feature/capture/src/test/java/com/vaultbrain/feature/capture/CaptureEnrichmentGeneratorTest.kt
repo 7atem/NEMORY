@@ -4,7 +4,7 @@ import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.ai.llm.CapturePromptEvidence
 import com.vaultbrain.core.ai.llm.LlmClient
 import com.vaultbrain.core.ai.llm.LlmImageInput
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow

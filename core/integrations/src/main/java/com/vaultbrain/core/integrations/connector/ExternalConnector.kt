@@ -1,6 +1,6 @@
 package com.vaultbrain.core.integrations.connector
 
-import com.vaultbrain.core.common.model.external.ConnectorCapability
+import com.vaultbrain.shared.model.external.ConnectorCapability
 import com.vaultbrain.core.integrations.model.ConnectionRecord
 import com.vaultbrain.core.integrations.model.ConnectorAvailability
 import com.vaultbrain.core.integrations.model.ContextQuery

@@ -13,8 +13,8 @@ import com.google.mlkit.vision.text.TextRecognizer
 import com.vaultbrain.core.ai.heuristics.HeuristicExtractor
 import com.vaultbrain.core.ai.llm.CapturePromptEvidence
 import com.vaultbrain.core.ai.vision.VisionAnalyzer
-import com.vaultbrain.core.common.model.ProcessingState
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.ProcessingState
+import com.vaultbrain.shared.model.VaultItem
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -109,9 +109,9 @@ class DeferredItemAnalyzer @Inject constructor(
         ocrText: String,
         colors: List<String>,
         objects: List<String>,
-        scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel> = emptyList(),
+        scoredLabels: List<com.vaultbrain.shared.model.ScoredLabel> = emptyList(),
         barcodes: List<String>,
-        neuralClassification: com.vaultbrain.core.common.model.Classification? = null,
+        neuralClassification: com.vaultbrain.shared.model.Classification? = null,
         neuralConfidence: Float = 0f,
         previewBitmap: Bitmap? = null
     ): VaultItem {
@@ -177,7 +177,7 @@ class DeferredItemAnalyzer @Inject constructor(
         item: VaultItem,
         ocrText: String,
         objects: List<String>,
-        scoredLabels: List<com.vaultbrain.core.common.model.ScoredLabel>,
+        scoredLabels: List<com.vaultbrain.shared.model.ScoredLabel>,
         barcodes: List<String>,
         previewBitmap: Bitmap? = null
     ): VaultItem = try {

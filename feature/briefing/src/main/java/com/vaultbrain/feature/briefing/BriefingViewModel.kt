@@ -6,7 +6,7 @@ import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository
 import com.vaultbrain.core.notifications.VaultReminderManager
-import com.vaultbrain.core.common.model.VaultReminder
+import com.vaultbrain.shared.model.VaultReminder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.time.Instant
 import java.time.ZoneId

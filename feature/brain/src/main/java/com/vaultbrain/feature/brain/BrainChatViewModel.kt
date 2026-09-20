@@ -11,9 +11,9 @@ import com.vaultbrain.core.ai.rag.RagEvidenceKind
 import com.vaultbrain.core.ai.rag.RagCloudFailure
 import com.vaultbrain.core.ai.rag.RagResponse
 import com.vaultbrain.core.ai.rag.SearchFilters
-import com.vaultbrain.core.common.model.PersonalCollection
-import com.vaultbrain.core.common.model.VaultItem
-import com.vaultbrain.core.common.model.VaultReminder
+import com.vaultbrain.shared.model.PersonalCollection
+import com.vaultbrain.shared.model.VaultItem
+import com.vaultbrain.shared.model.VaultReminder
 import com.vaultbrain.core.database.repository.BrainConversationRepository
 import com.vaultbrain.core.database.repository.StoredBrainMessage
 import com.vaultbrain.core.database.repository.VaultRepository
@@ -54,7 +54,7 @@ data class BrainPendingWrite(
 
 data class BrainCollectionCreationPreview(
     val name: String,
-    val items: List<com.vaultbrain.core.common.model.VaultItem>,
+    val items: List<com.vaultbrain.shared.model.VaultItem>,
     val originalQuery: String,
     val assistantMessageId: String
 )
@@ -160,7 +160,7 @@ class BrainChatViewModel @Inject constructor(
                 _pendingCollectionTarget.value = vaultRepository.getById(itemId)
             }
             else -> {
-                val proactiveAction = com.vaultbrain.core.common.model.ProactiveAction.fromCode(action.actionId)
+                val proactiveAction = com.vaultbrain.shared.model.ProactiveAction.fromCode(action.actionId)
                 if (proactiveAction != null) {
                     viewModelScope.launch {
                         val item = vaultRepository.getById(itemId)
@@ -514,7 +514,7 @@ class BrainChatViewModel @Inject constructor(
     private fun updateWriteAssistant(
         messageId: String, 
         text: String, 
-        items: List<com.vaultbrain.core.common.model.VaultItem>,
+        items: List<com.vaultbrain.shared.model.VaultItem>,
         actions: List<com.vaultbrain.feature.brain.model.SuggestedAction> = emptyList()
     ) {
         var updatedMessage: ChatMessage.Assistant? = null
@@ -572,7 +572,7 @@ class BrainChatViewModel @Inject constructor(
 
     private fun writeSuccessMessage(
         preview: BrainWritePreview,
-        item: com.vaultbrain.core.common.model.VaultItem
+        item: com.vaultbrain.shared.model.VaultItem
     ): String = if (containsArabic(preview.originalQuery)) {
         when (val action = preview.action) {
             BrainWriteAction.Pin -> "تم تثبيت «${item.title}»."

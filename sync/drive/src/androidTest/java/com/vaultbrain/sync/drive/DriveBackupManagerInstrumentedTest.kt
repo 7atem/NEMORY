@@ -4,9 +4,9 @@ import android.content.Context
 import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.vaultbrain.core.common.model.SourceType
+import com.vaultbrain.shared.model.SourceType
 import com.vaultbrain.core.database.VaultDatabase
-import com.vaultbrain.core.database.entity.VaultItemEntity
+import com.vaultbrain.shared.database.entity.VaultItemEntity
 import com.vaultbrain.core.security.KeystoreManager
 import kotlinx.coroutines.runBlocking
 import org.junit.After

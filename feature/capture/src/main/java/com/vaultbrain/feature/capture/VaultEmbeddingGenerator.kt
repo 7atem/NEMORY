@@ -10,7 +10,7 @@ import android.os.ParcelFileDescriptor
 import androidx.core.graphics.createBitmap
 import com.vaultbrain.core.ai.embeddings.TextEmbeddingModel
 import com.vaultbrain.core.ai.embeddings.VisionEmbeddingModel
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.vectorstore.VectorStore
 import com.vaultbrain.core.vectorstore.entity.VaultEmbedding
 import dagger.hilt.android.qualifiers.ApplicationContext

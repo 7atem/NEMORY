@@ -1,14 +1,14 @@
 package com.vaultbrain.core.integrations.model
 
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalRetention
-import com.vaultbrain.core.common.model.external.ExternalSource
-import com.vaultbrain.core.common.model.external.SensitivityLevel
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalRetention
+import com.vaultbrain.shared.model.external.ExternalSource
+import com.vaultbrain.shared.model.external.SensitivityLevel
 
 /**
  * User-readable representation of a record living outside the vault.
  *
- * Mirrors [com.vaultbrain.core.database.entity.ExternalRecordEntity] but uses the
+ * Mirrors [com.vaultbrain.shared.database.entity.ExternalRecordEntity] but uses the
  * typed enums and hides storage concerns.
  */
 data class ExternalRecord(

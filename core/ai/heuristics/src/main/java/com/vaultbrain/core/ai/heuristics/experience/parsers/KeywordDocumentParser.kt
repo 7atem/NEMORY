@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.heuristics.experience.parsers
 
 import com.vaultbrain.core.ai.heuristics.experience.ExperienceParser
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 
 /**
  * Base implementation for the lightweight parsers added with the extended experience set.

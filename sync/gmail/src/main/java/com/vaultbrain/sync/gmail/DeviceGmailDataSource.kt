@@ -3,7 +3,7 @@ package com.vaultbrain.sync.gmail
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import com.vaultbrain.core.common.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectionState
 import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.integrations.google.GoogleApiException
 import com.vaultbrain.core.integrations.google.GoogleDeviceApi

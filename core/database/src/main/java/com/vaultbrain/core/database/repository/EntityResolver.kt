@@ -2,13 +2,13 @@ package com.vaultbrain.core.database.repository
 
 import kotlinx.serialization.encodeToString
 
-import com.vaultbrain.core.common.model.EnrichmentState
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.EnrichmentState
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.database.VaultDatabase
-import com.vaultbrain.core.database.dao.KnowledgeGraphDao
-import com.vaultbrain.core.database.entity.ItemEntityCrossRef
-import com.vaultbrain.core.database.entity.KnowledgeEntityEntity
+import com.vaultbrain.shared.database.dao.KnowledgeGraphDao
+import com.vaultbrain.shared.database.entity.ItemEntityCrossRef
+import com.vaultbrain.shared.database.entity.KnowledgeEntityEntity
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.json.Json
 import java.util.Locale

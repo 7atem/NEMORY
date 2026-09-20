@@ -1,6 +1,6 @@
 package com.vaultbrain.feature.brain.model
 
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.core.ai.rag.RagEvidence
 import com.vaultbrain.core.integrations.model.ExternalRecord

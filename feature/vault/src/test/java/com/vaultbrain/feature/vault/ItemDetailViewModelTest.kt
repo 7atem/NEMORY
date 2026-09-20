@@ -5,8 +5,8 @@ import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.core.ai.llm.CloudConsentStore
 import com.vaultbrain.core.ai.llm.HybridAiCoordinator
 import com.vaultbrain.core.ai.llm.HybridAiResult
-import com.vaultbrain.core.common.model.PersonalCollection
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.PersonalCollection
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.notifications.UnifiedAlertManager
 import io.mockk.coEvery

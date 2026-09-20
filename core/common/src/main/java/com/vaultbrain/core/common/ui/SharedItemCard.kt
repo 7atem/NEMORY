@@ -16,7 +16,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

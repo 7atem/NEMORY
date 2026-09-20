@@ -2,9 +2,9 @@ package com.vaultbrain.feature.capture.share
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.vaultbrain.core.common.model.PersonalCollection
-import com.vaultbrain.core.database.dao.PersonalCollectionDao
-import com.vaultbrain.core.database.dao.PersonalCollectionRow
+import com.vaultbrain.shared.model.PersonalCollection
+import com.vaultbrain.shared.database.dao.PersonalCollectionDao
+import com.vaultbrain.shared.database.dao.PersonalCollectionRow
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

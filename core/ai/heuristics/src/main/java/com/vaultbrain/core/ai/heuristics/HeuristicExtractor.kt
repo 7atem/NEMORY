@@ -1,9 +1,9 @@
 package com.vaultbrain.core.ai.heuristics
 
-import com.vaultbrain.core.common.model.Classification
+import com.vaultbrain.shared.model.Classification
 import com.vaultbrain.shared.domain.LensId
 import com.vaultbrain.shared.intelligence.KeywordDictionary
-import com.vaultbrain.core.common.model.ScoredLabel
+import com.vaultbrain.shared.model.ScoredLabel
 import com.vaultbrain.core.common.metadata.MetadataFieldType
 import com.vaultbrain.core.common.metadata.MetadataValueNormalizer
 import javax.inject.Inject

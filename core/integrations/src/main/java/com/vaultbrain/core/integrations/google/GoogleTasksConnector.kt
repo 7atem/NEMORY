@@ -1,6 +1,6 @@
 package com.vaultbrain.core.integrations.google
 
-import com.vaultbrain.core.common.model.external.*
+import com.vaultbrain.shared.model.external.*
 import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.integrations.connector.ExternalConnector
 import com.vaultbrain.core.integrations.model.*

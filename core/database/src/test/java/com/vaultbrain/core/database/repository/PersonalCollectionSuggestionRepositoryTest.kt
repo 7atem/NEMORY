@@ -1,15 +1,15 @@
 package com.vaultbrain.core.database.repository
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.CollectionSuggestionStatus
+import com.vaultbrain.shared.model.CollectionSuggestionStatus
 import com.vaultbrain.core.common.security.DecoySessionState
-import com.vaultbrain.core.database.dao.AuditLogDao
-import com.vaultbrain.core.database.dao.NotificationQueueDao
-import com.vaultbrain.core.database.dao.PersonalCollectionDao
-import com.vaultbrain.core.database.dao.PersonalCollectionSuggestionDao
-import com.vaultbrain.core.database.dao.VaultItemDao
-import com.vaultbrain.core.database.entity.PersonalCollectionMembershipEntity
-import com.vaultbrain.core.database.entity.PersonalCollectionSuggestionEntity
+import com.vaultbrain.shared.database.dao.AuditLogDao
+import com.vaultbrain.shared.database.dao.NotificationQueueDao
+import com.vaultbrain.shared.database.dao.PersonalCollectionDao
+import com.vaultbrain.shared.database.dao.PersonalCollectionSuggestionDao
+import com.vaultbrain.shared.database.dao.VaultItemDao
+import com.vaultbrain.shared.database.entity.PersonalCollectionMembershipEntity
+import com.vaultbrain.shared.database.entity.PersonalCollectionSuggestionEntity
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk

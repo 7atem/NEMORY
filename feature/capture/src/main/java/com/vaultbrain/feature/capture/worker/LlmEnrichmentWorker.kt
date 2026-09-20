@@ -17,7 +17,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.vaultbrain.core.ai.llm.CapturePromptEvidence
 import com.vaultbrain.core.ai.llm.LlmClient
-import com.vaultbrain.core.common.model.EnrichmentState
+import com.vaultbrain.shared.model.EnrichmentState
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.feature.capture.CaptureEnrichmentGenerator
 import com.vaultbrain.feature.capture.R

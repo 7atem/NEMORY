@@ -1,8 +1,8 @@
 package com.vaultbrain.feature.brain
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.VaultItem
 import org.junit.Test
 
 class BrainSuggestionProviderTest {

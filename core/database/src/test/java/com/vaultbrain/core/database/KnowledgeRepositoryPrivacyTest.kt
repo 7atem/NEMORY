@@ -1,8 +1,8 @@
 package com.vaultbrain.core.database
 
 import com.vaultbrain.core.common.security.DecoySessionState
-import com.vaultbrain.core.database.dao.KnowledgeGraphDao
-import com.vaultbrain.core.database.entity.RelationshipEntity
+import com.vaultbrain.shared.database.dao.KnowledgeGraphDao
+import com.vaultbrain.shared.database.entity.RelationshipEntity
 import com.vaultbrain.core.database.repository.KnowledgeRepository
 import com.vaultbrain.core.database.repository.VaultRepository
 import io.mockk.coEvery

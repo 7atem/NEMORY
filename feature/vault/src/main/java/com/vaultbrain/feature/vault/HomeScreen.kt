@@ -41,8 +41,8 @@ import com.vaultbrain.feature.vault.components.VaultItemCard
 import com.vaultbrain.feature.vault.home.AttentionItem
 import com.vaultbrain.feature.voice.OnDeviceVoiceCaptureDialog
 
-import com.vaultbrain.core.common.model.VaultItem
-import com.vaultbrain.core.common.model.VaultReminder
+import com.vaultbrain.shared.model.VaultItem
+import com.vaultbrain.shared.model.VaultReminder
 import com.vaultbrain.core.integrations.calendar.CalendarEventDraft
 import com.vaultbrain.core.integrations.calendar.CalendarIntentFactory
 import com.vaultbrain.core.integrations.model.ExternalRecord
@@ -1107,7 +1107,7 @@ private fun HomeContentPreview() {
                 recentItems = PreviewData.sampleItems,
                 activeItems = PreviewData.sampleItems,
                 collections = listOf(
-                    com.vaultbrain.core.common.model.PersonalCollection(
+                    com.vaultbrain.shared.model.PersonalCollection(
                         id = "collection",
                         name = "My Italy Adventure",
                         createdAt = 1L,

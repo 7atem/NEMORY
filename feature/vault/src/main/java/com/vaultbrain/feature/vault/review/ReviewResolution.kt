@@ -1,7 +1,7 @@
 package com.vaultbrain.feature.vault.review
 
-import com.vaultbrain.core.common.model.EnrichmentState
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.EnrichmentState
+import com.vaultbrain.shared.model.VaultItem
 
 enum class ReviewReason { POSSIBLE_DUPLICATE, CATEGORY, ENRICHMENT_FAILED, DETAILS }
 

@@ -12,8 +12,8 @@ import com.vaultbrain.core.ai.llm.gemma.GemmaModelManager
 import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import com.vaultbrain.core.ai.vision.VisionAnalyzer
 import com.vaultbrain.core.common.UserExperienceFrequency
-import com.vaultbrain.core.common.model.Classification
-import com.vaultbrain.core.common.model.SourceType
+import com.vaultbrain.shared.model.Classification
+import com.vaultbrain.shared.model.SourceType
 import com.vaultbrain.core.database.repository.VaultRepository
 import com.vaultbrain.core.notifications.UnifiedAlertManager
 import io.mockk.every

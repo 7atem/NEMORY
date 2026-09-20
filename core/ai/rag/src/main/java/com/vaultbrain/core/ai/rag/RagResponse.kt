@@ -2,7 +2,7 @@ package com.vaultbrain.core.ai.rag
 
 import com.vaultbrain.core.ai.llm.AiResponseOrigin
 import com.vaultbrain.core.ai.llm.CloudConsentDisclosure
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.integrations.model.ExternalRecord
 
 /**

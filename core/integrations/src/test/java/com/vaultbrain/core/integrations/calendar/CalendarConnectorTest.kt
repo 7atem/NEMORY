@@ -1,9 +1,9 @@
 package com.vaultbrain.core.integrations.calendar
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.external.ConnectionState
-import com.vaultbrain.core.database.dao.FakeExternalConnectionDao
-import com.vaultbrain.core.database.dao.FakeExternalRecordDao
+import com.vaultbrain.shared.model.external.ConnectionState
+import com.vaultbrain.shared.database.dao.FakeExternalConnectionDao
+import com.vaultbrain.shared.database.dao.FakeExternalRecordDao
 import com.vaultbrain.core.integrations.model.ExternalAction
 import com.vaultbrain.core.integrations.model.SyncRequest
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository

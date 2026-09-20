@@ -1,7 +1,7 @@
 package com.vaultbrain.core.database.mapper
 
-import com.vaultbrain.core.common.model.VaultItem
-import com.vaultbrain.core.database.entity.VaultItemEntity
+import com.vaultbrain.shared.model.VaultItem
+import com.vaultbrain.shared.database.entity.VaultItemEntity
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 

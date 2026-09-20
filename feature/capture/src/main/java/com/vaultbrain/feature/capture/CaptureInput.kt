@@ -1,8 +1,8 @@
 package com.vaultbrain.feature.capture
 
 import android.net.Uri
-import com.vaultbrain.core.common.model.SourceType
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.SourceType
+import com.vaultbrain.shared.model.VaultItem
 
 /**
  * Input passed to the capture flow. Either a list of shared URIs, pasted text,

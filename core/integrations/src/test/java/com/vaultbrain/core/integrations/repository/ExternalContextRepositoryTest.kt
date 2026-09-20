@@ -1,12 +1,12 @@
 package com.vaultbrain.core.integrations.repository
 
 import com.google.common.truth.Truth.assertThat
-import com.vaultbrain.core.common.model.external.ConnectionState
-import com.vaultbrain.core.common.model.external.ConnectorCapability
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
-import com.vaultbrain.core.database.dao.FakeExternalConnectionDao
-import com.vaultbrain.core.database.dao.FakeExternalRecordDao
+import com.vaultbrain.shared.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectorCapability
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
+import com.vaultbrain.shared.database.dao.FakeExternalConnectionDao
+import com.vaultbrain.shared.database.dao.FakeExternalRecordDao
 import com.vaultbrain.core.integrations.model.ConnectionRecord
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import kotlinx.coroutines.flow.first

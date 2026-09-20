@@ -3,8 +3,8 @@ package com.vaultbrain.core.ai.rag
 import com.google.common.truth.Truth.assertThat
 import com.vaultbrain.core.ai.llm.LlmClient
 import com.vaultbrain.core.ai.llm.ReasoningBudget
-import com.vaultbrain.core.common.model.external.ExternalRecordType
-import com.vaultbrain.core.common.model.external.ExternalSource
+import com.vaultbrain.shared.model.external.ExternalRecordType
+import com.vaultbrain.shared.model.external.ExternalSource
 import com.vaultbrain.core.integrations.model.ExternalRecord
 import io.mockk.coEvery
 import io.mockk.every

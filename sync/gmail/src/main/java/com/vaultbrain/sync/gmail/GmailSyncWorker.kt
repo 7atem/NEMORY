@@ -10,7 +10,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.vaultbrain.core.common.model.external.ConnectionState
+import com.vaultbrain.shared.model.external.ConnectionState
 import com.vaultbrain.core.common.security.DecoySessionState
 import com.vaultbrain.core.integrations.model.SyncRequest
 import com.vaultbrain.core.integrations.repository.ExternalContextRepository

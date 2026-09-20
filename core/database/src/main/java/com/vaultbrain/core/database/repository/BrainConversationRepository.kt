@@ -1,10 +1,10 @@
 package com.vaultbrain.core.database.repository
 
-import com.vaultbrain.core.common.model.VaultItem
+import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.common.security.DecoySessionState
-import com.vaultbrain.core.database.dao.BrainMessageDao
-import com.vaultbrain.core.database.dao.VaultItemDao
-import com.vaultbrain.core.database.entity.BrainMessageEntity
+import com.vaultbrain.shared.database.dao.BrainMessageDao
+import com.vaultbrain.shared.database.dao.VaultItemDao
+import com.vaultbrain.shared.database.entity.BrainMessageEntity
 import com.vaultbrain.core.database.mapper.VaultItemMapper
 import javax.inject.Inject
 import javax.inject.Singleton

@@ -1,7 +1,7 @@
-package com.vaultbrain.core.database.dao
+package com.vaultbrain.shared.database.dao
 
-import com.vaultbrain.core.common.model.external.ConnectionState
-import com.vaultbrain.core.database.entity.ExternalConnectionEntity
+import com.vaultbrain.shared.model.external.ConnectionState
+import com.vaultbrain.shared.database.entity.ExternalConnectionEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

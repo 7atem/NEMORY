@@ -1,7 +1,7 @@
 package com.vaultbrain.core.ai.heuristics.experience
 
 import com.vaultbrain.shared.intelligence.KeywordDictionary
-import com.vaultbrain.core.common.model.ExperienceId
+import com.vaultbrain.shared.model.ExperienceId
 
 /**
  * Keyword dictionary used to rank experiences against OCR text.
