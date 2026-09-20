@@ -113,7 +113,9 @@
     <string name="settings_lock_5m">5 دقائق</string>
     <string name="settings_lock_15m">15 دقيقة</string>
     <string name="settings_appearance">المظهر</string>
-    <string name="settings_theme_system">الافتراضي للنظام</string>
+    <string name="settings_theme_system">النظام الافتراضي</string>
     <string name="settings_theme_light">فاتح</string>
     <string name="settings_theme_dark">داكن</string>
+    <string name="settings_magic_screenshot">التعرف الذكي على لقطات الشاشة</string>
+    <string name="settings_magic_screenshot_permission">مطلوب إذن التخزين</string>
 </resources>

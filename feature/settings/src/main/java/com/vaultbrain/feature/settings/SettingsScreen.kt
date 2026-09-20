@@ -500,7 +500,7 @@ private fun GeneralSection(
         if (isGranted) {
             onMagicScreenshotToggle(true)
         } else {
-            android.widget.Toast.makeText(context, "Storage permission is required", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, context.getString(R.string.settings_magic_screenshot_permission), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
     
@@ -534,7 +534,7 @@ private fun GeneralSection(
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         SettingsSwitch(
-            label = "Magic Screenshot Detection (Ambient AI)",
+            label = stringResource(R.string.settings_magic_screenshot),
             checked = magicScreenshotEnabled,
             onCheckedChange = { enabled ->
                 if (enabled) {

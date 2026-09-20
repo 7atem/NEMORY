@@ -116,4 +116,6 @@
     <string name="settings_theme_system">System Default</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_magic_screenshot">Magic Screenshot Detection (Ambient AI)</string>
+    <string name="settings_magic_screenshot_permission">Storage permission is required</string>
 </resources>
