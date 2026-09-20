@@ -1,4 +1,4 @@
-package com.vaultbrain.core.database.util
+package com.vaultbrain.shared.database.util
 
 import androidx.room.TypeConverter
 import com.vaultbrain.shared.model.Classification

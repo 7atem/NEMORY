@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 kotlin {
@@ -44,6 +45,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             implementation(libs.room.runtime)
+            implementation(libs.kotlinx.serialization.json)
         }
 
         commonTest.dependencies {
