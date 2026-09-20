@@ -78,19 +78,31 @@ object KeywordDictionary {
         ),
         LensId.MEDIA to listOf(
             SubModule("movie", setOf(
-                "movie", "film", "cinema", "showtimes", "dvd", "blu-ray"
+                "movie", "film", "cinema", "showtimes", "dvd", "blu-ray", "imdb", "rotten tomatoes",
+                "letterboxd", "trailer", "box office", "directed by", "starring", "cast", "plot",
+                "synopsis", "watchlist", "must watch", "movie recommendation", "film recommendation",
+                "فيلم", "سينما", "أفلام", "مشاهدة"
+            )),
+            SubModule("tv_series", setOf(
+                "tv series", "tv show", "series", "miniseries", "episode", "season", "finale",
+                "premiere", "binge", "binge-watching", "episodes", "seasons", "مسلسل", "حلقة", "مواسم"
             )),
             SubModule("book", setOf(
-                "book", "novel", "paperback", "hardcover", "kindle", "audible", "bookstore"
+                "book", "novel", "paperback", "hardcover", "kindle", "audible", "bookstore", "goodreads",
+                "author", "bestseller", "isbn", "reading list", "readlist", "must read", "booktok",
+                "book recommendation", "chapter", "nonfiction", "fiction", "كتاب", "رواية", "مؤلف", "قراءة"
             )),
             SubModule("streaming", setOf(
-                "netflix", "hulu", "amazon prime", "disney+", "hbo", "apple tv"
+                "netflix", "hulu", "amazon prime", "disney+", "disney plus", "hbo", "hbo max", "max.com",
+                "apple tv", "apple tv+", "paramount+", "peacock", "crunchyroll", "osn", "shahid",
+                "شاهد", "نتفليكس"
             )),
             SubModule("music", setOf(
-                "music", "album", "concert", "spotify", "apple music", "youtube", "vinyl"
+                "music", "album", "concert", "spotify", "apple music", "youtube", "vinyl", "track",
+                "artist", "playlist", "أغنية", "موسيقى"
             )),
             SubModule("gaming", setOf(
-                "video game", "playstation", "xbox", "nintendo", "steam", "epic games"
+                "video game", "playstation", "xbox", "nintendo", "steam", "epic games", "gameplay"
             ))
         )
     )

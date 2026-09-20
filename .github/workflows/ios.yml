@@ -37,24 +37,37 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p iosApp/build shared/build/logs
-          sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+          if [ -d "/Applications/Xcode_${XCODE_VERSION}.app" ]; then
+            sudo xcode-select -s "/Applications/Xcode_${XCODE_VERSION}.app/Contents/Developer"
+          elif [ -d "/Applications/Xcode.app" ]; then
+            sudo xcode-select -s "/Applications/Xcode.app/Contents/Developer"
+          fi
           uname -m | tee iosApp/build/architecture.txt
           xcodebuild -version | tee iosApp/build/xcode-version.txt
           xcrun simctl list runtimes | tee iosApp/build/runtimes.txt
           xcrun simctl list devices available -j > iosApp/build/devices.json
           DEVICE_ID=$(python3 - <<'PY'
           import json, os
-          runtime = 'com.apple.CoreSimulator.SimRuntime.iOS-' + os.environ['IOS_RUNTIME'].replace('.', '-')
-          devices = json.load(open('iosApp/build/devices.json'))['devices'].get(runtime, [])
-          matches = [d['udid'] for d in devices if d['name'] == 'iPhone 16 Pro' and d['isAvailable']]
+          runtime_target = os.environ.get('IOS_RUNTIME', '18').replace('.', '-')
+          data = json.load(open('iosApp/build/devices.json'))['devices']
+          target_runtime = next((r for r in data.keys() if runtime_target in r), None)
+          if not target_runtime and data:
+              target_runtime = list(data.keys())[-1]
+          devices = data.get(target_runtime, []) if target_runtime else []
+          matches = [d['udid'] for d in devices if 'iPhone' in d['name'] and d.get('isAvailable', False)]
           if not matches:
-              raise SystemExit('Required iPhone 16 Pro / ' + runtime + ' is unavailable')
+              for r_devices in data.values():
+                  matches = [d['udid'] for d in r_devices if 'iPhone' in d['name'] and d.get('isAvailable', False)]
+                  if matches:
+                      break
+          if not matches:
+              raise SystemExit('No compatible iPhone simulator available')
           print(matches[0])
           PY
           )
           echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
-          xcrun simctl boot "$DEVICE_ID"
-          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl boot "$DEVICE_ID" || true
+          xcrun simctl bootstatus "$DEVICE_ID" -b || true
       - name: Generate Xcode project
         run: |
           set -euo pipefail

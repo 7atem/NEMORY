@@ -266,17 +266,21 @@ class HeuristicExtractor @Inject constructor() {
                 Classification.IDENTITY_DOCUMENT
             lower.containsAny(
                 "tv series", "tv show", "television series", "miniseries", "episode ",
-                "season ", "series review"
+                "season ", "series review", "binge watch", "مسلسل", "مواسم"
             ) -> Classification.TV_SERIES
             lower.containsAny(
                 "movie", "film", "cinema", "watchlist", "movie review", "film review",
                 "movie trailer", "imdb.com/title", "letterboxd.com/film", "netflix.com/title",
                 "themoviedb.org", "rottentomatoes.com", "primevideo.com/detail",
-                "disneyplus.com", "max.com/", "tv.apple.com"
+                "disneyplus.com", "max.com/", "tv.apple.com", "directed by", "starring ",
+                "rotten tomatoes", "letterboxd", "must watch", "movie recommendation",
+                "فيلم", "سينما", "أفلام"
             )  -> Classification.MOVIE
             lower.containsAny(
                 "book", "novel", "reading list", "readlist", "book review", "isbn",
-                "goodreads.com/book", "app.thestorygraph.com/books", "books.google."
+                "goodreads.com/book", "app.thestorygraph.com/books", "books.google.",
+                "goodreads", "booktok", "bestseller", "must read", "book recommendation",
+                "كتاب", "رواية", "قراءة", "مؤلف"
             ) || lowerVision.contains("book") -> Classification.BOOK
             lower.containsAny(
                 "boarding pass", "flight", "airport", "departure", "arrival", "train ticket",

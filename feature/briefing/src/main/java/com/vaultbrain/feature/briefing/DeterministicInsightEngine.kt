@@ -171,7 +171,14 @@ class DeterministicInsightEngine @Inject constructor() {
     }
 
     private fun mediaBacklogInsight(items: List<VaultItem>, now: Long): TodayInsight.MediaBacklog? {
-        val oldEnough = now - MEDIA_NUDGE_AFTER_DAYS * DAY_MILLIS
+        val dayOfWeek = Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault()).dayOfWeek
+        val isWeekendWindow = dayOfWeek in setOf(
+            java.time.DayOfWeek.FRIDAY,
+            java.time.DayOfWeek.SATURDAY,
+            java.time.DayOfWeek.SUNDAY
+        )
+        val thresholdDays = if (isWeekendWindow) 1L else MEDIA_NUDGE_AFTER_DAYS
+        val oldEnough = now - thresholdDays * DAY_MILLIS
         val backlog = items.filter { item ->
             item.effectiveClassification in MEDIA_CATEGORIES &&
                 !item.isMediaComplete() && item.createdAt <= oldEnough
