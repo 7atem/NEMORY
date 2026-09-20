@@ -19,6 +19,7 @@ kotlin {
     sourceSets.androidMain.dependencies {
         implementation(libs.biometric)
         implementation("androidx.fragment:fragment-ktx:1.8.5")
+        implementation(libs.security.crypto)
     }
 
     listOf(
