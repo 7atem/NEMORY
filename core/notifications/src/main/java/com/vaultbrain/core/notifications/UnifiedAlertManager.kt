@@ -43,6 +43,48 @@ class UnifiedAlertManager @Inject constructor(
 ) {
 
     /**
+     * Instantly pushes an actionable notification for a detected screenshot.
+     */
+    fun sendMagicScreenshotAlert(uri: String, title: String, body: String) {
+        val notificationManager = context.getSystemService(android.app.NotificationManager::class.java)
+        val channelId = "MAGIC_SCREENSHOT"
+        if (notificationManager?.getNotificationChannel(channelId) == null) {
+            val channel = android.app.NotificationChannel(
+                channelId,
+                "Magic Screenshots",
+                android.app.NotificationManager.IMPORTANCE_DEFAULT
+            )
+            notificationManager?.createNotificationChannel(channel)
+        }
+
+        val intent = android.content.Intent(
+            android.content.Intent.ACTION_VIEW,
+            android.net.Uri.parse("nemory://capture?imageUris=${android.net.Uri.encode(uri)}&source=MAGIC_SCREENSHOT")
+        ).setClassName(context.packageName, "com.vaultbrain.app.MainActivity")
+            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TOP)
+
+        val pendingIntent = android.app.PendingIntent.getActivity(
+            context,
+            uri.hashCode(),
+            intent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = androidx.core.app.NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED || android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) {
+            androidx.core.app.NotificationManagerCompat.from(context).notify(uri.hashCode(), notification)
+        }
+    }
+
+    /**
      * Schedules a notification for [item] to be delivered no earlier than [triggerAt].
      */
     suspend fun schedule(

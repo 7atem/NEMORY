@@ -36,6 +36,10 @@ enum class Classification {
     MEDICAL_RECORD,
     CRYPTO_TRANSACTION,
     ACADEMIC_RECORD,
+    EVENT,
+    RECIPE,
+    CHAT,
+    FLIGHT_BOARDING_PASS,
     /** Supported evidence that does not reasonably fit another broad category. */
     OTHER,
     /** Internal low-confidence state used before semantic enrichment. */

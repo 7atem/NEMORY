@@ -45,6 +45,7 @@ data class SettingsUiState(
     val driveBackupEnabled: Boolean = false,
     val gmailIntegrationEnabled: Boolean = false,
     val affiliateLinksEnabled: Boolean = true,
+    val magicScreenshotEnabled: Boolean = false,
     val showAuditLog: Boolean = false,
     val auditLogs: List<AuditLogEntity> = emptyList(),
     val isPinSetupVisible: Boolean = false,
@@ -93,6 +94,7 @@ class SettingsViewModel @Inject constructor(
             autoLockMinutes = authManager.autoLockMinutes,
             decoyPinSet = authManager.isDecoyPinSet,
             driveBackupEnabled = false,
+            magicScreenshotEnabled = context.getSharedPreferences("nemory_settings", Context.MODE_PRIVATE).getBoolean("magic_screenshot_enabled", false),
             lensAccess = buildMap {
                 com.vaultbrain.shared.domain.LensId.FREE_LENSES.forEach { put(it, featureGate.canAccessLens(it)) }
                 com.vaultbrain.shared.domain.LensId.PRO_LENSES.forEach { put(it, featureGate.canAccessLens(it)) }
@@ -174,6 +176,28 @@ class SettingsViewModel @Inject constructor(
     fun setBiometricEnabled(enabled: Boolean) {
         authManager.enableBiometric(enabled)
         _uiState.value = _uiState.value.copy(biometricEnabled = enabled)
+    }
+
+    fun setMagicScreenshotEnabled(enabled: Boolean) {
+        val prefs = context.getSharedPreferences("nemory_settings", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("magic_screenshot_enabled", enabled).apply()
+        _uiState.value = _uiState.value.copy(magicScreenshotEnabled = enabled)
+        
+        if (enabled) {
+            val constraints = androidx.work.Constraints.Builder()
+                .addContentUriTrigger(android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, true)
+                .build()
+            val request = androidx.work.OneTimeWorkRequestBuilder<com.vaultbrain.feature.capture.worker.ScreenshotWatcherWorker>()
+                .setConstraints(constraints)
+                .build()
+            androidx.work.WorkManager.getInstance(context).enqueueUniqueWork(
+                com.vaultbrain.feature.capture.worker.ScreenshotWatcherWorker.WORK_NAME,
+                androidx.work.ExistingWorkPolicy.REPLACE,
+                request
+            )
+        } else {
+            androidx.work.WorkManager.getInstance(context).cancelUniqueWork(com.vaultbrain.feature.capture.worker.ScreenshotWatcherWorker.WORK_NAME)
+        }
     }
 
     fun setAutoLockMinutes(minutes: Int) {

@@ -187,7 +187,9 @@ fun SettingsScreen(
             GeneralSection(
                 lensAccess = uiState.lensAccess,
                 affiliateEnabled = uiState.affiliateLinksEnabled,
-                onAffiliateToggle = viewModel::setAffiliateLinksEnabled
+                onAffiliateToggle = viewModel::setAffiliateLinksEnabled,
+                magicScreenshotEnabled = uiState.magicScreenshotEnabled,
+                onMagicScreenshotToggle = viewModel::setMagicScreenshotEnabled
             )
 
             PrivateAiSection(
@@ -484,12 +486,30 @@ private fun DashboardRow(icon: androidx.compose.ui.graphics.vector.ImageVector, 
 private fun GeneralSection(
     lensAccess: Map<String, Boolean>,
     affiliateEnabled: Boolean,
-    onAffiliateToggle: (Boolean) -> Unit
+    onAffiliateToggle: (Boolean) -> Unit,
+    magicScreenshotEnabled: Boolean,
+    onMagicScreenshotToggle: (Boolean) -> Unit
 ) {
     var helpVisible by remember { mutableStateOf(false) }
     var privacyVisible by remember { mutableStateOf(false) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            onMagicScreenshotToggle(true)
+        } else {
+            android.widget.Toast.makeText(context, "Storage permission is required", android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    val mediaPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        android.Manifest.permission.READ_MEDIA_IMAGES
+    } else {
+        android.Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+
     val versionName = remember {
         runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }
             .getOrNull() ?: "1.1.2"
@@ -510,6 +530,28 @@ private fun GeneralSection(
             label = stringResource(R.string.settings_affiliate_links),
             checked = affiliateEnabled,
             onCheckedChange = onAffiliateToggle
+        )
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        SettingsSwitch(
+            label = "Magic Screenshot Detection (Ambient AI)",
+            checked = magicScreenshotEnabled,
+            onCheckedChange = { enabled ->
+                if (enabled) {
+                    val isGranted = androidx.core.content.ContextCompat.checkSelfPermission(
+                        context,
+                        mediaPermission
+                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    
+                    if (isGranted) {
+                        onMagicScreenshotToggle(true)
+                    } else {
+                        permissionLauncher.launch(mediaPermission)
+                    }
+                } else {
+                    onMagicScreenshotToggle(false)
+                }
+            }
         )
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
