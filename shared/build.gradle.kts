@@ -20,6 +20,8 @@ kotlin {
         implementation(libs.biometric)
         implementation("androidx.fragment:fragment-ktx:1.8.5")
         implementation(libs.security.crypto)
+        implementation(libs.workmanager.runtime.ktx)
+        implementation("androidx.core:core-ktx:1.15.0")
     }
 
     listOf(
