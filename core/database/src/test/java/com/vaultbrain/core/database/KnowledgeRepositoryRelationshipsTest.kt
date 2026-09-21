@@ -101,6 +101,30 @@ class KnowledgeRepositoryRelationshipsTest {
     }
 
     @Test
+    fun `exactly 24 relationships are accepted`() = runTest {
+        stubGraph()
+        val stored = mutableListOf<RelationshipEntity>()
+        coEvery { dao.replaceRelationshipsInvolving(any(), any()) } answers { stored.addAll(secondArg()) }
+
+        val relationships = (1..24).map { RelationshipEntity("r$it", "a", "b", "SAME_ENTITY") }
+        repository.replaceRelationships("a", relationships)
+
+        assertEquals(24, stored.size)
+    }
+
+    @Test
+    fun `evidence is stored verbatim`() = runTest {
+        stubGraph()
+        val stored = mutableListOf<RelationshipEntity>()
+        coEvery { dao.replaceRelationshipsInvolving(any(), any()) } answers { stored.addAll(secondArg()) }
+
+        val evidence = "Policy #POL-99201"
+        repository.replaceRelationships("a", listOf(RelationshipEntity("r1", "a", "b", "SAME_ENTITY", evidence = evidence)))
+
+        assertEquals(listOf(evidence), stored.map { it.evidence })
+    }
+
+    @Test
     fun `replace removes previous relationships and coerces confidence`() = runTest {
         stubGraph(endpoints = listOf(VaultItem(id = "b", title = "Item B"), VaultItem(id = "c", title = "Item C")))
         val stored = mutableMapOf<String, RelationshipEntity>()

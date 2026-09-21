@@ -57,6 +57,41 @@ class CalendarConnectorTest {
     }
 
     @Test
+    fun `sync requests events from 30 days past through 90 days future`() = runTest {
+        val before = System.currentTimeMillis()
+        source.selected = setOf(1)
+        val connection = connector.connect().getOrThrow()
+        connector.sync(connection, SyncRequest()).getOrThrow()
+        val after = System.currentTimeMillis()
+
+        assertThat(source.lastRequestedStartAt).isNotNull()
+        assertThat(source.lastRequestedEndAt).isNotNull()
+        assertThat(source.lastRequestedStartAt!!).isAtLeast(before - CalendarConnector.PAST_WINDOW_MS)
+        assertThat(source.lastRequestedStartAt!!).isAtMost(after - CalendarConnector.PAST_WINDOW_MS)
+        assertThat(source.lastRequestedEndAt!!).isAtLeast(before + CalendarConnector.FUTURE_WINDOW_MS)
+        assertThat(source.lastRequestedEndAt!!).isAtMost(after + CalendarConnector.FUTURE_WINDOW_MS)
+    }
+
+    @Test
+    fun `stale records inside the sync window are removed while records outside it are kept`() = runTest {
+        val now = System.currentTimeMillis()
+        source.selected = setOf(1)
+        source.rows = listOf(row(40, 1, now))
+        val connection = connector.connect().getOrThrow()
+        connector.sync(connection, SyncRequest()).getOrThrow()
+
+        val outsideWindow = connector.normalize(row(41, 1, now + 200L * 24 * 60 * 60 * 1000))
+        repository.upsertRecord(outsideWindow)
+
+        source.rows = emptyList()
+        val result = connector.sync(connection, SyncRequest()).getOrThrow()
+
+        assertThat(result.recordsRemoved).isEqualTo(1)
+        assertThat(repository.getRecordsForConnection(CalendarConnector.CONNECTOR_ID, CalendarConnector.ACCOUNT_ID))
+            .containsExactly(outsideWindow)
+    }
+
+    @Test
     fun `permission denied and revoked update state and clear cached context`() = runTest {
         source.permission = false
         assertThat(connector.connect().isFailure).isTrue()
@@ -131,6 +166,8 @@ private class FakeCalendarDataSource : CalendarDataSource {
     var selected: Set<Long> = emptySet()
     var rows: List<CalendarEventRow> = emptyList()
     var lastRequestedCalendarIds: Set<Long> = emptySet()
+    var lastRequestedStartAt: Long? = null
+    var lastRequestedEndAt: Long? = null
     var openedUri: String? = null
     var createdDraft: CalendarEventDraft? = null
 
@@ -141,6 +178,8 @@ private class FakeCalendarDataSource : CalendarDataSource {
     override suspend fun calendars() = listOf(CalendarInfo(1, "Personal"), CalendarInfo(2, "Work"))
     override suspend fun events(calendarIds: Set<Long>, startAt: Long, endAt: Long): List<CalendarEventRow> {
         lastRequestedCalendarIds = calendarIds
+        lastRequestedStartAt = startAt
+        lastRequestedEndAt = endAt
         return rows.filter { it.calendarId in calendarIds }
     }
     override fun open(uri: String): Boolean { openedUri = uri; return true }

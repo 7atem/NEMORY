@@ -88,6 +88,21 @@ jobs:
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO \
             test 2>&1 | tee iosApp/build/xcodebuild.log
+      - name: Copy UI screenshots to workspace
+        if: always()
+        run: |
+          SCREENSHOT_DIR="${TMPDIR:-$(getconf DARWIN_USER_TEMP_DIR)}/nemory-screenshots"
+          if [ -d "$SCREENSHOT_DIR" ]; then
+            mkdir -p iosApp/build/nemory-screenshots
+            cp -R "$SCREENSHOT_DIR"/. iosApp/build/nemory-screenshots/
+          fi
+      - name: Upload iOS UI screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-screenshots
+          retention-days: 30
+          path: iosApp/build/nemory-screenshots/
       - name: Build and package iOS IPA for USB Sideloading
         run: |
           set -euo pipefail

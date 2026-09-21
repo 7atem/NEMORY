@@ -1,0 +1,429 @@
+[
+  {
+    "mode": "sum",
+    "name": "electricity_year_missing_month_not_hallucinated",
+    "query": "How much did I spend at North Power this year?",
+    "items": [
+      {"id": "e1", "title": "North Power January", "classification": "UTILITY_BILL", "date": "2026-01-15", "total": "12", "currency": "EGP"},
+      {"id": "e2", "title": "North Power February", "classification": "UTILITY_BILL", "date": "2026-02-11", "total": "10", "currency": "EGP"},
+      {"id": "e3", "title": "North Power March", "classification": "UTILITY_BILL", "date": "2026-03-14", "total": "14", "currency": "EGP"},
+      {"id": "e5", "title": "North Power May", "classification": "UTILITY_BILL", "date": "2026-05-09", "total": "11", "currency": "EGP"},
+      {"id": "e6", "title": "North Power June", "classification": "UTILITY_BILL", "date": "2026-06-13", "total": "13", "currency": "EGP"},
+      {"id": "e7", "title": "North Power July", "classification": "UTILITY_BILL", "date": "2026-07-15", "total": "15", "currency": "EGP"}
+    ],
+    "merchant": "North Power",
+    "expectHeadline": "EGP 75",
+    "expectFacts": ["EGP 75 • 6 items", "Merchant: north power", "Period: this year"]
+  },
+  {
+    "mode": "sum",
+    "name": "knownIssue_sum_duplicateBillDoubleCounted",
+    "knownIssue": true,
+    "issue": "sumAmounts sums every matching record with no duplicate suppression; a bill captured twice (same amount, 2 days apart) is double-counted. DeterministicToolRegistry.kt:44-59.",
+    "query": "How much did I spend at North Power this year?",
+    "items": [
+      {"id": "e1", "title": "North Power January", "classification": "UTILITY_BILL", "date": "2026-01-15", "total": "12", "currency": "EGP"},
+      {"id": "e2", "title": "North Power February", "classification": "UTILITY_BILL", "date": "2026-02-11", "total": "10", "currency": "EGP"},
+      {"id": "e3", "title": "North Power March", "classification": "UTILITY_BILL", "date": "2026-03-14", "total": "14", "currency": "EGP"},
+      {"id": "e5", "title": "North Power May", "classification": "UTILITY_BILL", "date": "2026-05-09", "total": "11", "currency": "EGP"},
+      {"id": "e5b", "title": "North Power May duplicate", "classification": "UTILITY_BILL", "date": "2026-05-11", "total": "11", "currency": "EGP"},
+      {"id": "e6", "title": "North Power June", "classification": "UTILITY_BILL", "date": "2026-06-13", "total": "13", "currency": "EGP"},
+      {"id": "e7", "title": "North Power July", "classification": "UTILITY_BILL", "date": "2026-07-15", "total": "15", "currency": "EGP"}
+    ],
+    "merchant": "North Power",
+    "expectHeadline": "EGP 75",
+    "expectFacts": ["EGP 75 • 7 items"]
+  },
+  {
+    "mode": "sum",
+    "name": "budget_subset_last_month_only",
+    "query": "How much did I spend at Carrefour last month?",
+    "items": [
+      {"id": "c1", "title": "Carrefour run 1", "date": "2026-08-03", "total": "120", "currency": "EGP"},
+      {"id": "c2", "title": "Carrefour run 2", "date": "2026-08-15", "total": "60", "currency": "EGP"},
+      {"id": "c3", "title": "Carrefour run 3", "date": "2026-08-28", "total": "45", "currency": "EGP"},
+      {"id": "c4", "title": "Carrefour September 1", "date": "2026-09-05", "total": "99", "currency": "EGP"},
+      {"id": "c5", "title": "Carrefour September 2", "date": "2026-09-12", "total": "150", "currency": "EGP"},
+      {"id": "a1", "title": "Aldi August", "merchant": "Aldi", "date": "2026-08-20", "total": "77", "currency": "EGP"}
+    ],
+    "merchant": "Carrefour",
+    "expectHeadline": "EGP 225",
+    "expectFacts": ["EGP 225 • 3 items", "Period: last month"]
+  },
+  {
+    "mode": "sum",
+    "name": "mixed_currencies_never_combined",
+    "query": "How much did I spend at Global Air this year?",
+    "items": [
+      {"id": "g1", "title": "Global Air Cairo ticket", "date": "2026-03-10", "total": "500", "currency": "EGP"},
+      {"id": "g2", "title": "Global Air international fee", "date": "2026-07-22", "total": "120", "currency": "USD"}
+    ],
+    "merchant": "Global Air",
+    "expectHeadline": "Totals by currency",
+    "expectFacts": ["EGP 500 • 1 items", "USD 120 • 1 items"]
+  },
+  {
+    "mode": "sum",
+    "name": "sum_no_match_fails_closed",
+    "query": "How much did I spend at Metro Market this year?",
+    "items": [
+      {"id": "c1", "title": "Carrefour run 1", "merchant": "Carrefour", "date": "2026-08-03", "total": "120", "currency": "EGP"}
+    ],
+    "merchant": "Metro Market",
+    "expectHeadline": "No matching recorded amounts",
+    "expectSourceCount": 0,
+    "expectAnswer": "I found no matching evidence in your vault."
+  },
+  {
+    "mode": "sum",
+    "name": "sum_last_30_days_range",
+    "query": "How much did I spend in the last 30 days?",
+    "items": [
+      {"id": "r1", "title": "Pharmacy receipt", "date": "2026-08-20", "total": "30", "currency": "EGP"},
+      {"id": "r2", "title": "Groceries receipt", "date": "2026-09-01", "total": "50", "currency": "EGP"},
+      {"id": "r3", "title": "Old July receipt", "date": "2026-07-01", "total": "40", "currency": "EGP"}
+    ],
+    "expectHeadline": "EGP 80",
+    "expectFacts": ["EGP 80 • 2 items", "Period: last 30 days"]
+  },
+  {
+    "mode": "sum",
+    "name": "arabic_merchant_sum_this_year",
+    "query": "كم أنفقت لدى بقالة الحي هذا العام؟",
+    "items": [
+      {"id": "b1", "title": "بقالة الحي يونيو", "date": "2026-06-01", "total": "120", "currency": "EGP"},
+      {"id": "b2", "title": "بقالة الحي أغسطس", "date": "2026-08-02", "total": "90", "currency": "EGP"},
+      {"id": "b3", "title": "بقالة الحي ديسمبر الماضي", "date": "2025-12-01", "total": "70", "currency": "EGP"}
+    ],
+    "merchant": "بقالة الحي",
+    "expectHeadline": "EGP 210",
+    "expectFacts": ["EGP 210 • 2 عناصر", "التاجر: بقالة الحي", "الفترة: هذا العام"]
+  },
+  {
+    "mode": "expiry_tool",
+    "name": "expiry_window_sorted_excludes_past_and_far",
+    "query": "What is expiring soon?",
+    "items": [
+      {"id": "ins", "title": "Car insurance AXA", "classification": "LEGAL_DOCUMENT", "expiry": "2026-10-14"},
+      {"id": "pass", "title": "Passport", "classification": "PASSPORT", "expiry": "2026-10-29"},
+      {"id": "lic", "title": "Driver license", "classification": "IDENTITY_DOCUMENT", "expiry": "2026-09-04"},
+      {"id": "war", "title": "AC warranty", "classification": "WARRANTY_CARD", "expiry": "2027-02-14"}
+    ],
+    "expectIds": ["ins", "pass"],
+    "expectHeadline": "2 items expiring soon",
+    "expectFacts": ["Car insurance AXA • 2026-10-14"]
+  },
+  {
+    "mode": "parse",
+    "name": "knownIssue_intent_renew_next_60_days",
+    "knownIssue": true,
+    "issue": "\"renew\" is not in EXPIRY_TERMS and \"next N days\" is not parsed as a range, so renewal questions fall through to semantic RAG with a 90-day default. QueryIntentParser.kt:35,61-80,107.",
+    "query": "What do I need to renew in the next 60 days?",
+    "expect": "ExpiringSoon"
+  },
+  {
+    "mode": "expiry_tool",
+    "name": "knownIssue_expiry_replaces_relationship_ignored",
+    "knownIssue": true,
+    "issue": "findExpiringSoon lists every expiring record and never consults KnowledgeRepository, so a policy superseded via a REPLACES relationship is still surfaced as needing renewal. DeterministicToolRegistry.kt:116-131.",
+    "query": "What is expiring soon?",
+    "items": [
+      {"id": "oldp", "title": "Old car insurance", "classification": "LEGAL_DOCUMENT", "expiry": "2026-10-04"},
+      {"id": "newp", "title": "New car insurance", "classification": "LEGAL_DOCUMENT", "expiry": "2027-08-01"},
+      {"id": "pass", "title": "Passport", "classification": "PASSPORT", "expiry": "2026-10-29"}
+    ],
+    "relations": [{"from": "newp", "to": "oldp", "type": "REPLACES"}],
+    "expectIds": ["pass"],
+    "expectHeadline": "1 items expiring soon"
+  },
+  {
+    "mode": "replacement_chain",
+    "name": "replacement_chain_recurring_policies",
+    "query": "Show me document renewals",
+    "items": [
+      {"id": "p1", "title": "AXA policy 2025", "recurring": "annual", "merchant": "AXA Insurance"},
+      {"id": "p2", "title": "AXA policy 2026", "recurring": "annual", "merchant": "AXA Insurance"}
+    ],
+    "expectHeadline": "Document Chains",
+    "expectFacts": ["AXA Insurance renewals (2 documents)"]
+  },
+  {
+    "mode": "relationship_section",
+    "name": "relationship_section_renders_renew_and_replace_chain",
+    "items": [
+      {"id": "old-pass", "title": "Old passport"},
+      {"id": "new-pass", "title": "New passport"},
+      {"id": "old-pol", "title": "Old policy"},
+      {"id": "new-pol", "title": "New policy"}
+    ],
+    "relations": [
+      {"id": "r1", "from": "old-pass", "to": "new-pass", "type": "RENEWS"},
+      {"id": "r2", "from": "new-pol", "to": "old-pol", "type": "REPLACES"},
+      {"id": "r3", "from": "new-pass", "to": "ghost", "type": "SAME_ENTITY"},
+      {"id": "r4", "from": "new-pass", "to": "old-pass", "type": "untrusted text"}
+    ],
+    "expect": ["[1] RENEWS [2]", "[4] REPLACES [3]"],
+    "reject": ["SAME_ENTITY", "untrusted", "ghost"]
+  },
+  {
+    "mode": "expiry_tool",
+    "name": "arabic_expiring_soon",
+    "query": "ما المستندات التي تنتهي قريبًا؟",
+    "items": [
+      {"id": "ins", "title": "Car insurance AXA", "classification": "LEGAL_DOCUMENT", "expiry": "2026-10-14"},
+      {"id": "pass", "title": "Passport", "classification": "PASSPORT", "expiry": "2026-10-29"},
+      {"id": "lic", "title": "Driver license", "classification": "IDENTITY_DOCUMENT", "expiry": "2026-09-04"}
+    ],
+    "expectIds": ["ins", "pass"],
+    "expectHeadline": "2 عناصر تنتهي قريبًا"
+  },
+  {
+    "mode": "verify",
+    "name": "fabricated_total_fails_closed_to_evidence",
+    "claim": "You spent 99999 EGP on electricity this year [1]",
+    "sources": [
+      {"text": "NORTH POWER\nELECTRICITY BILL AUGUST\nMeter: 44551\nTotal due: 350 EGP"}
+    ],
+    "expect": ["> ", "Total due: 350 EGP [1]"],
+    "reject": ["99999"]
+  },
+  {
+    "mode": "verify",
+    "name": "wrong_citation_distractor_rejected",
+    "claim": "The electricity bill total due is 350 EGP [2]",
+    "sources": [
+      {"text": "NORTH POWER\nELECTRICITY BILL\nTotal due: 350 EGP"},
+      {"text": "CITY WATER\nWATER BILL SEPTEMBER\nTotal due: 90 EGP"}
+    ],
+    "expect": ["> ", "Total due: 350 EGP [1]", "Total due: 90 EGP [2]"],
+    "reject": ["The electricity bill total due is 350 EGP"]
+  },
+  {
+    "mode": "verify",
+    "name": "ocr_noise_verbatim_quote_kept",
+    "claim": "T0TAL: 45O.OO [1]",
+    "sources": [
+      {"text": "CITY PHARMACY\nDate: 2026-09-10\nT0TAL:      45O.OO\nC@SH ONLY"}
+    ],
+    "expectExact": "> T0TAL: 45O.OO [1]"
+  },
+  {
+    "mode": "verify",
+    "name": "out_of_range_citation_fails_closed",
+    "claim": "Your policy renews automatically every year [9]",
+    "sources": [
+      {"text": "MOTOR INSURANCE POLICY\nPolicy No: AX-9911\nRenewal due: 2027-03-01"}
+    ],
+    "expect": ["MOTOR INSURANCE POLICY", "[1]"],
+    "reject": ["renews automatically"]
+  },
+  {
+    "mode": "verify",
+    "name": "contradictory_amounts_never_merged",
+    "claim": "Amount due: 200 EGP [1][2]",
+    "sources": [
+      {"text": "INVOICE #7781\nAmount due: 200 EGP"},
+      {"text": "INVOICE #7782\nAmount due: 260 EGP"}
+    ],
+    "expect": ["> Amount due: 200 EGP [1]", "> Amount due: 260 EGP [2]"],
+    "reject": ["[1][2]"]
+  },
+  {
+    "mode": "classify",
+    "name": "pharmacy_receipt_routes_to_money",
+    "text": "CITY PHARMACY\nDate: 2026-09-10\n1x Vitamin C 30.00\n1x Cough syrup 15.00\nTOTAL: 45.00 EGP",
+    "expectClassification": "RECEIPT",
+    "rejectClassification": "PRESCRIPTION",
+    "expectLens": ["MONEY"]
+  },
+  {
+    "mode": "classify",
+    "name": "clinic_prescription_routes_to_health",
+    "text": "DR SMITH CLINIC\nPatient: Jane Doe\nRx: Amoxicillin 500mg\nTake 1 capsule twice daily\nRefills: 2",
+    "expectClassification": "PRESCRIPTION",
+    "rejectClassification": "RECEIPT",
+    "expectLens": ["HEALTH"],
+    "expectMetadata": {"refills": "2"},
+    "expectAlert": true
+  },
+  {
+    "mode": "classify",
+    "name": "boarding_pass_routes_to_ticket_travel",
+    "text": "EGYPTAIR\nBOARDING PASS\nPassenger: DOE/JOHN MR\nFlight: MS 777\nDate: 2026-11-20\nDepart: 10:15\nGate: B4\nSeat: 12A",
+    "expectClassification": "TICKET",
+    "expectLens": ["TRAVEL"],
+    "expectMetadata": {"flight_number": "MS777", "gate": "B4", "seat": "12A"},
+    "expectAlert": true
+  },
+  {
+    "mode": "classify",
+    "name": "knownIssue_classify_flightInvoice_as_ticket",
+    "knownIssue": true,
+    "issue": "The TICKET keyword branch matches \"flight\" before the INVOICE branch is reached, so an airline booking invoice (Amount Due, no boarding details) is classified as a travel ticket and routed to the travel lens instead of money. HeuristicExtractor.kt:285-299.",
+    "text": "EGYPTAIR\nINVOICE #8899\nBooking: Cairo to Dubai\nFlight: MS 777\nDate: 2026-10-01\nAmount Due: 620 USD",
+    "expectClassification": "INVOICE",
+    "rejectClassification": "TICKET",
+    "expectLens": ["MONEY"]
+  },
+  {
+    "mode": "classify",
+    "name": "warranty_card_routes_to_bureaucracy",
+    "text": "SAMSUNG ELECTRONICS\nWARRANTY CERTIFICATE\nProduct: Air Conditioner\nModel: AR18TY\nSerial No: SN88231\nValid until: 2027-06-01",
+    "expectClassification": "WARRANTY_CARD",
+    "expectLens": ["BUREAUCRACY"]
+  },
+  {
+    "mode": "classify",
+    "name": "appliance_purchase_receipt_routes_to_money",
+    "text": "ELECTRO MART\nDate: 2026-08-02\n1x Air Conditioner 450.00\nTOTAL: 450.00 EGP\nCard: 5412",
+    "expectClassification": "RECEIPT",
+    "rejectClassification": "WARRANTY_CARD",
+    "expectLens": ["MONEY"]
+  },
+  {
+    "mode": "classify",
+    "name": "knownIssue_classify_visa_as_passport",
+    "knownIssue": true,
+    "issue": "A visa sticker text contains \"Passport No\", which matches the passport keyword branch first, so a visa page is classified as a passport. There is no visa handling in inferClassification. HeuristicExtractor.kt:260.",
+    "text": "VISA\nType: B1/B2\nVisa No: V-12345\nPassport No: P123456\nExpiry Date: 2031-05-01",
+    "expectClassification": "IDENTITY_DOCUMENT"
+  },
+  {
+    "mode": "classify",
+    "name": "knownIssue_classify_insurancePolicyNumber_as_amount_receipt",
+    "knownIssue": true,
+    "issue": "AMOUNT_PATTERN parses the policy number (AX-9911) as an amount; with the expiry date present, the RECEIPT branch fires before INSURANCE_POLICY_PATTERN, so a motor insurance policy is classified as a money receipt. HeuristicExtractor.kt:94-106,299,309.",
+    "text": "MOTOR INSURANCE POLICY\nPolicy No: AX-9911\nVehicle: Nissan Sunny\nExpiry Date: 2027-03-01\nInsured: John Doe",
+    "expectClassification": "GENERAL_DOCUMENT",
+    "expectLens": ["BUREAUCRACY"],
+    "expectMetadata": {"policy_number": "AX-9911"}
+  },
+  {
+    "mode": "classify",
+    "name": "electricity_bill_routes_to_utility_bill_money",
+    "text": "NORTH POWER\nELECTRICITY BILL\nAccount: 778899\nBilling period: 2026-08\nTotal due: 280 EGP",
+    "expectClassification": "UTILITY_BILL",
+    "expectLens": ["MONEY"]
+  },
+  {
+    "mode": "proactive",
+    "name": "urgent_expiry_ranked_above_trivial_summary",
+    "items": [
+      {"id": "passport", "title": "Passport", "updatedAt": "2026-09-12"},
+      {"id": "grocery", "title": "Grocery run", "updatedAt": "2026-09-11"}
+    ],
+    "insights": [
+      {"record": 0, "evidence": "Your passport expires within 45 days — renew it soon", "relevance": 0.9, "confidence": 0.95, "urgency": 0.95, "novelty": 0.8},
+      {"record": 1, "evidence": "You have 12 grocery receipts this month", "relevance": 0.85, "confidence": 0.9, "urgency": 0.2, "novelty": 0.85}
+    ],
+    "expectOrder": ["Your passport expires within 45 days — renew it soon", "You have 12 grocery receipts this month"]
+  },
+  {
+    "mode": "proactive",
+    "name": "below_score_gate_dropped",
+    "items": [
+      {"id": "passport", "title": "Passport", "updatedAt": "2026-09-12"}
+    ],
+    "insights": [
+      {"record": 0, "evidence": "Low priority observation", "relevance": 0.8, "confidence": 0.9, "urgency": 0.3, "novelty": 0.4}
+    ],
+    "expectEmpty": true
+  },
+  {
+    "mode": "proactive",
+    "name": "confidence_gate_drops_at_0_6",
+    "items": [
+      {"id": "passport", "title": "Passport", "updatedAt": "2026-09-12"}
+    ],
+    "insights": [
+      {"record": 0, "evidence": "Uncertain suggestion", "relevance": 1.0, "confidence": 0.6, "urgency": 1.0, "novelty": 1.0}
+    ],
+    "expectEmpty": true
+  },
+  {
+    "mode": "proactive",
+    "name": "deterministic_tools_feed_prompt",
+    "items": [
+      {"id": "passport", "title": "Passport", "updatedAt": "2026-09-12"}
+    ],
+    "missing": ["Trip (Rome) missing hotel booking"],
+    "increases": ["Internet | EGP 100 -> EGP 125 | +25"],
+    "insights": [],
+    "expectEmpty": true,
+    "expectPromptContains": ["Trip (Rome) missing hotel booking", "Internet | EGP 100 -> EGP 125 | +25", "missing_documents", "spend_increases"]
+  },
+  {
+    "mode": "proactive",
+    "name": "insight_binds_vault_item_id",
+    "items": [
+      {"id": "passport", "title": "Passport", "updatedAt": "2026-09-12"},
+      {"id": "license", "title": "Driver license", "updatedAt": "2026-09-11"}
+    ],
+    "insights": [
+      {"record": 0, "evidence": "Passport expires within 45 days", "relevance": 0.9, "confidence": 0.9, "urgency": 0.9, "novelty": 0.7}
+    ],
+    "expectKept": ["Passport expires within 45 days"],
+    "expectItemIds": ["passport"]
+  },
+  {
+    "mode": "proactive",
+    "name": "insight_binds_calendar_event_id",
+    "items": [
+      {"id": "doc", "title": "Random document", "updatedAt": "2026-09-12"}
+    ],
+    "events": [
+      {"connectorId": "calendar", "accountId": "personal", "externalId": "evt-9", "title": "Dentist appointment", "startAt": "2026-09-16"}
+    ],
+    "insights": [
+      {"record": 1, "evidence": "Dentist appointment coming up", "relevance": 0.9, "confidence": 0.9, "urgency": 0.8, "novelty": 0.6}
+    ],
+    "expectKept": ["Dentist appointment coming up"],
+    "expectItemIds": ["external:calendar:personal:evt-9"]
+  },
+  {
+    "mode": "proactive",
+    "name": "insight_binds_reminder_id",
+    "items": [
+      {"id": "doc", "title": "Random document", "updatedAt": "2026-09-12"}
+    ],
+    "reminders": [
+      {"id": "rem-1", "title": "Pay storage bill", "dueAt": "2026-09-17"}
+    ],
+    "insights": [
+      {"record": 1, "evidence": "Storage bill reminder due soon", "relevance": 0.9, "confidence": 0.9, "urgency": 0.85, "novelty": 0.5}
+    ],
+    "expectKept": ["Storage bill reminder due soon"],
+    "expectItemIds": ["reminder:rem-1"]
+  },
+  {
+    "mode": "proactive",
+    "name": "decoy_mode_returns_empty_insights",
+    "decoy": true,
+    "items": [
+      {"id": "passport", "title": "Passport", "updatedAt": "2026-09-12"}
+    ],
+    "insights": [
+      {"record": 0, "evidence": "Passport expires within 45 days", "relevance": 0.9, "confidence": 0.9, "urgency": 0.9, "novelty": 0.8}
+    ],
+    "expectEmpty": true
+  },
+  {
+    "mode": "retrieve",
+    "name": "arabic_titled_item_retrievable_by_arabic_query",
+    "query": "أين فاتورة الكهرباء؟",
+    "items": [
+      {"id": "arb-bill", "title": "فاتورة كهرباء أغسطس", "ocr": "NORTH POWER\nELECTRICITY BILL AUGUST\nTotal due: 280 EGP"}
+    ],
+    "expectIds": ["arb-bill"],
+    "expectPromptContains": "فاتورة كهرباء أغسطس"
+  },
+  {
+    "mode": "verify",
+    "name": "arabic_claim_verbatim_kept",
+    "claim": "تاريخ الانتهاء 2031-05-01 [1]",
+    "sources": [
+      {"title": "جواز سفر", "text": "جمهورية مصر العربية\nرقم الجواز A123456\nتاريخ الانتهاء 2031-05-01"}
+    ],
+    "expectExact": "> تاريخ الانتهاء 2031-05-01 [1]"
+  }
+]
