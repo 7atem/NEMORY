@@ -225,6 +225,30 @@ object EnrichmentProfileRegistry {
         ),
 
         profile(
+            Classification.EVENT, LensId.MEDIA,
+            "Use the exact event title and visible date.",
+            "State the event type, location, and dates; do not invent details.",
+            "event_name", "date", "location", "ticket_price", "participant"
+        ),
+        profile(
+            Classification.RECIPE, LensId.HEALTH,
+            "Use the exact recipe title.",
+            "State the cuisine, main ingredients, and cooking time.",
+            "recipe_name", "ingredients", "prep_time", "cuisine"
+        ),
+        profile(
+            Classification.CHAT, LensId.BUREAUCRACY,
+            "Use the primary contact name or group name.",
+            "Summarize the conversation topic and visible participants.",
+            "participant", "topic", "date"
+        ),
+        profile(
+            Classification.FLIGHT_BOARDING_PASS, LensId.TRAVEL,
+            "Use the airline and flight number.",
+            "State the passenger, origin, destination, and departure time.",
+            "carrier", "flight_number", "origin", "destination", "departure_date", "passenger", "seat", "pnr"
+        ),
+        profile(
             Classification.UNKNOWN, null,
             "Use the most specific visible heading; otherwise use Captured item.",
             "Summarize only directly visible facts and say when the content is unclear.",
