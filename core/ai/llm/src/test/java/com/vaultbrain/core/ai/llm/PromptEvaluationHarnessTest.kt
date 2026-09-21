@@ -10,7 +10,7 @@ class PromptEvaluationHarnessTest {
 
     @Test
     fun `golden corpus covers every classification in English and Arabic`() {
-        val newClasss = setOf(Classification.REAL_ESTATE, Classification.LEGAL_DOCUMENT, Classification.BANK_STATEMENT, Classification.UTILITY_BILL, Classification.MEDICAL_RECORD, Classification.CRYPTO_TRANSACTION, Classification.ACADEMIC_RECORD, Classification.CREDIT_CARD, Classification.DRIVERS_LICENSE, Classification.EVENT, Classification.RECIPE, Classification.CHAT, Classification.FLIGHT_BOARDING_PASS)
+        val newClasss = setOf(Classification.REAL_ESTATE, Classification.LEGAL_DOCUMENT, Classification.BANK_STATEMENT, Classification.UTILITY_BILL, Classification.MEDICAL_RECORD, Classification.CRYPTO_TRANSACTION, Classification.ACADEMIC_RECORD, Classification.CREDIT_CARD, Classification.DRIVERS_LICENSE)
         val modelClassifications = Classification.entries.filterNot { it == Classification.UNKNOWN || it in newClasss }
         assertThat(cases.size).isAtLeast(modelClassifications.size * 2)
         assertThat(cases.map { it.id }).containsNoDuplicates()

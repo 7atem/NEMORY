@@ -1,46 +1,1327 @@
 [
-  {"id":"receipt_en","language":"ENGLISH","classification":"RECEIPT","lens":"MONEY","ocr":"Fresh Mart\n2026-08-20\nBread 3.50\nMilk 4.00\nTOTAL 7.50 USD","labels":["receipt"],"barcodes":[],"signals":[["Fresh Mart"],["7.50"],["2026-08-20"]],"forbidden":["9.50"]},
-  {"id":"receipt_ar","language":"ARABIC","classification":"RECEIPT","lens":"MONEY","ocr":"سوبر ماركت النور\n٢٠ أغسطس ٢٠٢٦\nالإجمالي ٣٥٠ جنيه","labels":["إيصال"],"barcodes":[],"signals":[["سوبر ماركت النور","النور"],["٣٥٠","350"],["جنيه"]],"forbidden":["٤٥٠","450"]},
-  {"id":"prescription_en","language":"ENGLISH","classification":"PRESCRIPTION","lens":"HEALTH","ocr":"City Clinic\nRx Amoxicillin 500 mg\nTake one capsule every 8 hours","labels":["prescription"],"barcodes":[],"signals":[["Amoxicillin"],["500 mg"],["8 hours"]],"forbidden":["1000 mg"]},
-  {"id":"prescription_ar","language":"ARABIC","classification":"PRESCRIPTION","lens":"HEALTH","ocr":"عيادة الشفاء\nدواء أموكسيسيلين ٥٠٠ مجم\nكبسولة كل ٨ ساعات","labels":["روشتة"],"barcodes":[],"signals":[["أموكسيسيلين"],["٥٠٠","500"],["٨ ساعات","8 ساعات"]],"forbidden":["١٠٠٠","1000"]},
-  {"id":"lab_result_en","language":"ENGLISH","classification":"LAB_RESULT","lens":"HEALTH","ocr":"Central Lab\nHbA1c 5.8 %\nReference 4.0-5.6","labels":["lab report"],"barcodes":[],"signals":[["HbA1c"],["5.8"],["Central Lab"]],"forbidden":["diabetes diagnosis"]},
-  {"id":"lab_result_ar","language":"ARABIC","classification":"LAB_RESULT","lens":"HEALTH","ocr":"مختبر النيل\nالهيموجلوبين ١٣٫٢ جم/دل\nالمرجع ١٢-١٦","labels":["تحليل طبي"],"barcodes":[],"signals":[["مختبر النيل"],["الهيموجلوبين"],["١٣٫٢","13.2"]],"forbidden":["فقر الدم"]},
-  {"id":"passport_en","language":"ENGLISH","classification":"PASSPORT","lens":"BUREAUCRACY","ocr":"PASSPORT\nName: Alex Morgan\nPassport No: X1234567\nExpiry: 2031-04-12","labels":["passport"],"barcodes":[],"signals":[["Alex Morgan"],["X1234567"],["2031-04-12"]],"forbidden":["X7654321"]},
-  {"id":"passport_ar","language":"ARABIC","classification":"PASSPORT","lens":"BUREAUCRACY","ocr":"جواز سفر\nالاسم: أحمد سالم\nرقم الجواز: A7654321\nتاريخ الانتهاء: ٢٠٣٢/٠٥/١٠","labels":["جواز سفر"],"barcodes":[],"signals":[["أحمد سالم"],["A7654321"],["٢٠٣٢/٠٥/١٠","2032/05/10"]],"forbidden":["A1234567"]},
-  {"id":"identity_document_en","language":"ENGLISH","classification":"IDENTITY_DOCUMENT","lens":"BUREAUCRACY","ocr":"NATIONAL ID CARD\nName: Nora Reed\nNational ID: 29804150123456\nExpiry: 2030-04-15","labels":["identity card"],"barcodes":[],"signals":[["Nora Reed"],["29804150123456"],["2030-04-15"]],"forbidden":["passport"]},
-  {"id":"identity_document_ar","language":"ARABIC","classification":"IDENTITY_DOCUMENT","lens":"BUREAUCRACY","ocr":"بطاقة رقم قومي\nالاسم: منى علي\nالرقم القومي: ٢٩٨٠٤١٥٠١٢٣٤٥٦\nتاريخ الانتهاء: ٢٠٣٠/٠٤/١٥","labels":["بطاقة هوية"],"barcodes":[],"signals":[["منى علي"],["٢٩٨٠٤١٥٠١٢٣٤٥٦","29804150123456"],["٢٠٣٠/٠٤/١٥","2030/04/15"]],"forbidden":["جواز سفر"]},
-  {"id":"ticket_en","language":"ENGLISH","classification":"TICKET","lens":"TRAVEL","ocr":"EgyptAir MS985\nCAI to JFK\n2026-12-14 09:30\nSeat 18A","labels":["boarding pass"],"barcodes":["MS985-18A"],"signals":[["MS985"],["CAI","JFK"],["18A"]],"forbidden":["18B"]},
-  {"id":"ticket_ar","language":"ARABIC","classification":"TICKET","lens":"TRAVEL","ocr":"تذكرة قطار\nالقاهرة إلى الإسكندرية\n٢٥/٠٩/٢٠٢٦\nالمقعد ١٢","labels":["تذكرة"],"barcodes":[],"signals":[["القاهرة"],["الإسكندرية"],["المقعد ١٢","١٢"]],"forbidden":["أسوان"]},
-  {"id":"hotel_en","language":"ENGLISH","classification":"HOTEL","lens":"TRAVEL","ocr":"Nile View Hotel\nConfirmation NV4421\nCheck-in 2026-10-02\nCheck-out 2026-10-06","labels":["hotel booking"],"barcodes":[],"signals":[["Nile View Hotel"],["NV4421"],["2026-10-06"]],"forbidden":["2026-10-08"]},
-  {"id":"hotel_ar","language":"ARABIC","classification":"HOTEL","lens":"TRAVEL","ocr":"فندق البحر\nرقم الحجز ٨٨٢١\nالوصول ١٠/١١/٢٠٢٦\nالمغادرة ١٤/١١/٢٠٢٦","labels":["حجز فندق"],"barcodes":[],"signals":[["فندق البحر"],["٨٨٢١","8821"],["١٤/١١/٢٠٢٦","14/11/2026"]],"forbidden":["١٥/١١/٢٠٢٦"]},
-  {"id":"invoice_en","language":"ENGLISH","classification":"INVOICE","lens":"MONEY","ocr":"INVOICE INV-2048\nAcme Design\nAmount due 1,200 USD\nDue 2026-09-15","labels":["invoice"],"barcodes":[],"signals":[["INV-2048"],["1,200","1200"],["2026-09-15"]],"forbidden":["paid"]},
-  {"id":"invoice_ar","language":"ARABIC","classification":"INVOICE","lens":"MONEY","ocr":"فاتورة رقم ٧٧٤\nشركة الأفق\nالمبلغ المستحق ٢٤٠٠ ريال\nالاستحقاق ٣٠/٠٩/٢٠٢٦","labels":["فاتورة"],"barcodes":[],"signals":[["شركة الأفق"],["٢٤٠٠","2400"],["٣٠/٠٩/٢٠٢٦","30/09/2026"]],"forbidden":["مدفوعة"]},
-  {"id":"warranty_en","language":"ENGLISH","classification":"WARRANTY_CARD","lens":"HOME","ocr":"Samsung Warranty\nModel QN90B\nSerial SN89347209\nValid until 2027-01-01","labels":["warranty card"],"barcodes":["SN89347209"],"signals":[["QN90B"],["SN89347209"],["2027-01-01"]],"forbidden":["2028-01-01"]},
-  {"id":"warranty_ar","language":"ARABIC","classification":"WARRANTY_CARD","lens":"HOME","ocr":"شهادة ضمان توشيبا\nالموديل AC-55\nالرقم التسلسلي ٩٩١٢٣\nساري حتى ٢٠٢٨/٠٣/٠١","labels":["ضمان"],"barcodes":[],"signals":[["توشيبا"],["AC-55"],["٢٠٢٨/٠٣/٠١","2028/03/01"]],"forbidden":["٢٠٢٩"]},
-  {"id":"business_card_en","language":"ENGLISH","classification":"BUSINESS_CARD","lens":"PRODUCTIVITY","ocr":"Maya Chen\nProduct Designer\nmaya@example.com\n+1 555 0104","labels":["business card"],"barcodes":[],"signals":[["Maya Chen"],["maya@example.com"],["555 0104"]],"forbidden":["Product Manager"]},
-  {"id":"business_card_ar","language":"ARABIC","classification":"BUSINESS_CARD","lens":"PRODUCTIVITY","ocr":"ليلى حسن\nمهندسة معمارية\nlayla@example.com\n٠١٠١٢٣٤٥٦٧٨","labels":["بطاقة عمل"],"barcodes":[],"signals":[["ليلى حسن"],["مهندسة معمارية"],["layla@example.com"]],"forbidden":["طبيبة"]},
-  {"id":"product_photo_en","language":"ENGLISH","classification":"PRODUCT_PHOTO","lens":"SHOPPING","ocr":"NoiseCancel Pro Headphones\nModel NC-40\nPrice 89.99 USD","labels":["headphones","product"],"barcodes":["0123456789012"],"signals":[["NoiseCancel Pro"],["NC-40"],["89.99"]],"forbidden":["wireless charger"]},
-  {"id":"product_photo_ar","language":"ARABIC","classification":"PRODUCT_PHOTO","lens":"SHOPPING","ocr":"خلاط النخبة\nموديل MX-7\nالسعر ١٧٥٠ جنيه","labels":["منتج","خلاط"],"barcodes":[],"signals":[["خلاط النخبة","النخبة"],["MX-7"],["١٧٥٠","1750"]],"forbidden":["غسالة"]},
-  {"id":"menu_photo_en","language":"ENGLISH","classification":"MENU_PHOTO","lens":"SHOPPING","ocr":"Garden Cafe Menu\nMargherita Pizza 12\nMushroom Soup 7","labels":["menu","food"],"barcodes":[],"signals":[["Garden Cafe"],["Margherita Pizza"],["12"]],"forbidden":["Pepperoni"]},
-  {"id":"menu_photo_ar","language":"ARABIC","classification":"MENU_PHOTO","lens":"SHOPPING","ocr":"قائمة مطعم الدار\nكشري ٨٠ جنيه\nشوربة عدس ٦٠ جنيه","labels":["قائمة طعام"],"barcodes":[],"signals":[["مطعم الدار"],["كشري"],["٨٠","80"]],"forbidden":["بيتزا"]},
-  {"id":"serial_plate_en","language":"ENGLISH","classification":"SERIAL_PLATE","lens":"CAR","ocr":"Vehicle identification\nVIN 1HGCM82633A004352\nPlate ABC-742","labels":["vehicle plate"],"barcodes":[],"signals":[["1HGCM82633A004352"],["ABC-742"]],"forbidden":["ABC-724"]},
-  {"id":"serial_plate_ar","language":"ARABIC","classification":"SERIAL_PLATE","lens":"CAR","ocr":"بيانات المركبة\nرقم الشاسيه JH4KA8260MC000111\nاللوحة س ن ر ٤٢١","labels":["لوحة سيارة"],"barcodes":[],"signals":[["JH4KA8260MC000111"],["س ن ر ٤٢١","421"]],"forbidden":["٤١٢"]},
-  {"id":"general_document_en","language":"ENGLISH","classification":"GENERAL_DOCUMENT","lens":"BUREAUCRACY","ocr":"Municipal Notice MN-22\nAppointment 2026-09-03\nBring proof of address","labels":["document"],"barcodes":[],"signals":[["MN-22"],["2026-09-03"],["proof of address"]],"forbidden":["passport required"]},
-  {"id":"general_document_ar","language":"ARABIC","classification":"GENERAL_DOCUMENT","lens":"BUREAUCRACY","ocr":"إشعار من الحي رقم ٢٢\nالموعد ٣ سبتمبر ٢٠٢٦\nيرجى إحضار إثبات العنوان","labels":["مستند"],"barcodes":[],"signals":[["إشعار من الحي"],["٣ سبتمبر ٢٠٢٦"],["إثبات العنوان"]],"forbidden":["جواز السفر"]},
-  {"id":"web_article_en","language":"ENGLISH","classification":"WEB_ARTICLE","lens":"MEDIA","ocr":"How Cairo Is Rethinking Urban Shade\nBy Lina Hassan\nExample Journal\nPublished 2026-08-12\nhttps://example.org/cairo-shade","labels":["web article"],"barcodes":[],"signals":[["How Cairo Is Rethinking Urban Shade"],["Lina Hassan"],["Example Journal"]],"forbidden":["Alex Morgan"]},
-  {"id":"web_article_ar","language":"ARABIC","classification":"WEB_ARTICLE","lens":"MEDIA","ocr":"كيف تعيد القاهرة تصميم الظل الحضري\nبقلم ليلى حسن\nمجلة المدينة\nنشر في ١٢ أغسطس ٢٠٢٦\nhttps://example.org/ar/cairo-shade","labels":["مقال ويب"],"barcodes":[],"signals":[["كيف تعيد القاهرة تصميم الظل الحضري"],["ليلى حسن"],["مجلة المدينة"]],"forbidden":["أحمد علي"]},
-  {"id":"scene_photo_en","language":"ENGLISH","classification":"SCENE_PHOTO","lens":"PRODUCTIVITY","ocr":"","labels":["sunset","beach","palm tree"],"barcodes":[],"signals":[["sunset"],["beach"]],"forbidden":["mountain"]},
-  {"id":"scene_photo_ar","language":"ARABIC","classification":"SCENE_PHOTO","lens":"PRODUCTIVITY","ocr":"غروب على شاطئ البحر","labels":["شاطئ","غروب"],"barcodes":[],"signals":[["غروب"],["شاطئ"]],"forbidden":["جبل"]},
-  {"id":"movie_en","language":"ENGLISH","classification":"MOVIE","lens":"MEDIA","ocr":"DUNE: PART TWO\nA film by Denis Villeneuve\nNow streaming","labels":["movie poster"],"barcodes":[],"signals":[["DUNE: PART TWO","Dune Part Two"],["watchlist","watch"]],"forbidden":["TV series"]},
-  {"id":"movie_ar","language":"ARABIC","classification":"MOVIE","lens":"MEDIA","ocr":"فيلم ولاد رزق ٣\nقريباً في السينما","labels":["ملصق فيلم"],"barcodes":[],"signals":[["ولاد رزق ٣"],["فيلم","مشاهدة"]],"forbidden":["مسلسل"]},
-  {"id":"tv_series_en","language":"ENGLISH","classification":"TV_SERIES","lens":"MEDIA","ocr":"THE BEAR\nSeason 3\nEpisode 1","labels":["TV poster"],"barcodes":[],"signals":[["THE BEAR"],["Season 3"],["watchlist","watch"]],"forbidden":["movie"]},
-  {"id":"tv_series_ar","language":"ARABIC","classification":"TV_SERIES","lens":"MEDIA","ocr":"مسلسل الحشاشين\nالحلقة ٥\nالموسم الأول","labels":["مسلسل"],"barcodes":[],"signals":[["الحشاشين"],["الحلقة ٥","5"],["الموسم الأول"]],"forbidden":["فيلم"]},
-  {"id":"book_en","language":"ENGLISH","classification":"BOOK","lens":"MEDIA","ocr":"ATOMIC HABITS\nJames Clear\nAn Easy Way to Build Good Habits","labels":["book cover"],"barcodes":["9780735211292"],"signals":[["ATOMIC HABITS","Atomic Habits"],["James Clear"],["reading list","read"]],"forbidden":["movie"]},
-  {"id":"book_ar","language":"ARABIC","classification":"BOOK","lens":"MEDIA","ocr":"كتاب الأيام\nطه حسين\nالجزء الأول","labels":["غلاف كتاب"],"barcodes":[],"signals":[["الأيام"],["طه حسين"],["قراءة","قائمة القراءة"]],"forbidden":["فيلم"]},
-  {"id":"meme_junk_en","language":"ENGLISH","classification":"MEME_JUNK","lens":"MEDIA","ocr":"WHEN THE WIFI STOPS\nNOOOOO","labels":["meme","cartoon"],"barcodes":[],"signals":[["meme"],["wifi"]],"forbidden":["invoice"]},
-  {"id":"meme_junk_ar","language":"ARABIC","classification":"MEME_JUNK","lens":"MEDIA","ocr":"لما الإنترنت يفصل وقت الشغل\nيا نهار أبيض","labels":["ميم","رسم"],"barcodes":[],"signals":[["ميم"],["الإنترنت"]],"forbidden":["فاتورة"]},
-  {"id":"other_en","language":"ENGLISH","classification":"OTHER","lenses":[],"ocr":"PLA 1.75 mm filament spool matte orange","labels":["plastic spool","3D printing"],"barcodes":[],"signals":[["PLA"],["filament"],["1.75 mm"]],"forbidden":["passport","receipt"]},
-  {"id":"other_ar","language":"ARABIC","classification":"OTHER","lenses":[],"ocr":"بكرة خيط طباعة ثلاثية الأبعاد PLA مقاس ١٫٧٥ مم","labels":["بكرة بلاستيك","طباعة ثلاثية الأبعاد"],"barcodes":[],"signals":[["PLA"],["طباعة ثلاثية الأبعاد"],["١٫٧٥ مم","1.75"]],"forbidden":["جواز سفر","إيصال"]},
-  {"id":"unknown_en","language":"ENGLISH","classification":"OTHER","lenses":[],"ocr":"blurred fragment 7X ?","labels":[],"barcodes":[],"signals":[["unknown","insufficient"],["blurred","unclear"]],"forbidden":["passport","receipt"]},
-  {"id":"unknown_ar","language":"ARABIC","classification":"OTHER","lenses":[],"ocr":"صورة غير واضحة ؟ ٧","labels":[],"barcodes":[],"signals":[["غير واضح","معلومات غير كافية"],["غير معروف","تعذر"]],"forbidden":["جواز سفر","فاتورة"]}
+  {
+    "id": "receipt_en",
+    "language": "ENGLISH",
+    "classification": "RECEIPT",
+    "lens": "MONEY",
+    "ocr": "Fresh Mart\n2026-08-20\nBread 3.50\nMilk 4.00\nTOTAL 7.50 USD",
+    "labels": [
+      "receipt"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Fresh Mart"
+      ],
+      [
+        "7.50"
+      ],
+      [
+        "2026-08-20"
+      ]
+    ],
+    "forbidden": [
+      "9.50"
+    ]
+  },
+  {
+    "id": "receipt_ar",
+    "language": "ARABIC",
+    "classification": "RECEIPT",
+    "lens": "MONEY",
+    "ocr": "سوبر ماركت النور\n٢٠ أغسطس ٢٠٢٦\nالإجمالي ٣٥٠ جنيه",
+    "labels": [
+      "إيصال"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "سوبر ماركت النور",
+        "النور"
+      ],
+      [
+        "٣٥٠",
+        "350"
+      ],
+      [
+        "جنيه"
+      ]
+    ],
+    "forbidden": [
+      "٤٥٠",
+      "450"
+    ]
+  },
+  {
+    "id": "prescription_en",
+    "language": "ENGLISH",
+    "classification": "PRESCRIPTION",
+    "lens": "HEALTH",
+    "ocr": "City Clinic\nRx Amoxicillin 500 mg\nTake one capsule every 8 hours",
+    "labels": [
+      "prescription"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Amoxicillin"
+      ],
+      [
+        "500 mg"
+      ],
+      [
+        "8 hours"
+      ]
+    ],
+    "forbidden": [
+      "1000 mg"
+    ]
+  },
+  {
+    "id": "prescription_ar",
+    "language": "ARABIC",
+    "classification": "PRESCRIPTION",
+    "lens": "HEALTH",
+    "ocr": "عيادة الشفاء\nدواء أموكسيسيلين ٥٠٠ مجم\nكبسولة كل ٨ ساعات",
+    "labels": [
+      "روشتة"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "أموكسيسيلين"
+      ],
+      [
+        "٥٠٠",
+        "500"
+      ],
+      [
+        "٨ ساعات",
+        "8 ساعات"
+      ]
+    ],
+    "forbidden": [
+      "١٠٠٠",
+      "1000"
+    ]
+  },
+  {
+    "id": "lab_result_en",
+    "language": "ENGLISH",
+    "classification": "LAB_RESULT",
+    "lens": "HEALTH",
+    "ocr": "Central Lab\nHbA1c 5.8 %\nReference 4.0-5.6",
+    "labels": [
+      "lab report"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "HbA1c"
+      ],
+      [
+        "5.8"
+      ],
+      [
+        "Central Lab"
+      ]
+    ],
+    "forbidden": [
+      "diabetes diagnosis"
+    ]
+  },
+  {
+    "id": "lab_result_ar",
+    "language": "ARABIC",
+    "classification": "LAB_RESULT",
+    "lens": "HEALTH",
+    "ocr": "مختبر النيل\nالهيموجلوبين ١٣٫٢ جم/دل\nالمرجع ١٢-١٦",
+    "labels": [
+      "تحليل طبي"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "مختبر النيل"
+      ],
+      [
+        "الهيموجلوبين"
+      ],
+      [
+        "١٣٫٢",
+        "13.2"
+      ]
+    ],
+    "forbidden": [
+      "فقر الدم"
+    ]
+  },
+  {
+    "id": "passport_en",
+    "language": "ENGLISH",
+    "classification": "PASSPORT",
+    "lens": "BUREAUCRACY",
+    "ocr": "PASSPORT\nName: Alex Morgan\nPassport No: X1234567\nExpiry: 2031-04-12",
+    "labels": [
+      "passport"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Alex Morgan"
+      ],
+      [
+        "X1234567"
+      ],
+      [
+        "2031-04-12"
+      ]
+    ],
+    "forbidden": [
+      "X7654321"
+    ]
+  },
+  {
+    "id": "passport_ar",
+    "language": "ARABIC",
+    "classification": "PASSPORT",
+    "lens": "BUREAUCRACY",
+    "ocr": "جواز سفر\nالاسم: أحمد سالم\nرقم الجواز: A7654321\nتاريخ الانتهاء: ٢٠٣٢/٠٥/١٠",
+    "labels": [
+      "جواز سفر"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "أحمد سالم"
+      ],
+      [
+        "A7654321"
+      ],
+      [
+        "٢٠٣٢/٠٥/١٠",
+        "2032/05/10"
+      ]
+    ],
+    "forbidden": [
+      "A1234567"
+    ]
+  },
+  {
+    "id": "identity_document_en",
+    "language": "ENGLISH",
+    "classification": "IDENTITY_DOCUMENT",
+    "lens": "BUREAUCRACY",
+    "ocr": "NATIONAL ID CARD\nName: Nora Reed\nNational ID: 29804150123456\nExpiry: 2030-04-15",
+    "labels": [
+      "identity card"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Nora Reed"
+      ],
+      [
+        "29804150123456"
+      ],
+      [
+        "2030-04-15"
+      ]
+    ],
+    "forbidden": [
+      "passport"
+    ]
+  },
+  {
+    "id": "identity_document_ar",
+    "language": "ARABIC",
+    "classification": "IDENTITY_DOCUMENT",
+    "lens": "BUREAUCRACY",
+    "ocr": "بطاقة رقم قومي\nالاسم: منى علي\nالرقم القومي: ٢٩٨٠٤١٥٠١٢٣٤٥٦\nتاريخ الانتهاء: ٢٠٣٠/٠٤/١٥",
+    "labels": [
+      "بطاقة هوية"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "منى علي"
+      ],
+      [
+        "٢٩٨٠٤١٥٠١٢٣٤٥٦",
+        "29804150123456"
+      ],
+      [
+        "٢٠٣٠/٠٤/١٥",
+        "2030/04/15"
+      ]
+    ],
+    "forbidden": [
+      "جواز سفر"
+    ]
+  },
+  {
+    "id": "ticket_en",
+    "language": "ENGLISH",
+    "classification": "TICKET",
+    "lens": "TRAVEL",
+    "ocr": "EgyptAir MS985\nCAI to JFK\n2026-12-14 09:30\nSeat 18A",
+    "labels": [
+      "boarding pass"
+    ],
+    "barcodes": [
+      "MS985-18A"
+    ],
+    "signals": [
+      [
+        "MS985"
+      ],
+      [
+        "CAI",
+        "JFK"
+      ],
+      [
+        "18A"
+      ]
+    ],
+    "forbidden": [
+      "18B"
+    ]
+  },
+  {
+    "id": "ticket_ar",
+    "language": "ARABIC",
+    "classification": "TICKET",
+    "lens": "TRAVEL",
+    "ocr": "تذكرة قطار\nالقاهرة إلى الإسكندرية\n٢٥/٠٩/٢٠٢٦\nالمقعد ١٢",
+    "labels": [
+      "تذكرة"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "القاهرة"
+      ],
+      [
+        "الإسكندرية"
+      ],
+      [
+        "المقعد ١٢",
+        "١٢"
+      ]
+    ],
+    "forbidden": [
+      "أسوان"
+    ]
+  },
+  {
+    "id": "hotel_en",
+    "language": "ENGLISH",
+    "classification": "HOTEL",
+    "lens": "TRAVEL",
+    "ocr": "Nile View Hotel\nConfirmation NV4421\nCheck-in 2026-10-02\nCheck-out 2026-10-06",
+    "labels": [
+      "hotel booking"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Nile View Hotel"
+      ],
+      [
+        "NV4421"
+      ],
+      [
+        "2026-10-06"
+      ]
+    ],
+    "forbidden": [
+      "2026-10-08"
+    ]
+  },
+  {
+    "id": "hotel_ar",
+    "language": "ARABIC",
+    "classification": "HOTEL",
+    "lens": "TRAVEL",
+    "ocr": "فندق البحر\nرقم الحجز ٨٨٢١\nالوصول ١٠/١١/٢٠٢٦\nالمغادرة ١٤/١١/٢٠٢٦",
+    "labels": [
+      "حجز فندق"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "فندق البحر"
+      ],
+      [
+        "٨٨٢١",
+        "8821"
+      ],
+      [
+        "١٤/١١/٢٠٢٦",
+        "14/11/2026"
+      ]
+    ],
+    "forbidden": [
+      "١٥/١١/٢٠٢٦"
+    ]
+  },
+  {
+    "id": "invoice_en",
+    "language": "ENGLISH",
+    "classification": "INVOICE",
+    "lens": "MONEY",
+    "ocr": "INVOICE INV-2048\nAcme Design\nAmount due 1,200 USD\nDue 2026-09-15",
+    "labels": [
+      "invoice"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "INV-2048"
+      ],
+      [
+        "1,200",
+        "1200"
+      ],
+      [
+        "2026-09-15"
+      ]
+    ],
+    "forbidden": [
+      "paid"
+    ]
+  },
+  {
+    "id": "invoice_ar",
+    "language": "ARABIC",
+    "classification": "INVOICE",
+    "lens": "MONEY",
+    "ocr": "فاتورة رقم ٧٧٤\nشركة الأفق\nالمبلغ المستحق ٢٤٠٠ ريال\nالاستحقاق ٣٠/٠٩/٢٠٢٦",
+    "labels": [
+      "فاتورة"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "شركة الأفق"
+      ],
+      [
+        "٢٤٠٠",
+        "2400"
+      ],
+      [
+        "٣٠/٠٩/٢٠٢٦",
+        "30/09/2026"
+      ]
+    ],
+    "forbidden": [
+      "مدفوعة"
+    ]
+  },
+  {
+    "id": "warranty_en",
+    "language": "ENGLISH",
+    "classification": "WARRANTY_CARD",
+    "lens": "HOME",
+    "ocr": "Samsung Warranty\nModel QN90B\nSerial SN89347209\nValid until 2027-01-01",
+    "labels": [
+      "warranty card"
+    ],
+    "barcodes": [
+      "SN89347209"
+    ],
+    "signals": [
+      [
+        "QN90B"
+      ],
+      [
+        "SN89347209"
+      ],
+      [
+        "2027-01-01"
+      ]
+    ],
+    "forbidden": [
+      "2028-01-01"
+    ]
+  },
+  {
+    "id": "warranty_ar",
+    "language": "ARABIC",
+    "classification": "WARRANTY_CARD",
+    "lens": "HOME",
+    "ocr": "شهادة ضمان توشيبا\nالموديل AC-55\nالرقم التسلسلي ٩٩١٢٣\nساري حتى ٢٠٢٨/٠٣/٠١",
+    "labels": [
+      "ضمان"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "توشيبا"
+      ],
+      [
+        "AC-55"
+      ],
+      [
+        "٢٠٢٨/٠٣/٠١",
+        "2028/03/01"
+      ]
+    ],
+    "forbidden": [
+      "٢٠٢٩"
+    ]
+  },
+  {
+    "id": "business_card_en",
+    "language": "ENGLISH",
+    "classification": "BUSINESS_CARD",
+    "lens": "PRODUCTIVITY",
+    "ocr": "Maya Chen\nProduct Designer\nmaya@example.com\n+1 555 0104",
+    "labels": [
+      "business card"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Maya Chen"
+      ],
+      [
+        "maya@example.com"
+      ],
+      [
+        "555 0104"
+      ]
+    ],
+    "forbidden": [
+      "Product Manager"
+    ]
+  },
+  {
+    "id": "business_card_ar",
+    "language": "ARABIC",
+    "classification": "BUSINESS_CARD",
+    "lens": "PRODUCTIVITY",
+    "ocr": "ليلى حسن\nمهندسة معمارية\nlayla@example.com\n٠١٠١٢٣٤٥٦٧٨",
+    "labels": [
+      "بطاقة عمل"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "ليلى حسن"
+      ],
+      [
+        "مهندسة معمارية"
+      ],
+      [
+        "layla@example.com"
+      ]
+    ],
+    "forbidden": [
+      "طبيبة"
+    ]
+  },
+  {
+    "id": "product_photo_en",
+    "language": "ENGLISH",
+    "classification": "PRODUCT_PHOTO",
+    "lens": "SHOPPING",
+    "ocr": "NoiseCancel Pro Headphones\nModel NC-40\nPrice 89.99 USD",
+    "labels": [
+      "headphones",
+      "product"
+    ],
+    "barcodes": [
+      "0123456789012"
+    ],
+    "signals": [
+      [
+        "NoiseCancel Pro"
+      ],
+      [
+        "NC-40"
+      ],
+      [
+        "89.99"
+      ]
+    ],
+    "forbidden": [
+      "wireless charger"
+    ]
+  },
+  {
+    "id": "product_photo_ar",
+    "language": "ARABIC",
+    "classification": "PRODUCT_PHOTO",
+    "lens": "SHOPPING",
+    "ocr": "خلاط النخبة\nموديل MX-7\nالسعر ١٧٥٠ جنيه",
+    "labels": [
+      "منتج",
+      "خلاط"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "خلاط النخبة",
+        "النخبة"
+      ],
+      [
+        "MX-7"
+      ],
+      [
+        "١٧٥٠",
+        "1750"
+      ]
+    ],
+    "forbidden": [
+      "غسالة"
+    ]
+  },
+  {
+    "id": "menu_photo_en",
+    "language": "ENGLISH",
+    "classification": "MENU_PHOTO",
+    "lens": "SHOPPING",
+    "ocr": "Garden Cafe Menu\nMargherita Pizza 12\nMushroom Soup 7",
+    "labels": [
+      "menu",
+      "food"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Garden Cafe"
+      ],
+      [
+        "Margherita Pizza"
+      ],
+      [
+        "12"
+      ]
+    ],
+    "forbidden": [
+      "Pepperoni"
+    ]
+  },
+  {
+    "id": "menu_photo_ar",
+    "language": "ARABIC",
+    "classification": "MENU_PHOTO",
+    "lens": "SHOPPING",
+    "ocr": "قائمة مطعم الدار\nكشري ٨٠ جنيه\nشوربة عدس ٦٠ جنيه",
+    "labels": [
+      "قائمة طعام"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "مطعم الدار"
+      ],
+      [
+        "كشري"
+      ],
+      [
+        "٨٠",
+        "80"
+      ]
+    ],
+    "forbidden": [
+      "بيتزا"
+    ]
+  },
+  {
+    "id": "serial_plate_en",
+    "language": "ENGLISH",
+    "classification": "SERIAL_PLATE",
+    "lens": "CAR",
+    "ocr": "Vehicle identification\nVIN 1HGCM82633A004352\nPlate ABC-742",
+    "labels": [
+      "vehicle plate"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "1HGCM82633A004352"
+      ],
+      [
+        "ABC-742"
+      ]
+    ],
+    "forbidden": [
+      "ABC-724"
+    ]
+  },
+  {
+    "id": "serial_plate_ar",
+    "language": "ARABIC",
+    "classification": "SERIAL_PLATE",
+    "lens": "CAR",
+    "ocr": "بيانات المركبة\nرقم الشاسيه JH4KA8260MC000111\nاللوحة س ن ر ٤٢١",
+    "labels": [
+      "لوحة سيارة"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "JH4KA8260MC000111"
+      ],
+      [
+        "س ن ر ٤٢١",
+        "421"
+      ]
+    ],
+    "forbidden": [
+      "٤١٢"
+    ]
+  },
+  {
+    "id": "general_document_en",
+    "language": "ENGLISH",
+    "classification": "GENERAL_DOCUMENT",
+    "lens": "BUREAUCRACY",
+    "ocr": "Municipal Notice MN-22\nAppointment 2026-09-03\nBring proof of address",
+    "labels": [
+      "document"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "MN-22"
+      ],
+      [
+        "2026-09-03"
+      ],
+      [
+        "proof of address"
+      ]
+    ],
+    "forbidden": [
+      "passport required"
+    ]
+  },
+  {
+    "id": "general_document_ar",
+    "language": "ARABIC",
+    "classification": "GENERAL_DOCUMENT",
+    "lens": "BUREAUCRACY",
+    "ocr": "إشعار من الحي رقم ٢٢\nالموعد ٣ سبتمبر ٢٠٢٦\nيرجى إحضار إثبات العنوان",
+    "labels": [
+      "مستند"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "إشعار من الحي"
+      ],
+      [
+        "٣ سبتمبر ٢٠٢٦"
+      ],
+      [
+        "إثبات العنوان"
+      ]
+    ],
+    "forbidden": [
+      "جواز السفر"
+    ]
+  },
+  {
+    "id": "web_article_en",
+    "language": "ENGLISH",
+    "classification": "WEB_ARTICLE",
+    "lens": "MEDIA",
+    "ocr": "How Cairo Is Rethinking Urban Shade\nBy Lina Hassan\nExample Journal\nPublished 2026-08-12\nhttps://example.org/cairo-shade",
+    "labels": [
+      "web article"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "How Cairo Is Rethinking Urban Shade"
+      ],
+      [
+        "Lina Hassan"
+      ],
+      [
+        "Example Journal"
+      ]
+    ],
+    "forbidden": [
+      "Alex Morgan"
+    ]
+  },
+  {
+    "id": "web_article_ar",
+    "language": "ARABIC",
+    "classification": "WEB_ARTICLE",
+    "lens": "MEDIA",
+    "ocr": "كيف تعيد القاهرة تصميم الظل الحضري\nبقلم ليلى حسن\nمجلة المدينة\nنشر في ١٢ أغسطس ٢٠٢٦\nhttps://example.org/ar/cairo-shade",
+    "labels": [
+      "مقال ويب"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "كيف تعيد القاهرة تصميم الظل الحضري"
+      ],
+      [
+        "ليلى حسن"
+      ],
+      [
+        "مجلة المدينة"
+      ]
+    ],
+    "forbidden": [
+      "أحمد علي"
+    ]
+  },
+  {
+    "id": "scene_photo_en",
+    "language": "ENGLISH",
+    "classification": "SCENE_PHOTO",
+    "lens": "PRODUCTIVITY",
+    "ocr": "",
+    "labels": [
+      "sunset",
+      "beach",
+      "palm tree"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "sunset"
+      ],
+      [
+        "beach"
+      ]
+    ],
+    "forbidden": [
+      "mountain"
+    ]
+  },
+  {
+    "id": "scene_photo_ar",
+    "language": "ARABIC",
+    "classification": "SCENE_PHOTO",
+    "lens": "PRODUCTIVITY",
+    "ocr": "غروب على شاطئ البحر",
+    "labels": [
+      "شاطئ",
+      "غروب"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "غروب"
+      ],
+      [
+        "شاطئ"
+      ]
+    ],
+    "forbidden": [
+      "جبل"
+    ]
+  },
+  {
+    "id": "movie_en",
+    "language": "ENGLISH",
+    "classification": "MOVIE",
+    "lens": "MEDIA",
+    "ocr": "DUNE: PART TWO\nA film by Denis Villeneuve\nNow streaming",
+    "labels": [
+      "movie poster"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "DUNE: PART TWO",
+        "Dune Part Two"
+      ],
+      [
+        "watchlist",
+        "watch"
+      ]
+    ],
+    "forbidden": [
+      "TV series"
+    ]
+  },
+  {
+    "id": "movie_ar",
+    "language": "ARABIC",
+    "classification": "MOVIE",
+    "lens": "MEDIA",
+    "ocr": "فيلم ولاد رزق ٣\nقريباً في السينما",
+    "labels": [
+      "ملصق فيلم"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "ولاد رزق ٣"
+      ],
+      [
+        "فيلم",
+        "مشاهدة"
+      ]
+    ],
+    "forbidden": [
+      "مسلسل"
+    ]
+  },
+  {
+    "id": "tv_series_en",
+    "language": "ENGLISH",
+    "classification": "TV_SERIES",
+    "lens": "MEDIA",
+    "ocr": "THE BEAR\nSeason 3\nEpisode 1",
+    "labels": [
+      "TV poster"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "THE BEAR"
+      ],
+      [
+        "Season 3"
+      ],
+      [
+        "watchlist",
+        "watch"
+      ]
+    ],
+    "forbidden": [
+      "movie"
+    ]
+  },
+  {
+    "id": "tv_series_ar",
+    "language": "ARABIC",
+    "classification": "TV_SERIES",
+    "lens": "MEDIA",
+    "ocr": "مسلسل الحشاشين\nالحلقة ٥\nالموسم الأول",
+    "labels": [
+      "مسلسل"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "الحشاشين"
+      ],
+      [
+        "الحلقة ٥",
+        "5"
+      ],
+      [
+        "الموسم الأول"
+      ]
+    ],
+    "forbidden": [
+      "فيلم"
+    ]
+  },
+  {
+    "id": "book_en",
+    "language": "ENGLISH",
+    "classification": "BOOK",
+    "lens": "MEDIA",
+    "ocr": "ATOMIC HABITS\nJames Clear\nAn Easy Way to Build Good Habits",
+    "labels": [
+      "book cover"
+    ],
+    "barcodes": [
+      "9780735211292"
+    ],
+    "signals": [
+      [
+        "ATOMIC HABITS",
+        "Atomic Habits"
+      ],
+      [
+        "James Clear"
+      ],
+      [
+        "reading list",
+        "read"
+      ]
+    ],
+    "forbidden": [
+      "movie"
+    ]
+  },
+  {
+    "id": "book_ar",
+    "language": "ARABIC",
+    "classification": "BOOK",
+    "lens": "MEDIA",
+    "ocr": "كتاب الأيام\nطه حسين\nالجزء الأول",
+    "labels": [
+      "غلاف كتاب"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "الأيام"
+      ],
+      [
+        "طه حسين"
+      ],
+      [
+        "قراءة",
+        "قائمة القراءة"
+      ]
+    ],
+    "forbidden": [
+      "فيلم"
+    ]
+  },
+  {
+    "id": "meme_junk_en",
+    "language": "ENGLISH",
+    "classification": "MEME_JUNK",
+    "lens": "MEDIA",
+    "ocr": "WHEN THE WIFI STOPS\nNOOOOO",
+    "labels": [
+      "meme",
+      "cartoon"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "meme"
+      ],
+      [
+        "wifi"
+      ]
+    ],
+    "forbidden": [
+      "invoice"
+    ]
+  },
+  {
+    "id": "meme_junk_ar",
+    "language": "ARABIC",
+    "classification": "MEME_JUNK",
+    "lens": "MEDIA",
+    "ocr": "لما الإنترنت يفصل وقت الشغل\nيا نهار أبيض",
+    "labels": [
+      "ميم",
+      "رسم"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "ميم"
+      ],
+      [
+        "الإنترنت"
+      ]
+    ],
+    "forbidden": [
+      "فاتورة"
+    ]
+  },
+  {
+    "id": "other_en",
+    "language": "ENGLISH",
+    "classification": "OTHER",
+    "lenses": [],
+    "ocr": "PLA 1.75 mm filament spool matte orange",
+    "labels": [
+      "plastic spool",
+      "3D printing"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "PLA"
+      ],
+      [
+        "filament"
+      ],
+      [
+        "1.75 mm"
+      ]
+    ],
+    "forbidden": [
+      "passport",
+      "receipt"
+    ]
+  },
+  {
+    "id": "other_ar",
+    "language": "ARABIC",
+    "classification": "OTHER",
+    "lenses": [],
+    "ocr": "بكرة خيط طباعة ثلاثية الأبعاد PLA مقاس ١٫٧٥ مم",
+    "labels": [
+      "بكرة بلاستيك",
+      "طباعة ثلاثية الأبعاد"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "PLA"
+      ],
+      [
+        "طباعة ثلاثية الأبعاد"
+      ],
+      [
+        "١٫٧٥ مم",
+        "1.75"
+      ]
+    ],
+    "forbidden": [
+      "جواز سفر",
+      "إيصال"
+    ]
+  },
+  {
+    "id": "unknown_en",
+    "language": "ENGLISH",
+    "classification": "OTHER",
+    "lenses": [],
+    "ocr": "blurred fragment 7X ?",
+    "labels": [],
+    "barcodes": [],
+    "signals": [
+      [
+        "unknown",
+        "insufficient"
+      ],
+      [
+        "blurred",
+        "unclear"
+      ]
+    ],
+    "forbidden": [
+      "passport",
+      "receipt"
+    ]
+  },
+  {
+    "id": "unknown_ar",
+    "language": "ARABIC",
+    "classification": "OTHER",
+    "lenses": [],
+    "ocr": "صورة غير واضحة ؟ ٧",
+    "labels": [],
+    "barcodes": [],
+    "signals": [
+      [
+        "غير واضح",
+        "معلومات غير كافية"
+      ],
+      [
+        "غير معروف",
+        "تعذر"
+      ]
+    ],
+    "forbidden": [
+      "جواز سفر",
+      "فاتورة"
+    ]
+  },
+  {
+    "id": "event_en",
+    "language": "ENGLISH",
+    "classification": "EVENT",
+    "lens": "MEDIA",
+    "ocr": "Comic Con 2026\nOct 22-24, Downtown Center\nTicket ",
+    "labels": [
+      "event"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Comic Con 2026"
+      ],
+      [
+        "Oct 22-24"
+      ],
+      [
+        "Downtown Center"
+      ]
+    ],
+    "forbidden": [
+      "Music Festival"
+    ]
+  },
+  {
+    "id": "event_ar",
+    "language": "ARABIC",
+    "classification": "EVENT",
+    "lens": "MEDIA",
+    "ocr": "مهرجان السينما 2026\n22 اكتوبر, وسط البلد\nالتذكرة 50",
+    "labels": [
+      "event"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "مهرجان السينما"
+      ],
+      [
+        "22 اكتوبر"
+      ],
+      [
+        "وسط البلد"
+      ]
+    ],
+    "forbidden": [
+      "مسرحية"
+    ]
+  },
+  {
+    "id": "recipe_en",
+    "language": "ENGLISH",
+    "classification": "RECIPE",
+    "lens": "HEALTH",
+    "ocr": "Chocolate Cake Recipe\nPrep: 20m\nIngredients: Flour, Sugar, Cocoa",
+    "labels": [
+      "recipe"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Chocolate Cake"
+      ],
+      [
+        "20m"
+      ],
+      [
+        "Cocoa"
+      ]
+    ],
+    "forbidden": [
+      "Vanilla"
+    ]
+  },
+  {
+    "id": "recipe_ar",
+    "language": "ARABIC",
+    "classification": "RECIPE",
+    "lens": "HEALTH",
+    "ocr": "وصفة كيك الشوكولاتة\nالتحضير: 20 دقيقة\nالمكونات: دقيق، سكر، كاكاو",
+    "labels": [
+      "recipe"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "كيك الشوكولاتة"
+      ],
+      [
+        "20 دقيقة"
+      ],
+      [
+        "كاكاو"
+      ]
+    ],
+    "forbidden": [
+      "فانيليا"
+    ]
+  },
+  {
+    "id": "chat_en",
+    "language": "ENGLISH",
+    "classification": "CHAT",
+    "lens": "BUREAUCRACY",
+    "ocr": "Family Group\nMom: Did you pay the bill?\nMe: Yes, yesterday.",
+    "labels": [
+      "chat"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "Family Group"
+      ],
+      [
+        "Mom"
+      ],
+      [
+        "pay the bill"
+      ]
+    ],
+    "forbidden": [
+      "Boss"
+    ]
+  },
+  {
+    "id": "chat_ar",
+    "language": "ARABIC",
+    "classification": "CHAT",
+    "lens": "BUREAUCRACY",
+    "ocr": "جروب العائلة\nالام: هل دفعت الفاتورة؟\nانا: نعم، البارحة.",
+    "labels": [
+      "chat"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "جروب العائلة"
+      ],
+      [
+        "الام"
+      ],
+      [
+        "الفاتورة"
+      ]
+    ],
+    "forbidden": [
+      "المدير"
+    ]
+  },
+  {
+    "id": "flight_boarding_pass_en",
+    "language": "ENGLISH",
+    "classification": "FLIGHT_BOARDING_PASS",
+    "lens": "TRAVEL",
+    "ocr": "Boarding Pass\nFlight EK302\nDXB to LHR\nPassenger: John Doe",
+    "labels": [
+      "boarding pass"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "EK302"
+      ],
+      [
+        "DXB",
+        "LHR"
+      ],
+      [
+        "John Doe"
+      ]
+    ],
+    "forbidden": [
+      "EK502"
+    ]
+  },
+  {
+    "id": "flight_boarding_pass_ar",
+    "language": "ARABIC",
+    "classification": "FLIGHT_BOARDING_PASS",
+    "lens": "TRAVEL",
+    "ocr": "بطاقة صعود الطائرة\nرحلة EK302\nدبي الى لندن\nالراكب: جون دو",
+    "labels": [
+      "boarding pass"
+    ],
+    "barcodes": [],
+    "signals": [
+      [
+        "EK302"
+      ],
+      [
+        "دبي",
+        "لندن"
+      ],
+      [
+        "جون دو"
+      ]
+    ],
+    "forbidden": [
+      "EK502"
+    ]
+  }
 ]
