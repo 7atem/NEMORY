@@ -1,4 +1,4 @@
-package com.vaultbrain.shared.ui.sample
+﻿package com.vaultbrain.shared.ui.sample
 
 import androidx.compose.ui.window.ComposeUIViewController
 import platform.UIKit.UIViewController
@@ -13,12 +13,12 @@ fun MainViewController(isArabic: Boolean = false): UIViewController = ComposeUIV
         SharedSampleScreen(
             collectionLabel = "المجموعة",
             collectionName = "إيصالات البقالة",
-            itemLabel = "العنصر",
+            itemLabel = "عنصر",
             itemName = "تسوق السبت",
             amountLabel = "المبلغ",
-            amount = "١٢٣٫٤٥ ر.س",
+            amount = ".45",
             dateLabel = "التاريخ",
-            date = "١٧/٠٩/٢٠٢٦",
+            date = "17 سبتمبر 2026",
             isRtl = true
         )
     } else {
