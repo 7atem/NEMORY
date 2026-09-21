@@ -60,4 +60,24 @@ class QueryIntentParserTest {
         assertThat(parser.parse("أنشئ ملخص السفر القادم", now, ZoneOffset.UTC))
             .isEqualTo(QueryIntent.TripBriefing())
     }
+
+    @Test
+    fun `parses renew questions as expiring soon with a next-n-days window`() {
+        assertThat(parser.parse("What do I need to renew in the next 60 days?", now, ZoneOffset.UTC))
+            .isEqualTo(QueryIntent.ExpiringSoon(60))
+        assertThat(parser.parse("Which documents are up for renewal within 30 days?", now, ZoneOffset.UTC))
+            .isEqualTo(QueryIntent.ExpiringSoon(30))
+    }
+
+    @Test
+    fun `parses Arabic renew window with Arabic-Indic digits`() {
+        assertThat(parser.parse("ما الذي يجب تجديده خلال ٣٠ يوم؟", now, ZoneOffset.UTC))
+            .isEqualTo(QueryIntent.ExpiringSoon(30))
+    }
+
+    @Test
+    fun `document renewals still route to replacement chains before expiry`() {
+        assertThat(parser.parse("Show me document renewals", now, ZoneOffset.UTC))
+            .isEqualTo(QueryIntent.DocumentReplacementChains())
+    }
 }

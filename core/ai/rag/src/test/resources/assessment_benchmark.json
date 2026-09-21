@@ -3,140 +3,160 @@
     "id": "0",
     "merchant": "Acacia",
     "amount": "10",
-    "expectedTotal": "20",
-    "quote": "Policy Acacia expires in 2030."
+    "expectedTotal": "25",
+    "quote": "Policy Acacia expires in 2030.",
+    "amount2": "15"
   },
   {
     "id": "1",
     "merchant": "Birch",
     "amount": "15",
-    "expectedTotal": "30",
-    "quote": "Policy Birch expires in 2030."
+    "expectedTotal": "35",
+    "quote": "Policy Birch expires in 2030.",
+    "amount2": "20"
   },
   {
     "id": "2",
     "merchant": "Cedar",
     "amount": "20",
-    "expectedTotal": "40",
-    "quote": "Policy Cedar expires in 2030."
+    "expectedTotal": "45",
+    "quote": "Policy Cedar expires in 2030.",
+    "amount2": "25"
   },
   {
     "id": "3",
     "merchant": "Dahlia",
     "amount": "25",
-    "expectedTotal": "50",
-    "quote": "Policy Dahlia expires in 2030."
+    "expectedTotal": "55",
+    "quote": "Policy Dahlia expires in 2030.",
+    "amount2": "30"
   },
   {
     "id": "4",
     "merchant": "Elm",
     "amount": "30",
-    "expectedTotal": "60",
-    "quote": "Policy Elm expires in 2030."
+    "expectedTotal": "65",
+    "quote": "Policy Elm expires in 2030.",
+    "amount2": "35"
   },
   {
     "id": "5",
     "merchant": "Fir",
     "amount": "35",
-    "expectedTotal": "70",
-    "quote": "Policy Fir expires in 2030."
+    "expectedTotal": "75",
+    "quote": "Policy Fir expires in 2030.",
+    "amount2": "40"
   },
   {
     "id": "6",
     "merchant": "Grove",
     "amount": "40",
-    "expectedTotal": "80",
-    "quote": "Policy Grove expires in 2030."
+    "expectedTotal": "85",
+    "quote": "Policy Grove expires in 2030.",
+    "amount2": "45"
   },
   {
     "id": "7",
     "merchant": "Hazel",
     "amount": "45",
-    "expectedTotal": "90",
-    "quote": "Policy Hazel expires in 2030."
+    "expectedTotal": "95",
+    "quote": "Policy Hazel expires in 2030.",
+    "amount2": "50"
   },
   {
     "id": "8",
     "merchant": "Iris",
     "amount": "50",
-    "expectedTotal": "100",
-    "quote": "Policy Iris expires in 2030."
+    "expectedTotal": "105",
+    "quote": "Policy Iris expires in 2030.",
+    "amount2": "55"
   },
   {
     "id": "9",
     "merchant": "Jasmine",
     "amount": "55",
-    "expectedTotal": "110",
-    "quote": "Policy Jasmine expires in 2030."
+    "expectedTotal": "115",
+    "quote": "Policy Jasmine expires in 2030.",
+    "amount2": "60"
   },
   {
     "id": "10",
     "merchant": "Kiwi",
     "amount": "60",
-    "expectedTotal": "120",
-    "quote": "Policy Kiwi expires in 2030."
+    "expectedTotal": "125",
+    "quote": "Policy Kiwi expires in 2030.",
+    "amount2": "65"
   },
   {
     "id": "11",
     "merchant": "Laurel",
     "amount": "65",
-    "expectedTotal": "130",
-    "quote": "Policy Laurel expires in 2030."
+    "expectedTotal": "135",
+    "quote": "Policy Laurel expires in 2030.",
+    "amount2": "70"
   },
   {
     "id": "12",
     "merchant": "Maple",
     "amount": "70",
-    "expectedTotal": "140",
-    "quote": "Policy Maple expires in 2030."
+    "expectedTotal": "145",
+    "quote": "Policy Maple expires in 2030.",
+    "amount2": "75"
   },
   {
     "id": "13",
     "merchant": "Nectar",
     "amount": "75",
-    "expectedTotal": "150",
-    "quote": "Policy Nectar expires in 2030."
+    "expectedTotal": "155",
+    "quote": "Policy Nectar expires in 2030.",
+    "amount2": "80"
   },
   {
     "id": "14",
     "merchant": "Olive",
     "amount": "80",
-    "expectedTotal": "160",
-    "quote": "Policy Olive expires in 2030."
+    "expectedTotal": "165",
+    "quote": "Policy Olive expires in 2030.",
+    "amount2": "85"
   },
   {
     "id": "15",
     "merchant": "Palm",
     "amount": "85",
-    "expectedTotal": "170",
-    "quote": "Policy Palm expires in 2030."
+    "expectedTotal": "175",
+    "quote": "Policy Palm expires in 2030.",
+    "amount2": "90"
   },
   {
     "id": "16",
     "merchant": "Quince",
     "amount": "90",
-    "expectedTotal": "180",
-    "quote": "Policy Quince expires in 2030."
+    "expectedTotal": "185",
+    "quote": "Policy Quince expires in 2030.",
+    "amount2": "95"
   },
   {
     "id": "17",
     "merchant": "Rose",
     "amount": "95",
-    "expectedTotal": "190",
-    "quote": "Policy Rose expires in 2030."
+    "expectedTotal": "195",
+    "quote": "Policy Rose expires in 2030.",
+    "amount2": "100"
   },
   {
     "id": "18",
     "merchant": "Spruce",
     "amount": "100",
-    "expectedTotal": "200",
-    "quote": "Policy Spruce expires in 2030."
+    "expectedTotal": "205",
+    "quote": "Policy Spruce expires in 2030.",
+    "amount2": "105"
   },
   {
     "id": "19",
     "merchant": "Tulip",
     "amount": "105",
-    "expectedTotal": "210",
-    "quote": "Policy Tulip expires in 2030."
+    "expectedTotal": "215",
+    "quote": "Policy Tulip expires in 2030.",
+    "amount2": "110"
   }
 ]

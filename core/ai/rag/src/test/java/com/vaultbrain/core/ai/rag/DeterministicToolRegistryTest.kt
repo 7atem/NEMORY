@@ -162,6 +162,75 @@ class DeterministicToolRegistryTest {
         coVerify(exactly = 0) { repository.delete(any()) }
     }
 
+    @Test
+    fun `duplicate bills within a few days are excluded and disclosed`() = runTest {
+        coEvery { repository.getActive() } returns listOf(
+            receipt("d1", "North Power May", "11", "EGP").copy(createdAt = now - 40 * DAY_MS),
+            receipt("d2", "North Power duplicate", "11", "EGP").copy(createdAt = now - 38 * DAY_MS),
+            receipt("d3", "North Power later", "20", "EGP").copy(createdAt = now - 10 * DAY_MS)
+        )
+
+        val response = tools.execute("How much did I spend at North Power?", now)!!
+
+        assertThat(response.evidence?.headline).isEqualTo("EGP 31")
+        assertThat(response.evidence?.supportingFacts).contains("EGP 31 • 2 items")
+        assertThat(response.evidence?.supportingFacts).contains("1 possible duplicates excluded")
+        assertThat(response.sources.map(VaultItem::id)).containsExactly("d1", "d3")
+    }
+
+    @Test
+    fun `year sum discloses months with no merchant document`() = runTest {
+        coEvery { repository.getActive() } returns listOf(
+            receipt("m1", "North Power January", "12", "EGP").copy(createdAt = now - 212 * DAY_MS),
+            receipt("m3", "North Power April", "14", "EGP").copy(createdAt = now - 139 * DAY_MS)
+        )
+
+        val response = tools.execute("How much did I spend at North Power this year?", now)!!
+
+        assertThat(response.evidence?.headline).isEqualTo("EGP 26")
+        assertThat(response.evidence?.supportingFacts)
+            .contains("No north power document found for February, March, May, June, July, August")
+    }
+
+    @Test
+    fun `expiring soon excludes documents superseded by a replaces relationship`() = runTest {
+        val day = 24L * 60 * 60 * 1000
+        val knowledge = mockk<com.vaultbrain.core.database.repository.KnowledgeRepository>()
+        val awareTools = DeterministicToolRegistry(repository, QueryIntentParser(), knowledge)
+        coEvery { repository.getActive() } returns listOf(
+            item("oldp", "Old car insurance", Classification.LEGAL_DOCUMENT, expiryDate = now + 20 * day),
+            item("newp", "New car insurance", Classification.LEGAL_DOCUMENT, expiryDate = now + 300 * day),
+            item("pass", "Passport", Classification.PASSPORT, expiryDate = now + 45 * day)
+        )
+        coEvery { knowledge.relationshipsForItems(any()) } returns listOf(
+            com.vaultbrain.shared.database.entity.RelationshipEntity("r1", "newp", "oldp", "REPLACES")
+        )
+
+        val response = awareTools.execute("What is expiring soon?", now)!!
+
+        assertThat(response.sources.map(VaultItem::id)).containsExactly("pass")
+    }
+
+    @Test
+    fun `document chains come from real relationships when available`() = runTest {
+        val knowledge = mockk<com.vaultbrain.core.database.repository.KnowledgeRepository>()
+        val awareTools = DeterministicToolRegistry(repository, QueryIntentParser(), knowledge)
+        coEvery { repository.getActive() } returns listOf(
+            item("p1", "AXA policy 2025", Classification.LEGAL_DOCUMENT),
+            item("p2", "AXA policy 2026", Classification.LEGAL_DOCUMENT)
+        )
+        coEvery { knowledge.relationshipsForItems(any()) } returns listOf(
+            com.vaultbrain.shared.database.entity.RelationshipEntity("r1", "p2", "p1", "REPLACES")
+        )
+
+        val response = awareTools.execute("Show me document renewals", now)!!
+
+        assertThat(response.evidence?.headline).isEqualTo("Document Chains")
+        assertThat(response.evidence?.supportingFacts).containsExactly("AXA policy 2026 renewals (2 documents)")
+    }
+
+    private val DAY_MS = 24L * 60 * 60 * 1000
+
     private fun receipt(id: String, title: String, total: String, currency: String) =
         item(id, title, Classification.RECEIPT).copy(
             parsedMetadata = mapOf("merchant" to "Carrefour", "total" to total, "currency" to currency)

@@ -52,9 +52,9 @@ class RagEngine @Inject constructor(
     private val hybridAiCoordinator: HybridAiCoordinator,
     private val personalContextEngine: PersonalContextEngine,
     private val tokenBudget: TokenBudget = TokenBudget(),
-    private val deterministicTools: DeterministicToolRegistry =
-        DeterministicToolRegistry(vaultRepository, QueryIntentParser()),
     private val knowledge: com.vaultbrain.core.database.repository.KnowledgeRepository? = null,
+    private val deterministicTools: DeterministicToolRegistry =
+        DeterministicToolRegistry(vaultRepository, QueryIntentParser(), knowledge),
     private val claimVerifier: ClaimVerifier = ClaimVerifier(llmClient),
     private val agentTools: AgentToolExecutor = AgentToolExecutor(vaultRepository, personalContextEngine)
 ) {

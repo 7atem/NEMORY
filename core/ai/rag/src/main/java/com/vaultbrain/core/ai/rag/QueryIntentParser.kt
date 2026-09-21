@@ -32,7 +32,10 @@ class QueryIntentParser @Inject constructor() {
         if (normalized.isBlank()) return null
         val range = parseDateRange(normalized, now, zoneId)
 
-        if (EXPIRY_TERMS.any(normalized::contains)) return QueryIntent.ExpiringSoon()
+        if (CHAIN_TERMS.any(normalized::contains) || (HISTORY_TERMS.any(normalized::contains) && DOCUMENT_TERMS.any(normalized::contains))) {
+            return QueryIntent.DocumentReplacementChains()
+        }
+        if (EXPIRY_TERMS.any(normalized::contains)) return QueryIntent.ExpiringSoon(parseForwardDays(normalized) ?: 90)
         if (MEDIA_BACKLOG_TERMS.any(normalized::contains)) return QueryIntent.MediaBacklog
         if (RECURRING_TERMS.any(normalized::contains) && CHANGE_TERMS.any(normalized::contains)) {
             return QueryIntent.RecurringSpendIncreases
@@ -45,9 +48,6 @@ class QueryIntentParser @Inject constructor() {
         }
         if (MISSING_TERMS.any(normalized::contains) && DOCUMENT_TERMS.any(normalized::contains)) {
             return QueryIntent.MissingDocuments()
-        }
-        if (CHAIN_TERMS.any(normalized::contains) || (HISTORY_TERMS.any(normalized::contains) && DOCUMENT_TERMS.any(normalized::contains))) {
-            return QueryIntent.DocumentReplacementChains()
         }
 
         val merchant = extractMerchant(normalized)
@@ -80,6 +80,15 @@ class QueryIntentParser @Inject constructor() {
         }
     }
 
+    private fun parseForwardDays(query: String): Int? {
+        val match = NEXT_DAYS.find(query) ?: return null
+        val raw = match.groupValues[1].ifBlank { match.groupValues[2] }
+        return parseDaysToken(raw)?.takeIf { it in 1..3650 }
+    }
+
+    private fun parseDaysToken(raw: String): Int? =
+        raw.map { if (it in '٠'..'٩') (it - '٠').toString() else it.toString() }.joinToString("").toIntOrNull()
+
     private fun range(start: LocalDate, exclusiveEnd: LocalDate, zoneId: ZoneId, en: String, ar: String) = DateRange(
         from = start.atStartOfDay(zoneId).toInstant().toEpochMilli(),
         to = exclusiveEnd.atStartOfDay(zoneId).toInstant().toEpochMilli() - 1,
@@ -104,7 +113,7 @@ class QueryIntentParser @Inject constructor() {
             "unfinished movie", "unfinished book", "unfinished media",
             "قائمة المشاهدة", "قائمة القراءة", "ماذا أشاهد", "ماذا أقرأ", "غير مكتمل"
         )
-        val EXPIRY_TERMS = listOf("expire", "expiry", "expiring", "تنتهي", "انتهاء", "صلاحية")
+        val EXPIRY_TERMS = listOf("expire", "expiry", "expiring", "renew", "renewal", "تنتهي", "انتهاء", "صلاحية", "تجديد")
         val TRAVEL_TERMS = listOf("travel", "trip", "flight", "hotel", "سفر", "رحلة", "فندق")
         val UPCOMING_TERMS = listOf("upcoming", "next", "soon", "القادمة", "القادم", "قريب")
         val TOTAL_TERMS = listOf("how much", "total", "spent", "spending", "إجمالي", "المجموع", "أنفقت", "مصروف")
@@ -114,6 +123,7 @@ class QueryIntentParser @Inject constructor() {
         val CHAIN_TERMS = listOf("replacement chain", "renewals", "سلسلة", "تجديدات")
         val HISTORY_TERMS = listOf("history", "previous", "old", "تاريخ", "سابق", "قديم")
         val LAST_DAYS = Regex("(?:last|past|آخر)\\s+(\\d{1,4})\\s+(?:days?|يوم|أيام|يومًا)")
+        val NEXT_DAYS = Regex("(?:next|within|خلال|بعد)\\s+([0-9٠-٩]{1,4})\\s+(?:days?|يوم|أيام|يومًا)|([0-9٠-٩]{1,4})\\s+(?:days?|أيام|يومًا)")
         val MERCHANT = Regex("(?:\\bat\\b|\\bfrom\\b|\\bmerchant\\b|من|لدى)\\s+[\"']?([\\p{L}\\p{N} .&'_-]{2,80})")
         val TEMPORAL_SUFFIX = Regex("\\s+(?:this month|last month|previous month|this year|هذا الشهر|الشهر الماضي|هذه السنة|هذا العام|last|past|آخر).*$")
         val GENERIC_MERCHANT_VALUES = setOf("my vault", "the vault", "الخزنة", "خزنتي")

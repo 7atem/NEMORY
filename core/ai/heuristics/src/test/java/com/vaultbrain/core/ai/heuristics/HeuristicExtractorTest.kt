@@ -321,5 +321,57 @@ class HeuristicExtractorTest {
         assertNotNull(result.metadata["expiry_date"])
         assertEquals("2028-12-01", result.metadata["expiry_date"])
     }
+
+    @Test
+    fun `airline booking invoice stays a money invoice rather than a travel ticket`() {
+        val result = extractor.extract(
+            """
+                EGYPTAIR
+                INVOICE #8899
+                Booking: Cairo to Dubai
+                Flight: MS 777
+                Date: 2026-10-01
+                Amount Due: 620 USD
+            """.trimIndent()
+        )
+
+        assertEquals(Classification.INVOICE, result.inferredClassification)
+        assertTrue(result.lensTags.contains(LensId.MONEY))
+        assertEquals("620", result.metadata["total"])
+    }
+
+    @Test
+    fun `visa page is an identity document rather than a passport`() {
+        val result = extractor.extract(
+            """
+                VISA
+                Type: B1/B2
+                Visa No: V-12345
+                Passport No: P123456
+                Expiry Date: 2031-05-01
+            """.trimIndent()
+        )
+
+        assertEquals(Classification.IDENTITY_DOCUMENT, result.inferredClassification)
+        assertEquals("visa", result.metadata["document_type"])
+        assertTrue(result.lensTags.contains(LensId.BUREAUCRACY))
+    }
+
+    @Test
+    fun `insurance policy numbers are not parsed as receipt amounts`() {
+        val result = extractor.extract(
+            """
+                MOTOR INSURANCE POLICY
+                Policy No: AX-9911
+                Vehicle: Nissan Sunny
+                Expiry Date: 2027-03-01
+                Insured: John Doe
+            """.trimIndent()
+        )
+
+        assertEquals(Classification.GENERAL_DOCUMENT, result.inferredClassification)
+        assertTrue(result.lensTags.contains(LensId.BUREAUCRACY))
+        assertEquals("AX-9911", result.metadata["policy_number"])
+    }
 }
 

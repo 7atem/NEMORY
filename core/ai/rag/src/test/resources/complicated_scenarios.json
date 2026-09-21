@@ -13,13 +13,12 @@
     ],
     "merchant": "North Power",
     "expectHeadline": "EGP 75",
-    "expectFacts": ["EGP 75 • 6 items", "Merchant: north power", "Period: this year"]
+    "expectFacts": ["EGP 75 • 6 items", "Merchant: north power", "Period: this year",
+      "No north power document found for April, August, September"]
   },
   {
     "mode": "sum",
-    "name": "knownIssue_sum_duplicateBillDoubleCounted",
-    "knownIssue": true,
-    "issue": "sumAmounts sums every matching record with no duplicate suppression; a bill captured twice (same amount, 2 days apart) is double-counted. DeterministicToolRegistry.kt:44-59.",
+    "name": "duplicate_bill_within_days_not_double_counted",
     "query": "How much did I spend at North Power this year?",
     "items": [
       {"id": "e1", "title": "North Power January", "classification": "UTILITY_BILL", "date": "2026-01-15", "total": "12", "currency": "EGP"},
@@ -32,7 +31,7 @@
     ],
     "merchant": "North Power",
     "expectHeadline": "EGP 75",
-    "expectFacts": ["EGP 75 • 7 items"]
+    "expectFacts": ["EGP 75 • 6 items", "1 possible duplicates excluded"]
   },
   {
     "mode": "sum",
@@ -115,17 +114,13 @@
   },
   {
     "mode": "parse",
-    "name": "knownIssue_intent_renew_next_60_days",
-    "knownIssue": true,
-    "issue": "\"renew\" is not in EXPIRY_TERMS and \"next N days\" is not parsed as a range, so renewal questions fall through to semantic RAG with a 90-day default. QueryIntentParser.kt:35,61-80,107.",
+    "name": "renew_next_60_days_parsed_as_expiry_window",
     "query": "What do I need to renew in the next 60 days?",
-    "expect": "ExpiringSoon"
+    "expect": "ExpiringSoon:60"
   },
   {
     "mode": "expiry_tool",
-    "name": "knownIssue_expiry_replaces_relationship_ignored",
-    "knownIssue": true,
-    "issue": "findExpiringSoon lists every expiring record and never consults KnowledgeRepository, so a policy superseded via a REPLACES relationship is still surfaced as needing renewal. DeterministicToolRegistry.kt:116-131.",
+    "name": "replaced_policy_not_surfaced_as_needing_renewal",
     "query": "What is expiring soon?",
     "items": [
       {"id": "oldp", "title": "Old car insurance", "classification": "LEGAL_DOCUMENT", "expiry": "2026-10-04"},
@@ -257,9 +252,7 @@
   },
   {
     "mode": "classify",
-    "name": "knownIssue_classify_flightInvoice_as_ticket",
-    "knownIssue": true,
-    "issue": "The TICKET keyword branch matches \"flight\" before the INVOICE branch is reached, so an airline booking invoice (Amount Due, no boarding details) is classified as a travel ticket and routed to the travel lens instead of money. HeuristicExtractor.kt:285-299.",
+    "name": "flight_invoice_routes_to_invoice_money",
     "text": "EGYPTAIR\nINVOICE #8899\nBooking: Cairo to Dubai\nFlight: MS 777\nDate: 2026-10-01\nAmount Due: 620 USD",
     "expectClassification": "INVOICE",
     "rejectClassification": "TICKET",
@@ -282,17 +275,13 @@
   },
   {
     "mode": "classify",
-    "name": "knownIssue_classify_visa_as_passport",
-    "knownIssue": true,
-    "issue": "A visa sticker text contains \"Passport No\", which matches the passport keyword branch first, so a visa page is classified as a passport. There is no visa handling in inferClassification. HeuristicExtractor.kt:260.",
+    "name": "visa_routes_to_identity_document",
     "text": "VISA\nType: B1/B2\nVisa No: V-12345\nPassport No: P123456\nExpiry Date: 2031-05-01",
     "expectClassification": "IDENTITY_DOCUMENT"
   },
   {
     "mode": "classify",
-    "name": "knownIssue_classify_insurancePolicyNumber_as_amount_receipt",
-    "knownIssue": true,
-    "issue": "AMOUNT_PATTERN parses the policy number (AX-9911) as an amount; with the expiry date present, the RECEIPT branch fires before INSURANCE_POLICY_PATTERN, so a motor insurance policy is classified as a money receipt. HeuristicExtractor.kt:94-106,299,309.",
+    "name": "insurance_policy_routes_to_bureaucracy",
     "text": "MOTOR INSURANCE POLICY\nPolicy No: AX-9911\nVehicle: Nissan Sunny\nExpiry Date: 2027-03-01\nInsured: John Doe",
     "expectClassification": "GENERAL_DOCUMENT",
     "expectLens": ["BUREAUCRACY"],

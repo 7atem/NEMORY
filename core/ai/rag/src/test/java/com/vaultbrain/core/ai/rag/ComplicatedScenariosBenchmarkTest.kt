@@ -93,11 +93,25 @@ class ComplicatedScenariosBenchmarkTest(private val mode: String, private val na
                 expiryDate = entry.jsonObject["expiry"]?.let { day(it.jsonPrimitive.content) }
             )
         }
-        val result = DeterministicToolRegistry(repository, QueryIntentParser()).execute(value("query"), now)!!
+        val result = DeterministicToolRegistry(repository, QueryIntentParser(), expiryKnowledge()).execute(value("query"), now)!!
         assertThat(result.evidence!!.headline).isEqualTo(value("expectHeadline"))
         assertThat(result.sources.map { it.id }).containsExactlyElementsIn(
             items("expectIds").map { it.jsonPrimitive.content }).inOrder()
         fixture["expectFacts"]?.jsonArray?.forEach { assertThat(result.evidence!!.supportingFacts).contains(it.jsonPrimitive.content) }
+    }
+
+    private fun expiryKnowledge(): com.vaultbrain.core.database.repository.KnowledgeRepository? {
+        val relations = fixture["relations"] ?: return null
+        val knowledge = mockk<com.vaultbrain.core.database.repository.KnowledgeRepository>()
+        coEvery { knowledge.relationshipsForItems(any()) } returns relations.jsonArray.map {
+            RelationshipEntity(
+                id = "${it.jsonObject.getValue("from").jsonPrimitive.content}-${it.jsonObject.getValue("to").jsonPrimitive.content}",
+                sourceItemId = it.jsonObject.getValue("from").jsonPrimitive.content,
+                targetItemId = it.jsonObject.getValue("to").jsonPrimitive.content,
+                type = it.jsonObject.getValue("type").jsonPrimitive.content
+            )
+        }
+        return knowledge
     }
 
     private fun parseScenario() {
@@ -106,9 +120,13 @@ class ComplicatedScenariosBenchmarkTest(private val mode: String, private val na
             "null" -> assertThat(intent).isNull()
             "ExpiringSoon" -> assertThat(intent).isEqualTo(QueryIntent.ExpiringSoon())
             "DocumentReplacementChains" -> assertThat(intent).isEqualTo(QueryIntent.DocumentReplacementChains())
-            else -> if (expect.startsWith("SumAmounts:")) {
-                assertThat(intent).isInstanceOf(QueryIntent.SumAmounts::class.java)
-                assertThat((intent as QueryIntent.SumAmounts).merchant).isEqualTo(expect.removePrefix("SumAmounts:"))
+            else -> when {
+                expect.startsWith("ExpiringSoon:") ->
+                    assertThat(intent).isEqualTo(QueryIntent.ExpiringSoon(expect.removePrefix("ExpiringSoon:").toInt()))
+                expect.startsWith("SumAmounts:") -> {
+                    assertThat(intent).isInstanceOf(QueryIntent.SumAmounts::class.java)
+                    assertThat((intent as QueryIntent.SumAmounts).merchant).isEqualTo(expect.removePrefix("SumAmounts:"))
+                }
             }
         }
     }

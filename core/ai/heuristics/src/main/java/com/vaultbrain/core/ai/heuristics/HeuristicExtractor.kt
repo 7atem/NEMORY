@@ -93,6 +93,10 @@ class HeuristicExtractor @Inject constructor() {
 
     private fun extractAmounts(text: String): List<Double> {
         return AMOUNT_PATTERN.findAll(text)
+            .filter { match ->
+                val before = text.substring((match.range.first - 16).coerceAtLeast(0), match.range.first)
+                !AMOUNT_LABEL_PATTERN.containsMatchIn(before)
+            }
             .map {
                 MetadataValueNormalizer.normalize(
                     key = "total",
@@ -257,6 +261,9 @@ class HeuristicExtractor @Inject constructor() {
                 "citation #", "citation no"
             ) -> Classification.GENERAL_DOCUMENT
             lower.containsAny("transcript", "academic record", "diploma", "degree certificate") -> Classification.ACADEMIC_RECORD
+            VISA_DOCUMENT_PATTERN.containsMatchIn(lower) &&
+                !lower.containsAny("credit card", "debit card", "mastercard", "amex", "ending in", "payment", "card") ->
+                Classification.IDENTITY_DOCUMENT
             lower.containsAny("passport", "جواز سفر", "رقم الجواز") || lowerVision.contains("passport") -> Classification.PASSPORT
             lower.containsAny(
                 "identity card", "identification card", "id card", "national id", "national identity", "driver license",
@@ -276,8 +283,9 @@ class HeuristicExtractor @Inject constructor() {
                 "rotten tomatoes", "letterboxd", "must watch", "movie recommendation",
                 "فيلم", "سينما", "أفلام"
             )  -> Classification.MOVIE
-            lower.containsAny(
-                "book", "novel", "reading list", "readlist", "book review", "isbn",
+            BOOK_WORD_PATTERN.containsMatchIn(lower) ||
+                lower.containsAny(
+                "novel", "reading list", "readlist", "book review", "isbn",
                 "goodreads.com/book", "app.thestorygraph.com/books", "books.google.",
                 "goodreads", "booktok", "bestseller", "must read", "book recommendation",
                 "كتاب", "رواية", "قراءة", "مؤلف"
@@ -285,7 +293,7 @@ class HeuristicExtractor @Inject constructor() {
             lower.containsAny(
                 "boarding pass", "flight", "airport", "departure", "arrival", "train ticket",
                 "bus ticket", "gate ", "رحلة", "تذكرة طيران"
-            ) -> Classification.TICKET
+            ) && (!isInvoiceSignal(lower, iban) || hasBoardingEvidence(lower)) -> Classification.TICKET
             lower.contains("lab result") || lower.contains("laboratory") || lower.contains("cholesterol") || lower.contains("hba1c") -> Classification.LAB_RESULT
             lower.containsAny("prescription", "rx:", "rx ", "medication", "clinic", "روشتة", "دواء") || lowerVision.contains("prescription") -> Classification.PRESCRIPTION
             lower.contains("hotel") || lower.contains("reservation") -> Classification.HOTEL
@@ -740,6 +748,7 @@ class HeuristicExtractor @Inject constructor() {
     private fun inferIdentityDocumentType(text: String): String {
         val lower = normalizeForMatching(text)
         return when {
+            lower.containsAny("visa", "تأشيرة") -> "visa"
             lower.containsAny("driver license", "driver's license", "driving licence", "رخصة قيادة") ->
                 "driver_license"
             lower.containsAny("national id", "national identity", "بطاقة رقم قومي", "الرقم القومي") ->
@@ -797,6 +806,14 @@ class HeuristicExtractor @Inject constructor() {
         }
         return securityLanguage || shortenedLink
     }
+
+    private fun isInvoiceSignal(lower: String, iban: List<String>): Boolean =
+        iban.isNotEmpty() || lower.containsAny("invoice", "rechnung", "amount due", "bank transfer", "wire transfer") ||
+            BILL_WORD_PATTERN.containsMatchIn(lower)
+
+    private fun hasBoardingEvidence(lower: String): Boolean =
+        lower.contains("boarding pass") ||
+            (lower.contains("passenger") && lower.containsAny("gate", "seat"))
 
     private fun normalizeForMatching(text: String): String = text
         .lowercase()
@@ -967,10 +984,12 @@ class HeuristicExtractor @Inject constructor() {
         private val AUTHOR_PATTERN = """(?im)^\s*(?:author|by)[\s:#-]+(.{2,80})$""".toRegex()
         // ── Expanded patterns for better classification coverage ──
         private val LOYALTY_CARD_PATTERN = """(?i)\b(?:frequent\s+flyer|miles|membership|loyalty|rewards?|member)\s*(?:card|no|number|#)?[\s:#-]*([A-Z0-9]{6,20})\b""".toRegex()
-        private val INSURANCE_POLICY_PATTERN = """(?i)\b(?:policy|claim|insurance)\s*(?:no|number|#)?[\s:#-]*([A-Z0-9-]{5,25})\b""".toRegex()
+        private val INSURANCE_POLICY_PATTERN = """(?i)\b(?:policy|claim|insurance)\s+(?:no|number|#)[\s:#-]*([A-Z0-9][A-Z0-9-]{4,24})\b""".toRegex()
         private val SERIAL_NUMBER_PATTERN = """(?i)\b(?:s/n|serial\s*(?:no|number|#)|imei)[\s:#-]*([A-Z0-9-]{6,25})\b""".toRegex()
         private val MODEL_NUMBER_PATTERN = """(?i)\b(?:model|mod\.?)\s*(?:no|number|#)?[\s:#-]*([A-Z0-9-]{4,20})\b""".toRegex()
         private val CREDIT_CARD_PATTERN = """(?i)\b(?:credit card|debit card|visa|mastercard|amex)\b""".toRegex()
+        private val VISA_DOCUMENT_PATTERN = """(?i)\bvisa\b|تأشيرة""".toRegex()
+        private val BOOK_WORD_PATTERN = """(?i)\bbook\b""".toRegex()
         private val VIN_PATTERN = """\b([A-HJ-NPR-Z0-9]{17})\b""".toRegex()
         private val UPS_TRACKING_PATTERN = """\b1Z[A-Z0-9]{16}\b""".toRegex()
         private val GENERIC_TRACKING_PATTERN = """(?i)\b(?:tracking|shipment|consignment|awb)\s*(?:no|number|#)?[\s:#-]*([A-Z0-9-]{8,30})\b""".toRegex()
@@ -998,9 +1017,11 @@ class HeuristicExtractor @Inject constructor() {
         private val WRITTEN_DATE =
             "(?<!\\d)\\d{1,2}\\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|يناير|فبراير|مارس|أبريل|مايو|يونيو|يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر)[a-z]*\\s+\\d{2,4}(?!\\d)".toRegex(RegexOption.IGNORE_CASE)
 
-        // 1,234.56 or 1.234,56 or 1234.56 or 100 or 5000 or .99
+        // 1,234.56 or 1.234,56 or 1234.56 or 100 or 5000 or .99; never part of a date or labeled identifier
         private val AMOUNT_PATTERN =
-            "(?<![\\d.,])(?:(?:[0-9]{1,3}(?:[.,][0-9]{3})+|[0-9]+)(?:[.,][0-9]{1,2})?|(?:[.,][0-9]{1,2}))(?![\\d.,])".toRegex()
+            "(?<![\\d.,/-])(?:(?:[0-9]{1,3}(?:[.,][0-9]{3})+|[0-9]+)(?:[.,][0-9]{1,2})?|(?:[.,][0-9]{1,2}))(?![\\d.,/-])".toRegex()
+        private val AMOUNT_LABEL_PATTERN =
+            "(?i)(?:no|number|policy|account|meter|invoice|رقم)\\s*[:#-]?\\s*$".toRegex()
 
         private val CURRENCY_PATTERN =
             "[\\$£€¥]|\\b(?:USD|EUR|GBP|JPY|CHF|CAD|AUD|CNY|INR|EGP|SAR|AED|KWD|QAR|BHD|OMD|JOD|SR|QR|KD)\\b|(?:ج\\.م|ر\\.س|د\\.إ|د\\.ك|جنيه|ريال|درهم)".toRegex(RegexOption.IGNORE_CASE)

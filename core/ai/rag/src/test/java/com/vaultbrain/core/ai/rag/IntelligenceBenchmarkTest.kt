@@ -19,14 +19,14 @@ import org.junit.runners.Parameterized
 @RunWith(Parameterized::class)
 class IntelligenceBenchmarkTest(private val mode: String, private val fixture: JsonObject) {
     private fun value(key: String) = fixture.getValue(key).jsonPrimitive.content
-    private fun item(id: String) = VaultItem(id = id, title = "${value("merchant")} receipt", sourceType = SourceType.MANUAL,
+    private fun item(id: String, amount: String) = VaultItem(id = id, title = "${value("merchant")} receipt", sourceType = SourceType.MANUAL,
         aiClassification = Classification.RECEIPT, rawOcrText = value("quote"),
-        parsedMetadata = mapOf("merchant" to value("merchant"), "total" to value("amount"), "currency" to "EGP"))
+        parsedMetadata = mapOf("merchant" to value("merchant"), "total" to amount, "currency" to "EGP"))
 
     @Test fun fixedContract() = runTest {
         val repository = mockk<VaultRepository>(relaxed = true)
         val model = mockk<LlmClient>()
-        val sources = listOf(item("a"), item("b"))
+        val sources = listOf(item("a", value("amount")), item("b", value("amount2")))
         coEvery { repository.getActive() } returns sources
         val verifier = ClaimVerifier(model)
         when (mode) {
