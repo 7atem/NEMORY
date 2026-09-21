@@ -1,4 +1,4 @@
-﻿package com.vaultbrain.shared.ui.sample
+package com.vaultbrain.shared.ui.sample
 
 import androidx.compose.ui.window.ComposeUIViewController
 import platform.UIKit.UIViewController
@@ -16,7 +16,7 @@ fun MainViewController(isArabic: Boolean = false): UIViewController = ComposeUIV
             itemLabel = "عنصر",
             itemName = "تسوق السبت",
             amountLabel = "المبلغ",
-            amount = ".45",
+            amount = "123.45 دولار",
             dateLabel = "التاريخ",
             date = "17 سبتمبر 2026",
             isRtl = true
