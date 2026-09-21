@@ -1,4 +1,4 @@
-﻿package com.vaultbrain.shared.ui.sample
+package com.vaultbrain.shared.ui.sample
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
