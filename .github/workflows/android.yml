@@ -15,11 +15,8 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools'
       - name: Install native toolchain
-        run: sdkmanager 'ndk;27.2.12479018' 'cmake;3.22.1' 'platforms;android-36' 'build-tools;36.0.0'
+        run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager 'ndk;27.2.12479018' 'cmake;3.22.1' 'platforms;android-36' 'build-tools;36.0.0'
       - name: Validate bilingual resources
         run: python3 scripts/check_localization.py
       - name: Build and test including native runtime
@@ -38,9 +35,6 @@ jobs:
           distribution: temurin
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: 'platform-tools'
       - name: Enable KVM
         run: sudo chmod 666 /dev/kvm
       - uses: reactivecircus/android-emulator-runner@v2
