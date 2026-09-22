@@ -298,12 +298,12 @@
     "mode": "proactive",
     "name": "urgent_expiry_ranked_above_trivial_summary",
     "items": [
-      {"id": "passport", "title": "Passport", "updatedAt": "2026-09-12"},
+      {"id": "passport", "title": "Passport", "updatedAt": "2026-09-12", "expiry": "2026-10-29"},
       {"id": "grocery", "title": "Grocery run", "updatedAt": "2026-09-11"}
     ],
     "insights": [
       {"record": 0, "evidence": "Your passport expires within 45 days — renew it soon", "relevance": 0.9, "confidence": 0.95, "urgency": 0.95, "novelty": 0.8},
-      {"record": 1, "evidence": "You have 12 grocery receipts this month", "relevance": 0.85, "confidence": 0.9, "urgency": 0.2, "novelty": 0.85}
+      {"record": 1, "evidence": "You have 12 grocery receipts this month", "relevance": 0.85, "confidence": 0.9, "urgency": 0.5, "novelty": 0.85}
     ],
     "expectOrder": ["Your passport expires within 45 days — renew it soon", "You have 12 grocery receipts this month"]
   },

@@ -234,7 +234,8 @@ class ComplicatedScenariosBenchmarkTest(private val mode: String, private val na
             VaultItem(id = it.jsonObject.getValue("id").jsonPrimitive.content,
                 title = it.jsonObject.getValue("title").jsonPrimitive.content,
                 sourceType = SourceType.CAMERA,
-                updatedAt = day(it.jsonObject.getValue("updatedAt").jsonPrimitive.content))
+                updatedAt = day(it.jsonObject.getValue("updatedAt").jsonPrimitive.content),
+                expiryDate = it.jsonObject["expiry"]?.let { d -> day(d.jsonPrimitive.content) })
         }
         val events = items("events").map {
             ExternalRecord(
@@ -258,7 +259,7 @@ class ComplicatedScenariosBenchmarkTest(private val mode: String, private val na
         val decoy = fixture["decoy"]?.jsonPrimitive?.booleanOrNull == true
         if (decoy) DecoySessionState.setDecoyMode(true)
         try {
-            val result = DailyIntelligence(model, tools).select(vaultItems, events, reminders)
+            val result = DailyIntelligence(model, tools, clock = { now }).select(vaultItems, events, reminders)
             if (fixture["expectEmpty"]?.jsonPrimitive?.booleanOrNull == true) assertThat(result).isEmpty()
             fixture["expectOrder"]?.let { expected ->
                 assertThat(result.map { it.evidence })

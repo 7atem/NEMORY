@@ -1,0 +1,13 @@
+package com.vaultbrain.core.ai.rag.di
+
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.components.SingletonComponent
+
+@Module
+@InstallIn(SingletonComponent::class)
+object RagModule {
+    @Provides
+    fun provideClock(): () -> Long = { System.currentTimeMillis() }
+}

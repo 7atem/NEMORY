@@ -5,6 +5,8 @@ import android.graphics.Bitmap
 import androidx.core.graphics.scale
 import com.vaultbrain.shared.model.Classification
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -26,20 +28,15 @@ import javax.inject.Singleton
  */
 @Singleton
 class DocumentClassifier @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val runnerProvider: () -> TfliteRunner? = { createRunner(context) }
 ) {
 
-    /**
-     * Lazily loaded TFLite interpreter. Returns null if the model asset
-     * is missing, so the rest of the app degrades gracefully.
-     */
     private val interpreterMutex = kotlinx.coroutines.sync.Mutex()
-    private val interpreter: org.tensorflow.lite.Interpreter? by lazy {
-        loadInterpreter()
-    }
+    private val runner: TfliteRunner? by lazy { runnerProvider() }
 
     /** Whether the classifier model is available on this device. */
-    fun isAvailable(): Boolean = interpreter != null
+    fun isAvailable(): Boolean = runner != null
 
     /**
      * Classifies [bitmap] into one of the 16 categories supported by the deployed model.
@@ -48,57 +45,67 @@ class DocumentClassifier @Inject constructor(
      */
     suspend fun classify(bitmap: Bitmap): Pair<Classification, Float>? = withContext(Dispatchers.IO) {
         interpreterMutex.withLock {
-            val interp = interpreter ?: return@withLock null
+            val activeRunner = runner ?: return@withLock null
 
-            // 1. Preprocess: Resize to 224x224 and normalize to [0, 1].
+            // Preprocess: resize to 224x224, then bulk-read pixels for normalization.
             val resized = bitmap.scale(INPUT_SIZE, INPUT_SIZE)
-            val inputBuffer = java.nio.ByteBuffer.allocateDirect(1 * INPUT_SIZE * INPUT_SIZE * 3 * 4)
-                .order(java.nio.ByteOrder.nativeOrder())
-
-            // Bulk-read pixels instead of per-pixel Bitmap.get() calls.
             val pixels = IntArray(INPUT_SIZE * INPUT_SIZE)
             resized.getPixels(pixels, 0, INPUT_SIZE, 0, 0, INPUT_SIZE, INPUT_SIZE)
-            for (pixel in pixels) {
-                inputBuffer.putFloat(((pixel shr 16) and 0xFF) / 255f)
-                inputBuffer.putFloat(((pixel shr 8) and 0xFF) / 255f)
-                inputBuffer.putFloat((pixel and 0xFF) / 255f)
-            }
             if (resized !== bitmap) resized.recycle()
 
-            // 2. Run inference.
-            val outputBuffer = Array(1) { FloatArray(NUM_CLASSES) }
-            inputBuffer.rewind()
-            interp.run(inputBuffer, outputBuffer)
-
-            // 3. Find the class with the highest probability.
-            val probabilities = outputBuffer[0]
-            val maxIndex = probabilities.indices.maxByOrNull { probabilities[it] } ?: return@withLock null
-            val confidence = probabilities[maxIndex]
-
-            // 4. Map index to Classification enum.
-            val classification = LABEL_MAP.getOrNull(maxIndex) ?: Classification.UNKNOWN
-            classification to confidence
+            runInference(activeRunner, pixels)
         }
     }
 
-    private fun loadInterpreter(): org.tensorflow.lite.Interpreter? {
-        return try {
-            val assetFileDescriptor = context.assets.openFd(MODEL_ASSET_PATH)
-            val inputStream = assetFileDescriptor.createInputStream()
-            val modelBytes = inputStream.readBytes()
-            inputStream.close()
-            val buffer = java.nio.ByteBuffer.allocateDirect(modelBytes.size)
-                .order(java.nio.ByteOrder.nativeOrder())
-            buffer.put(modelBytes)
-            buffer.rewind()
+    /**
+     * Feeds [pixels] (packed ARGB, row-major 224×224) through [runner] and maps the
+     * argmax probability to [Classification]. Returns null on shape mismatch or when
+     * every probability is NaN.
+     */
+    internal fun runInference(runner: TfliteRunner, pixels: IntArray): Pair<Classification, Float>? {
+        if (pixels.size != INPUT_SIZE * INPUT_SIZE) return null
+        val inputBuffer = ByteBuffer.allocateDirect(pixels.size * 3 * 4)
+            .order(ByteOrder.nativeOrder())
+        for (pixel in pixels) {
+            inputBuffer.putFloat(((pixel shr 16) and 0xFF) / 255f)
+            inputBuffer.putFloat(((pixel shr 8) and 0xFF) / 255f)
+            inputBuffer.putFloat((pixel and 0xFF) / 255f)
+        }
 
-            val options = org.tensorflow.lite.Interpreter.Options().apply {
-                setNumThreads(2)
+        val outputBuffer = Array(1) { FloatArray(NUM_CLASSES) }
+        inputBuffer.rewind()
+        runner.run(inputBuffer, outputBuffer)
+
+        val top = topClassification(outputBuffer[0]) ?: return null
+        return LABEL_MAP.getOrNull(top.first)?.let { it to top.second }
+    }
+
+    /** Argmax over a probability vector; NaN entries never win. */
+    internal fun topClassification(probabilities: FloatArray): Pair<Int, Float>? {
+        if (probabilities.isEmpty()) return null
+        var bestIndex = -1
+        var best = Float.NEGATIVE_INFINITY
+        for (i in probabilities.indices) {
+            val p = probabilities[i]
+            if (p.isNaN()) continue
+            if (bestIndex < 0 || p > best) {
+                best = p
+                bestIndex = i
             }
-            org.tensorflow.lite.Interpreter(buffer, options)
-        } catch (e: Exception) {
-            // Model asset not bundled yet — degrade gracefully.
-            null
+        }
+        return if (bestIndex < 0) null else bestIndex to best
+    }
+
+    /** Abstraction over the TFLite interpreter so inference is testable on the JVM. */
+    interface TfliteRunner {
+        fun run(input: ByteBuffer, output: Array<FloatArray>)
+    }
+
+    private class InterpreterRunner(
+        private val interpreter: org.tensorflow.lite.Interpreter
+    ) : TfliteRunner {
+        override fun run(input: ByteBuffer, output: Array<FloatArray>) {
+            interpreter.run(input, output)
         }
     }
 
@@ -106,6 +113,30 @@ class DocumentClassifier @Inject constructor(
         private const val MODEL_ASSET_PATH = "document_classifier.tflite"
         private const val INPUT_SIZE = 224
         private const val NUM_CLASSES = 16
+
+        internal fun createRunner(context: Context): TfliteRunner? =
+            loadInterpreter(context)?.let(::InterpreterRunner)
+
+        private fun loadInterpreter(context: Context): org.tensorflow.lite.Interpreter? {
+            return try {
+                val assetFileDescriptor = context.assets.openFd(MODEL_ASSET_PATH)
+                val inputStream = assetFileDescriptor.createInputStream()
+                val modelBytes = inputStream.readBytes()
+                inputStream.close()
+                val buffer = ByteBuffer.allocateDirect(modelBytes.size)
+                    .order(ByteOrder.nativeOrder())
+                buffer.put(modelBytes)
+                buffer.rewind()
+
+                val options = org.tensorflow.lite.Interpreter.Options().apply {
+                    setNumThreads(2)
+                }
+                org.tensorflow.lite.Interpreter(buffer, options)
+            } catch (e: Exception) {
+                // Model asset not bundled yet — degrade gracefully.
+                null
+            }
+        }
 
         /**
          * Maps model output indices to [Classification] enum values.

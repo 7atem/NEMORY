@@ -22,7 +22,7 @@ Assessment & validation status (14 September 2026):
 - Arabic Document Transparency: `ReviewScreen` renders honest bilingual guidance when Latin-optimized OCR detects sparse or missing text, prompting for Arabic titles and keywords.
 - Decoy mode Detail: `ItemDetailViewModel` observes `DecoySessionState.isDecoy` and immediately cancels load jobs and wipes `_uiState` upon decoy entry.
 - Agent write confirmation: `PendingWriteCard` renders structured inline confirm/cancel cards for agent write proposals in Brain chat.
-- Proactive intelligence: Today selects up to three insights with `DailyIntelligence` using proactive multi-factor scoring: `(0.30 * relevance) + (0.30 * confidence) + (0.25 * urgency) + (0.15 * novelty)`, requiring score > 70 and confidence > 0.6.
+- Proactive intelligence: Today selects up to three insights with `DailyIntelligence` using proactive multi-factor scoring: `(0.30 * relevance) + (0.30 * confidence) + (0.25 * urgency) + (0.15 * novelty)`, requiring score > 70 and confidence > 0.6. The urgency dimension is blended with a code-computed prior over an injectable clock (`clock: () -> Long` constructor param, provided in `di/RagModule`): days-to-expiry decay (1.0 ≤7d, 0.7 ≤30d, 0.4 ≤90d, 0.2 later, 0.0 expired), missing-document signals (trips without hotels, vehicles without insurance via the tool registry, plus utility-bill recent-month gaps computed locally), and near-due SCHEDULED/SNOOZED reminders. Final urgency = `max(llmUrgency, codeUrgency * 0.7)` so a low LLM self-reported urgency cannot hide genuine time pressure.
 - Release & Quality Gates: `:app:assembleRelease` passed with full native CMake compilation (`arm64-v8a` + `x86_64`) and R8 minification. `:app:lintDebug` reports 0 errors and 0 warnings. `check_localization.py` reports 100% bilingual parity.
 - Physical device testing: Verified on Samsung Galaxy Tab S7+ (SM-T975, Android 13). 13 database migration tests passed (including `Schema19MigrationTest`), backup/restore/rollback passed (`DriveBackupManagerInstrumentedTest`), and live tablet navigation, adaptive layout, and Decoy wipe verified.
 
@@ -63,8 +63,11 @@ answer limitations, and the Gmail/tasks authorization and sync work still needed
   connector, Calendar sync and connection management.
 - `core/vectorstore` — ObjectBox vector store (`VectorStore`, `VaultEmbedding`, app-private sandbox).
 - `core/ai/vision` — `VisionAnalyzer` (colors/confidence-bearing labels/barcodes/classifier, parallelized,
-  shared injected ML Kit clients), `DocumentClassifier` (TFLite, lazy interpreter),
-  `di/VisionModule`.
+  shared injected ML Kit clients), `DocumentClassifier` (TFLite, lazy interpreter behind a
+  `TfliteRunner` seam provided in `di/VisionModule`), `di/VisionModule`. Pure label
+  filtering/merge/color-bucketing logic and classifier argmax/buffer normalization live in
+  companion-level helpers covered by JVM unit tests (`DocumentClassifierTest`,
+  `VisionAnalyzerLogicTest`); `analyze()` and bitmap paths remain instrumented-only.
 - `core/ai/heuristics` — `HeuristicExtractor`,
   `experience/ExperienceKeywordLibrary` (precompiled keyword regexes),
   `experience/parsers/*` per-experience parsers.
