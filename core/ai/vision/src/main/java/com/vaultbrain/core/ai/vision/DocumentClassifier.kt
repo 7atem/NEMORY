@@ -27,6 +27,7 @@ import javax.inject.Singleton
  * [Classification.IDENTITY_DOCUMENT] without changing the deployed model's output dimensions.
  */
 @Singleton
+@JvmSuppressWildcards
 class DocumentClassifier @Inject constructor(
     @ApplicationContext private val context: Context,
     private val runnerProvider: () -> TfliteRunner? = { createRunner(context) }

@@ -1,4 +1,4 @@
-﻿package com.vaultbrain.core.ai.vision.di
+package com.vaultbrain.core.ai.vision.di
 
 import android.content.Context
 import com.google.mlkit.vision.barcode.BarcodeScanner
@@ -47,10 +47,9 @@ object VisionModule {
 
     @Provides
     @Singleton
-    @JvmSuppressWildcards
     fun provideClassifierRunnerProvider(
         @ApplicationContext context: Context
-    ): () -> TfliteRunner? = { DocumentClassifier.createRunner(context) }
+    ): @JvmSuppressWildcards () -> TfliteRunner? = { DocumentClassifier.createRunner(context) }
 
     @Provides
     @Singleton
