@@ -1,4 +1,4 @@
-package com.vaultbrain.core.ai.vision.di
+﻿package com.vaultbrain.core.ai.vision.di
 
 import android.content.Context
 import com.google.mlkit.vision.barcode.BarcodeScanner
@@ -25,21 +25,29 @@ object VisionModule {
 
     @Provides
     @Singleton
-    fun provideImageLabeler(): ImageLabeler =
-        ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
+    fun provideBarcodeScanner(): BarcodeScanner {
+        val options = BarcodeScannerOptions.Builder()
+            .enableAllPotentialBarcodes()
+            .build()
+        return BarcodeScanning.getClient(options)
+    }
 
     @Provides
     @Singleton
-    fun provideBarcodeScanner(): BarcodeScanner =
-        BarcodeScanning.getClient(BarcodeScannerOptions.Builder().build())
+    fun provideImageLabeler(): ImageLabeler {
+        val options = ImageLabelerOptions.Builder()
+            .setConfidenceThreshold(0.6f)
+            .build()
+        return ImageLabeling.getClient(options)
+    }
 
     @Provides
-    @Singleton
     fun provideSemanticVisualClassifier(): SemanticVisualClassifier =
         UnavailableSemanticVisualClassifier()
 
     @Provides
     @Singleton
+    @JvmSuppressWildcards
     fun provideClassifierRunnerProvider(
         @ApplicationContext context: Context
     ): () -> TfliteRunner? = { DocumentClassifier.createRunner(context) }
@@ -48,8 +56,13 @@ object VisionModule {
     @Singleton
     fun provideVisionAnalyzer(
         documentClassifier: DocumentClassifier,
-        semanticVisualClassifier: SemanticVisualClassifier,
+        barcodeScanner: BarcodeScanner,
         imageLabeler: ImageLabeler,
-        barcodeScanner: BarcodeScanner
-    ): VisionAnalyzer = VisionAnalyzer(documentClassifier, semanticVisualClassifier, imageLabeler, barcodeScanner)
+        semanticVisualClassifier: SemanticVisualClassifier
+    ): VisionAnalyzer = VisionAnalyzer(
+        documentClassifier = documentClassifier,
+        barcodeScanner = barcodeScanner,
+        imageLabeler = imageLabeler,
+        semanticVisualClassifier = semanticVisualClassifier
+    )
 }
