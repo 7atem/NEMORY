@@ -36,7 +36,7 @@ class DailyIntelligenceTest {
             {"record":0,"evidence":"Low value","score":100,"relevance":0,"confidence":1,"urgency":0,"novelty":0}
         ]}""")
         val result = DailyIntelligence(model, emptyTools(), clock = { fixedNow }).select(
-            listOf(VaultItem(id = "one", title = "Document")), emptyList(), emptyList())
+            listOf(VaultItem(id = "one", updatedAt = 100L, title = "Document")), emptyList(), emptyList())
         assertThat(result.map { it.evidence }).containsExactly("Useful suggestion")
     }
 
@@ -65,8 +65,8 @@ class DailyIntelligenceTest {
         ]}""")
         val result = DailyIntelligence(model, emptyTools(), clock = { fixedNow }).select(
             listOf(
-                VaultItem(id = "far", title = "Annual permit", expiryDate = fixedNow + 180 * dayMs),
-                VaultItem(id = "near", title = "Visa", expiryDate = fixedNow + 3 * dayMs)
+                VaultItem(id = "far", updatedAt = 100L, title = "Annual permit", expiryDate = fixedNow + 180 * dayMs),
+                VaultItem(id = "near", updatedAt = 50L, title = "Visa", expiryDate = fixedNow + 3 * dayMs)
             ), emptyList(), emptyList())
         assertThat(result.map { it.evidence })
             .containsExactly("Near expiry insight", "Far expiry insight").inOrder()
@@ -84,8 +84,8 @@ class DailyIntelligenceTest {
         ]}""")
         val result = DailyIntelligence(model, tools, clock = { fixedNow }).select(
             listOf(
-                VaultItem(id = "trip", title = "Rome trip"),
-                VaultItem(id = "note", title = "Old note")
+                VaultItem(id = "trip", updatedAt = 100L, title = "Rome trip"),
+                VaultItem(id = "note", updatedAt = 50L, title = "Old note")
             ), emptyList(), emptyList())
         assertThat(result.map { it.evidence }).containsExactly(
             "Rome trip lacks a hotel booking", "Trivial archive observation").inOrder()
@@ -104,9 +104,9 @@ class DailyIntelligenceTest {
         }
         val result = DailyIntelligence(model, emptyTools(), clock = { fixedNow }).select(
             listOf(
-                VaultItem(id = "bill", title = "Electricity", aiClassification = Classification.UTILITY_BILL,
+                VaultItem(id = "bill", updatedAt = 100L, title = "Electricity", aiClassification = Classification.UTILITY_BILL,
                     parsedMetadata = mapOf("merchant" to "North Power", "billing_period" to "2026-06")),
-                VaultItem(id = "doc", title = "Random document")
+                VaultItem(id = "doc", updatedAt = 50L, title = "Random document")
             ), emptyList(), emptyList())
         assertThat(prompt).contains("utility_bill_gaps")
         assertThat(prompt).contains("utility bill for")
@@ -121,8 +121,8 @@ class DailyIntelligenceTest {
         ]}""")
         val result = DailyIntelligence(model, emptyTools(), clock = { fixedNow }).select(
             listOf(
-                VaultItem(id = "a", title = "Document A"),
-                VaultItem(id = "b", title = "Document B")
+                VaultItem(id = "a", updatedAt = 100L, title = "Document A"),
+                VaultItem(id = "b", updatedAt = 50L, title = "Document B")
             ), emptyList(), emptyList())
         assertThat(result).isEmpty()
     }
