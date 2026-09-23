@@ -1,4 +1,4 @@
-import XCTest
+﻿import XCTest
 
 @MainActor
 final class FoundationSmokeTests: XCTestCase {
@@ -19,7 +19,7 @@ final class FoundationSmokeTests: XCTestCase {
         XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20))
         toggleBtn.tap()
 
-        XCTAssertTrue(app.staticTexts["المجموعة"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["بطاقة Nemory التجريبية"].waitForExistence(timeout: 20))
         capture("Arabic")
 
         toggleBtn.tap()
@@ -36,7 +36,7 @@ final class FoundationSmokeTests: XCTestCase {
         capture("Churn-English-Initial")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["المجموعة"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["بطاقة Nemory التجريبية"].waitForExistence(timeout: 20))
         capture("Churn-Arabic-1")
 
         toggleBtn.tap()
@@ -44,7 +44,7 @@ final class FoundationSmokeTests: XCTestCase {
         capture("Churn-English-1")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["المجموعة"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["بطاقة Nemory التجريبية"].waitForExistence(timeout: 20))
         capture("Churn-Arabic-2")
     }
 
@@ -60,7 +60,7 @@ final class FoundationSmokeTests: XCTestCase {
         XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20))
         toggleBtn.tap()
 
-        XCTAssertTrue(app.staticTexts["المجموعة"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["بطاقة Nemory التجريبية"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.staticTexts["sharedDetectionResult"].waitForExistence(timeout: 20))
         capture("Arabic-RTL-Mode")
 
@@ -83,3 +83,5 @@ final class FoundationSmokeTests: XCTestCase {
         try? screenshot.pngRepresentation.write(to: fileURL)
     }
 }
+
+
