@@ -20,7 +20,7 @@ env:
 jobs:
   ios:
     runs-on: macos-15
-    timeout-minutes: 5
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -44,22 +44,34 @@ jobs:
           xcrun simctl list runtimes | tee iosApp/build/runtimes.txt
           xcrun simctl list devices available -j > iosApp/build/devices.json
           DEVICE_ID=$(python3 - <<'PY'
-          import json, os
-          runtime_target = os.environ.get('IOS_RUNTIME', '18').replace('.', '-')
+          import json, os, re
+          env_rt = os.environ.get('IOS_RUNTIME', '18')
           data = json.load(open('iosApp/build/devices.json'))['devices']
-          target_runtime = next((r for r in data.keys() if runtime_target in r), None)
-          if not target_runtime and data:
-              target_runtime = list(data.keys())[-1]
-          devices = data.get(target_runtime, []) if target_runtime else []
-          matches = [d['udid'] for d in devices if 'iPhone' in d['name'] and d.get('isAvailable', False)]
-          if not matches:
-              for r_devices in data.values():
-                  matches = [d['udid'] for d in r_devices if 'iPhone' in d['name'] and d.get('isAvailable', False)]
-                  if matches:
+          valid_runtimes = []
+          for rt_id, devs in data.items():
+              if 'iOS' not in rt_id: continue
+              iphones = [d for d in devs if 'iPhone' in d['name'] and d.get('isAvailable', False)]
+              if iphones: valid_runtimes.append((rt_id, iphones))
+          if not valid_runtimes: raise SystemExit('No compatible iOS simulator available')
+          def parse_version(rt_id):
+              m = re.search(r'iOS-(\d+)-(\d+)', rt_id)
+              return (int(m.group(1)), int(m.group(2))) if m else (0,0)
+          valid_runtimes.sort(key=lambda x: parse_version(x[0]), reverse=True)
+          selected_iphones = None
+          for rt_id, iphones in valid_runtimes:
+              if env_rt.replace('.', '-') in rt_id:
+                  selected_iphones = iphones
+                  break
+          if not selected_iphones: selected_iphones = valid_runtimes[0][1]
+          selected_device = None
+          for pref in ['iPhone 16 Pro', 'iPhone 15 Pro', 'iPhone 14 Pro']:
+              for d in selected_iphones:
+                  if pref in d['name']:
+                      selected_device = d
                       break
-          if not matches:
-              raise SystemExit('No compatible iPhone simulator available')
-          print(matches[0])
+              if selected_device: break
+          if not selected_device: selected_device = selected_iphones[0]
+          print(selected_device['udid'])
           PY
           )
           echo "IOS_SIMULATOR_ID=$DEVICE_ID" >> "$GITHUB_ENV"
@@ -77,6 +89,7 @@ jobs:
           set -euo pipefail
           bash ./gradlew :shared:iosSimulatorArm64Test -Pnemory.skipNativeForTests=true --console=plain 2>&1 | tee shared/build/logs/ios-simulator-test.log
       - name: Build, launch and test bilingual iOS sample
+        timeout-minutes: 4
         run: |
           set -euo pipefail
           xcodebuild \
