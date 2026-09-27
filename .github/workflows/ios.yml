@@ -88,8 +88,19 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew :shared:iosSimulatorArm64Test -Pnemory.skipNativeForTests=true --console=plain 2>&1 | tee shared/build/logs/ios-simulator-test.log
+      - name: Pre-build shared Kotlin framework for iOS Simulator
+        run: |
+          set -euo pipefail
+          # Build the framework once here so xcodebuild's pre-build script is instant (cache hit).
+          # ARCHS=arm64 targets the simulator on macos-15 (Apple Silicon runner).
+          bash ./gradlew :shared:embedAndSignAppleFrameworkForXcode \
+            -Pnemory.skipNativeForTests=true \
+            -PXCODE_CONFIGURATION=Debug \
+            -PXCODE_EFFECTIVE_PLATFORM_NAME=-iphonesimulator \
+            -PARCHS=arm64 \
+            --console=plain 2>&1 | tee shared/build/logs/framework-prebuild.log
       - name: Build, launch and test bilingual iOS sample
-        timeout-minutes: 4
+        timeout-minutes: 30
         run: |
           set -euo pipefail
           xcodebuild \
@@ -143,13 +154,7 @@ jobs:
         if: always()
         run: |
           if [ -d iosApp/build/iosApp.xcresult ]; then
-            xcrun xcresulttool export attachments --path iosApp/build/iosApp.xcresult --output-path iosApp/build/screenshots
-          fi
-      - name: Send logs to webhook
-        if: always()
-        run: |
-          if [ -f iosApp/build/xcodebuild.log ]; then
-            curl -s -X POST -H "Content-Type: text/plain" --data-binary @iosApp/build/xcodebuild.log https://webhook.site/50cecc7c-5967-464e-9b5d-71eadf87d7d7 || true
+            xcrun xcresulttool export attachments --path iosApp/build/iosApp.xcresult --output-path iosApp/build/screenshots || true
           fi
       - name: Upload iOS evidence
         if: always()
