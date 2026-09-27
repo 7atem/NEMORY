@@ -32,7 +32,6 @@ struct ContentView: View {
                 .padding(.horizontal)
 
                 ComposeSampleView(isArabic: isArabic)
-                    .id(isArabic)
                     .frame(maxWidth: .infinity, minHeight: 400)
             }
             .padding(.vertical)
@@ -44,14 +43,21 @@ struct ContentView: View {
 struct ComposeSampleView: UIViewControllerRepresentable {
     let isArabic: Bool
 
+    class Coordinator {
+        let factory = SampleViewControllerFactory()
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
     func makeUIViewController(context: Context) -> UIViewController {
-        SampleViewControllerFactory().create(isArabic: isArabic)
+        let vc = context.coordinator.factory.create()
+        context.coordinator.factory.updateLanguage(isArabic: isArabic)
+        return vc
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        // The view controller is recreated via `.id(isArabic)` because
-        // ComposeUIViewController does not expose a simple state-update path
-        // from SwiftUI. This guarantees the entire Compose tree is rebuilt
-        // with the correct RTL/LTR direction.
+        context.coordinator.factory.updateLanguage(isArabic: isArabic)
     }
 }
