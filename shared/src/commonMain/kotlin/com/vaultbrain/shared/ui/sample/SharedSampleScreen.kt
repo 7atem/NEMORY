@@ -2,17 +2,18 @@ package com.vaultbrain.shared.ui.sample
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -46,7 +47,7 @@ fun SharedSampleScreen(
                 text = if (isRtl) "بطاقة Nemory التجريبية" else "Nemory Sample Card",
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().testTag("sampleHeader")
             )
 
             Card(
@@ -57,10 +58,10 @@ fun SharedSampleScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    LabeledLine(label = collectionLabel, value = collectionName)
-                    LabeledLine(label = itemLabel, value = itemName)
-                    LabeledLine(label = amountLabel, value = amount)
-                    LabeledLine(label = dateLabel, value = date)
+                    LabeledLine(label = collectionLabel, value = collectionName, testTag = "collectionLabel")
+                    LabeledLine(label = itemLabel, value = itemName, testTag = "itemLabel")
+                    LabeledLine(label = amountLabel, value = amount, testTag = "amountLabel")
+                    LabeledLine(label = dateLabel, value = date, testTag = "dateLabel")
                 }
             }
         }
@@ -68,17 +69,9 @@ fun SharedSampleScreen(
 }
 
 @Composable
-private fun LabeledLine(label: String, value: String) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.fillMaxWidth()
-        )
+fun LabeledLine(label: String, value: String, testTag: String) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.testTag(testTag))
+        Text(text = value, style = MaterialTheme.typography.bodyLarge)
     }
 }

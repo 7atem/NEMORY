@@ -11,7 +11,7 @@ final class FoundationSmokeTests: XCTestCase {
         XCTAssertTrue(result.label.contains("MONEY"))
         XCTAssertTrue(result.label.contains("grocery"))
 
-        let sampleHeader = app.staticTexts["Nemory Sample Card"]
+        let sampleHeader = app.staticTexts["sampleHeader"]
         XCTAssertTrue(sampleHeader.waitForExistence(timeout: 20))
         capture("English")
 
@@ -19,11 +19,11 @@ final class FoundationSmokeTests: XCTestCase {
         XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20))
         toggleBtn.tap()
 
-        XCTAssertTrue(app.staticTexts["المجموعة"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20))
         capture("Arabic")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["Nemory Sample Card"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20))
     }
 
     func testLanguageToggleChurnRestoresHeaders() {
@@ -32,19 +32,19 @@ final class FoundationSmokeTests: XCTestCase {
 
         let toggleBtn = app.buttons["languageToggle"]
         XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20))
-        XCTAssertTrue(app.staticTexts["Nemory Sample Card"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20))
         capture("Churn-English-Initial")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["المجموعة"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20))
         capture("Churn-Arabic-1")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["Nemory Sample Card"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20))
         capture("Churn-English-1")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["المجموعة"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20))
         capture("Churn-Arabic-2")
     }
 
@@ -60,12 +60,12 @@ final class FoundationSmokeTests: XCTestCase {
         XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20))
         toggleBtn.tap()
 
-        XCTAssertTrue(app.staticTexts["المجموعة"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.staticTexts["sharedDetectionResult"].waitForExistence(timeout: 20))
         capture("Arabic-RTL-Mode")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["Nemory Sample Card"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20))
         XCTAssertTrue(app.staticTexts["sharedDetectionResult"].waitForExistence(timeout: 20))
     }
 
