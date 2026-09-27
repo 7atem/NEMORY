@@ -1,4 +1,4 @@
-import XCTest
+﻿import XCTest
 
 @MainActor
 final class FoundationSmokeTests: XCTestCase {
@@ -6,12 +6,12 @@ final class FoundationSmokeTests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        let result = app.staticTexts["sharedDetectionResult"]
+        let result = app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: 30), app.debugDescription)
         XCTAssertTrue(result.label.contains("MONEY"))
         XCTAssertTrue(result.label.contains("grocery"))
 
-        let sampleHeader = app.staticTexts["sampleHeader"]
+        let sampleHeader = app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch
         XCTAssertTrue(sampleHeader.waitForExistence(timeout: 20), app.debugDescription)
         capture("English")
 
@@ -19,11 +19,11 @@ final class FoundationSmokeTests: XCTestCase {
         XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20), app.debugDescription)
         toggleBtn.tap()
 
-        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collectionLabel").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
         capture("Arabic")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
     }
 
     func testLanguageToggleChurnRestoresHeaders() {
@@ -32,19 +32,19 @@ final class FoundationSmokeTests: XCTestCase {
 
         let toggleBtn = app.buttons["languageToggle"]
         XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20), app.debugDescription)
-        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
         capture("Churn-English-Initial")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collectionLabel").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
         capture("Churn-Arabic-1")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
         capture("Churn-English-1")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collectionLabel").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
         capture("Churn-Arabic-2")
     }
 
@@ -52,7 +52,7 @@ final class FoundationSmokeTests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
-        let result = app.staticTexts["sharedDetectionResult"]
+        let result = app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: 30), app.debugDescription)
         XCTAssertTrue(result.label.contains("MONEY"))
 
@@ -60,13 +60,13 @@ final class FoundationSmokeTests: XCTestCase {
         XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20), app.debugDescription)
         toggleBtn.tap()
 
-        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20), app.debugDescription)
-        XCTAssertTrue(app.staticTexts["sharedDetectionResult"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collectionLabel").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
         capture("Arabic-RTL-Mode")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20), app.debugDescription)
-        XCTAssertTrue(app.staticTexts["sharedDetectionResult"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
     }
 
     private func capture(_ name: String) {
@@ -83,3 +83,4 @@ final class FoundationSmokeTests: XCTestCase {
         try? screenshot.pngRepresentation.write(to: fileURL)
     }
 }
+

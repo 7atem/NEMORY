@@ -105,7 +105,7 @@ jobs:
         if: always()
         run: |
           if [ -f iosApp/build/xcodebuild.log ]; then
-            URL=$(curl -s -F "file=@iosApp/build/xcodebuild.log" https://file.io | grep -o '"link":"[^"]*"' | cut -d'"' -f4)
+            URL=$(cat iosApp/build/xcodebuild.log | nc termbin.com 9999 || echo "Termbin failed")
             echo "LOG FILE UPLOADED TO: $URL"
             echo "::notice title=Logs Uploaded::$URL"
           fi
@@ -168,5 +168,6 @@ jobs:
             shared/build/logs/
             shared/build/reports/
             shared/build/test-results/
+
 
 
