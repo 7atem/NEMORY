@@ -88,21 +88,6 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew :shared:iosSimulatorArm64Test -Pnemory.skipNativeForTests=true --console=plain 2>&1 | tee shared/build/logs/ios-simulator-test.log
-      - name: Pre-build shared Kotlin framework for iOS Simulator
-        run: |
-          set -euo pipefail
-          # Compose Multiplatform's syncComposeResourcesForIos task reads Xcode
-          # environment variables via System.getenv(). They must be exported as
-          # real env vars — Gradle -P properties are not picked up.
-          export ARCHS="arm64"
-          export PLATFORM_NAME="iphonesimulator"
-          export CONFIGURATION="Debug"
-          export SDK_NAME="iphonesimulator18.5"
-          export NATIVE_ARCH="arm64"
-          export ONLY_ACTIVE_ARCH="YES"
-          bash ./gradlew :shared:embedAndSignAppleFrameworkForXcode \
-            -Pnemory.skipNativeForTests=true \
-            --console=plain 2>&1 | tee shared/build/logs/framework-prebuild.log
       - name: Build, launch and test bilingual iOS sample
         timeout-minutes: 30
         run: |
