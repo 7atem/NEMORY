@@ -7,23 +7,23 @@ final class FoundationSmokeTests: XCTestCase {
         app.launch()
 
         let result = app.staticTexts["sharedDetectionResult"]
-        XCTAssertTrue(result.waitForExistence(timeout: 30))
+        XCTAssertTrue(result.waitForExistence(timeout: 30), app.debugDescription)
         XCTAssertTrue(result.label.contains("MONEY"))
         XCTAssertTrue(result.label.contains("grocery"))
 
         let sampleHeader = app.staticTexts["sampleHeader"]
-        XCTAssertTrue(sampleHeader.waitForExistence(timeout: 20))
+        XCTAssertTrue(sampleHeader.waitForExistence(timeout: 20), app.debugDescription)
         capture("English")
 
         let toggleBtn = app.buttons["languageToggle"]
-        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20))
+        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20), app.debugDescription)
         toggleBtn.tap()
 
-        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20), app.debugDescription)
         capture("Arabic")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20), app.debugDescription)
     }
 
     func testLanguageToggleChurnRestoresHeaders() {
@@ -31,20 +31,20 @@ final class FoundationSmokeTests: XCTestCase {
         app.launch()
 
         let toggleBtn = app.buttons["languageToggle"]
-        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20))
-        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20))
+        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20), app.debugDescription)
         capture("Churn-English-Initial")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20), app.debugDescription)
         capture("Churn-Arabic-1")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20), app.debugDescription)
         capture("Churn-English-1")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20), app.debugDescription)
         capture("Churn-Arabic-2")
     }
 
@@ -53,20 +53,20 @@ final class FoundationSmokeTests: XCTestCase {
         app.launch()
 
         let result = app.staticTexts["sharedDetectionResult"]
-        XCTAssertTrue(result.waitForExistence(timeout: 30))
+        XCTAssertTrue(result.waitForExistence(timeout: 30), app.debugDescription)
         XCTAssertTrue(result.label.contains("MONEY"))
 
         let toggleBtn = app.buttons["languageToggle"]
-        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20))
+        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20), app.debugDescription)
         toggleBtn.tap()
 
-        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20))
-        XCTAssertTrue(app.staticTexts["sharedDetectionResult"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["collectionLabel"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["sharedDetectionResult"].waitForExistence(timeout: 20), app.debugDescription)
         capture("Arabic-RTL-Mode")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20))
-        XCTAssertTrue(app.staticTexts["sharedDetectionResult"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.staticTexts["sampleHeader"].waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["sharedDetectionResult"].waitForExistence(timeout: 20), app.debugDescription)
     }
 
     private func capture(_ name: String) {
