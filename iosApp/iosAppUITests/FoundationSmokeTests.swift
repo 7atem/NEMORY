@@ -1,4 +1,4 @@
-﻿import XCTest
+import XCTest
 
 @MainActor
 final class FoundationSmokeTests: XCTestCase {
@@ -7,23 +7,25 @@ final class FoundationSmokeTests: XCTestCase {
         app.launch()
 
         let result = app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch
-        XCTAssertTrue(result.waitForExistence(timeout: 30), app.debugDescription)
+        XCTAssertTrue(result.waitForExistence(timeout: 15))
         XCTAssertTrue(result.label.contains("MONEY"))
         XCTAssertTrue(result.label.contains("grocery"))
 
-        let sampleHeader = app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch
-        XCTAssertTrue(sampleHeader.waitForExistence(timeout: 20), app.debugDescription)
+        let sampleHeader = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch
+        XCTAssertTrue(sampleHeader.waitForExistence(timeout: 15))
         capture("English")
 
         let toggleBtn = app.buttons["languageToggle"]
-        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 10))
         toggleBtn.tap()
+        sleep(2) // Wait for ComposeUIViewController destruction/recreation to settle
 
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collectionLabel").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'المجموعة'")).firstMatch.waitForExistence(timeout: 15))
         capture("Arabic")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        sleep(2) // Wait for ComposeUIViewController destruction/recreation to settle
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch.waitForExistence(timeout: 15))
     }
 
     func testLanguageToggleChurnRestoresHeaders() {
@@ -31,20 +33,23 @@ final class FoundationSmokeTests: XCTestCase {
         app.launch()
 
         let toggleBtn = app.buttons["languageToggle"]
-        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20), app.debugDescription)
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch.waitForExistence(timeout: 15))
         capture("Churn-English-Initial")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collectionLabel").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        sleep(2)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'المجموعة'")).firstMatch.waitForExistence(timeout: 15))
         capture("Churn-Arabic-1")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        sleep(2)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch.waitForExistence(timeout: 15))
         capture("Churn-English-1")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collectionLabel").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        sleep(2)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'المجموعة'")).firstMatch.waitForExistence(timeout: 15))
         capture("Churn-Arabic-2")
     }
 
@@ -53,34 +58,21 @@ final class FoundationSmokeTests: XCTestCase {
         app.launch()
 
         let result = app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch
-        XCTAssertTrue(result.waitForExistence(timeout: 30), app.debugDescription)
+        XCTAssertTrue(result.waitForExistence(timeout: 15))
         XCTAssertTrue(result.label.contains("MONEY"))
 
         let toggleBtn = app.buttons["languageToggle"]
-        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 15))
         toggleBtn.tap()
+        sleep(2)
 
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "collectionLabel").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'المجموعة'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch.waitForExistence(timeout: 15))
         capture("Arabic-RTL-Mode")
 
         toggleBtn.tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sampleHeader").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
-        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch.waitForExistence(timeout: 20), app.debugDescription)
-    }
-
-    private func capture(_ name: String) {
-        let screenshot = XCUIScreen.main.screenshot()
-        let attachment = XCTAttachment(screenshot: screenshot)
-        attachment.name = name
-        attachment.lifetime = .keepAlways
-        add(attachment)
-
-        let directory = FileManager.default.temporaryDirectory
-            .appendingPathComponent("nemory-screenshots", isDirectory: true)
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let fileURL = directory.appendingPathComponent("\(name).png")
-        try? screenshot.pngRepresentation.write(to: fileURL)
+        sleep(2)
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch.waitForExistence(timeout: 15))
     }
 }
-
