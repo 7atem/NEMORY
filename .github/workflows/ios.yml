@@ -1,4 +1,4 @@
-name: iOS validation
+﻿name: iOS validation
 on:
   push:
     branches: [main, ios-kmp-foundation]
@@ -101,6 +101,13 @@ jobs:
             -parallel-testing-enabled NO \
             CODE_SIGNING_ALLOWED=NO \
             test 2>&1 | tee iosApp/build/xcodebuild.log
+      - name: Print xcodebuild failures
+        if: failure()
+        run: |
+          if [ -f iosApp/build/xcodebuild.log ]; then
+            grep -A 5 -B 5 'Failing tests:' iosApp/build/xcodebuild.log || true
+            grep -A 2 -B 2 'XCTAssert' iosApp/build/xcodebuild.log || true
+          fi
       - name: Copy UI screenshots to workspace
         if: always()
         run: |
@@ -160,3 +167,4 @@ jobs:
             shared/build/logs/
             shared/build/reports/
             shared/build/test-results/
+

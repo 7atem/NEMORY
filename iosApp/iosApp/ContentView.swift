@@ -1,4 +1,4 @@
-﻿import SwiftUI
+import SwiftUI
 import shared
 
 struct ContentView: View {
@@ -49,7 +49,7 @@ struct ComposeSampleView: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        // The view controller is recreated via .id(isArabic) because
+        // The view controller is recreated via `.id(isArabic)` because
         // ComposeUIViewController does not expose a simple state-update path
         // from SwiftUI. This guarantees the entire Compose tree is rebuilt
         // with the correct RTL/LTR direction.
