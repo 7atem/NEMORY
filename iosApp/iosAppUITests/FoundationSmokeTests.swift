@@ -2,8 +2,22 @@ import XCTest
 
 @MainActor
 final class FoundationSmokeTests: XCTestCase {
+    private let app = XCUIApplication()
+
+    /// Compose interop elements are not guaranteed to surface as `staticTexts`;
+    /// query `.any` descendants by accessibility label instead. 'Nemory' appears
+    /// in both languages' headers, so language anchors use language-exclusive text.
+    private func element(labelContaining text: String) -> XCUIElement {
+        app.descendants(matching: .any)
+            .containing(NSPredicate(format: "label CONTAINS %@", text))
+            .firstMatch
+    }
+
+    private var languageToggle: XCUIElement {
+        app.descendants(matching: .any).matching(identifier: "languageToggle").firstMatch
+    }
+
     func testSharedDetectionAndLanguageSwitch() {
-        let app = XCUIApplication()
         app.launch()
 
         let result = app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch
@@ -11,68 +25,62 @@ final class FoundationSmokeTests: XCTestCase {
         XCTAssertTrue(result.label.contains("MONEY"))
         XCTAssertTrue(result.label.contains("grocery"))
 
-        let sampleHeader = app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch
-        XCTAssertTrue(sampleHeader.waitForExistence(timeout: 15))
-        capture("English")
+        let toggle = languageToggle
+        XCTAssertTrue(toggle.waitForExistence(timeout: 15))
+        toggle.tap()
+        sleep(2) // Let in-place recomposition settle
 
-        let toggleBtn = app.buttons["languageToggle"]
-        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 10))
-        toggleBtn.tap()
-        sleep(2) // Wait for ComposeUIViewController destruction/recreation to settle
-
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'المجموعة'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelContaining: "المجموعة").waitForExistence(timeout: 15))
         capture("Arabic")
 
-        toggleBtn.tap()
-        sleep(2) // Wait for ComposeUIViewController destruction/recreation to settle
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch.waitForExistence(timeout: 15))
+        toggle.tap()
+        sleep(2)
+        XCTAssertTrue(element(labelContaining: "Grocery receipts").waitForExistence(timeout: 15))
     }
 
     func testLanguageToggleChurnRestoresHeaders() {
-        let app = XCUIApplication()
         app.launch()
 
-        let toggleBtn = app.buttons["languageToggle"]
-        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 15))
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch.waitForExistence(timeout: 15))
+        let toggle = languageToggle
+        XCTAssertTrue(toggle.waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelContaining: "Grocery receipts").waitForExistence(timeout: 15))
         capture("Churn-English-Initial")
 
-        toggleBtn.tap()
+        toggle.tap()
         sleep(2)
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'المجموعة'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelContaining: "المجموعة").waitForExistence(timeout: 15))
         capture("Churn-Arabic-1")
 
-        toggleBtn.tap()
+        toggle.tap()
         sleep(2)
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelContaining: "Grocery receipts").waitForExistence(timeout: 15))
         capture("Churn-English-1")
 
-        toggleBtn.tap()
+        toggle.tap()
         sleep(2)
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'المجموعة'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelContaining: "المجموعة").waitForExistence(timeout: 15))
         capture("Churn-Arabic-2")
     }
 
     func testArabicModeAppliesLayoutAndKeepsSharedResult() {
-        let app = XCUIApplication()
         app.launch()
 
         let result = app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: 15))
         XCTAssertTrue(result.label.contains("MONEY"))
 
-        let toggleBtn = app.buttons["languageToggle"]
-        XCTAssertTrue(toggleBtn.waitForExistence(timeout: 15))
-        toggleBtn.tap()
+        let toggle = languageToggle
+        XCTAssertTrue(toggle.waitForExistence(timeout: 15))
+        toggle.tap()
         sleep(2)
 
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'المجموعة'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelContaining: "المجموعة").waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch.waitForExistence(timeout: 15))
         capture("Arabic-RTL-Mode")
 
-        toggleBtn.tap()
+        toggle.tap()
         sleep(2)
-        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS 'Nemory'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertTrue(element(labelContaining: "Grocery receipts").waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch.waitForExistence(timeout: 15))
     }
 

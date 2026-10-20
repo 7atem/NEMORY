@@ -2,7 +2,6 @@ import SwiftUI
 import shared
 
 struct ContentView: View {
-    @State private var isArabic = false
     private let detectorText = "eggs, milk, bread, grocery store"
     private var detectorResult: String {
         SampleKeywordDetector.shared.detect(text: detectorText)
@@ -11,16 +10,8 @@ struct ContentView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                Button(action: { isArabic.toggle() }) {
-                    Text(isArabic ? "Switch to English" : "التبديل إلى العربية")
-                        .padding()
-                }
-                .accessibilityLabel(isArabic ? "Switch language to English" : "Switch language to Arabic")
-                .accessibilityHint("Toggles the sample between English and Arabic")
-                .accessibilityIdentifier("languageToggle")
-
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(isArabic ? "نتيجة الكشف المشترك" : "Shared detection result")
+                    Text("Shared detection result")
                         .font(.headline)
                         .accessibilityIdentifier("sharedDetectionHeader")
                     Text(detectorResult)
@@ -31,25 +22,24 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal)
 
-                ComposeSampleView(isArabic: isArabic)
+                // The Compose sample owns its language toggle and state. The
+                // view controller is created once and never updated from
+                // SwiftUI: recreation or cross-boundary state writes deadlock
+                // Kotlin/Native under XCUITest.
+                ComposeSampleView()
                     .frame(maxWidth: .infinity, minHeight: 400)
             }
             .padding(.vertical)
         }
-        .environment(\.layoutDirection, isArabic ? .rightToLeft : .leftToRight)
     }
 }
 
 struct ComposeSampleView: UIViewControllerRepresentable {
-    let isArabic: Bool
-
     func makeUIViewController(context: Context) -> UIViewController {
-        SampleViewControllerFactory().create(isArabic: isArabic)
+        SampleViewControllerFactory().create()
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        // Recompose in place via shared language state. Recreating the view
-        // controller (`.id(isArabic)`) crashes Kotlin/Native under XCUITest.
-        SampleViewControllerFactory().updateLanguage(isArabic: isArabic)
+        // Static host: the Compose tree manages its own state.
     }
 }
