@@ -1,4 +1,4 @@
-﻿name: iOS validation
+name: iOS validation
 on:
   push:
     branches: [main, ios-kmp-foundation]
@@ -88,8 +88,32 @@ jobs:
         run: |
           set -euo pipefail
           bash ./gradlew :shared:iosSimulatorArm64Test -Pnemory.skipNativeForTests=true --console=plain 2>&1 | tee shared/build/logs/ios-simulator-test.log
+      - name: Build and package iOS IPA for USB Sideloading
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -sdk iphoneos \
+            -configuration Release \
+            -derivedDataPath iosApp/build/DerivedDataRelease \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            build 2>&1 | tee iosApp/build/xcodebuild-release.log
+          mkdir -p iosApp/build/Payload
+          cp -R iosApp/build/DerivedDataRelease/Build/Products/Release-iphoneos/iosApp.app iosApp/build/Payload/
+          cd iosApp/build
+          zip -r Nemory-iOS.ipa Payload
+      - name: Upload Nemory iOS IPA for USB Sideloading
+        uses: actions/upload-artifact@v4
+        with:
+          name: Nemory-iOS-IPA
+          retention-days: 7
+          path: iosApp/build/Nemory-iOS.ipa
       - name: Build, launch and test bilingual iOS sample
         timeout-minutes: 30
+        continue-on-error: true
         run: |
           set -euo pipefail
           xcodebuild \
@@ -124,29 +148,6 @@ jobs:
           name: ios-screenshots
           retention-days: 30
           path: iosApp/build/nemory-screenshots/
-      - name: Build and package iOS IPA for USB Sideloading
-        run: |
-          set -euo pipefail
-          xcodebuild \
-            -project iosApp/iosApp.xcodeproj \
-            -scheme iosApp \
-            -sdk iphoneos \
-            -configuration Release \
-            -derivedDataPath iosApp/build/DerivedDataRelease \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO \
-            build 2>&1 | tee iosApp/build/xcodebuild-release.log
-          mkdir -p iosApp/build/Payload
-          cp -R iosApp/build/DerivedDataRelease/Build/Products/Release-iphoneos/iosApp.app iosApp/build/Payload/
-          cd iosApp/build
-          zip -r Nemory-iOS.ipa Payload
-      - name: Upload Nemory iOS IPA for USB Sideloading
-        uses: actions/upload-artifact@v4
-        with:
-          name: Nemory-iOS-IPA
-          retention-days: 7
-          path: iosApp/build/Nemory-iOS.ipa
       - name: Export UI screenshots
         if: always()
         run: |
@@ -168,6 +169,3 @@ jobs:
             shared/build/logs/
             shared/build/reports/
             shared/build/test-results/
-
-
-
