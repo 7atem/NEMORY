@@ -19,6 +19,9 @@ targets:
       - path: iosApp
     info:
       path: iosApp/Info.plist
+      properties:
+        CADisableMinimumFrameDurationOnPhone: true
+        CFBundleVersion: "2"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nemory.ios.sample
