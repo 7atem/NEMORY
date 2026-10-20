@@ -87,7 +87,7 @@
     <string name="settings_privacy_policy">سياسة الخصوصية</string>
     <string name="settings_privacy_summary">ملخص الخصوصية</string>
     <string name="settings_help_support_desc">التقط بالكاميرا، أو استورد صوراً أو مستندات PDF، أو الصق نصاً، أو استخدم الصوت. راجع كل عنصر قبل الحفظ، ثم عدّل حقوله المخصصة. المزامنة السحابية غير مفعلة عمداً في هذا الإصدار.</string>
-    <string name="settings_privacy_summary_desc">تبقى عناصر الخزنة والوسائط المستوردة في وحدة التخزين الخاصة بالتطبيق على هذا الجهاز. يعمل التعرف الضوئي على النصوص والتحليل على الجهاز محلياً. عمليات التكامل السحابية معطلة في هذا الإصدار. تصدير أو مشاركة عنصر يرسل فقط المحتوى الذي تختاره بنفسك.</string>
+    <string name="settings_privacy_summary_desc">تبقى عناصر الخزنة والوسائط المستوردة مشفرة في وحدة التخزين الخاصة بالتطبيق على هذا الجهاز. يعمل التعرف الضوئي على النصوص والتحليل على الجهاز محلياً. عمليات التكامل السحابية معطلة في هذا الإصدار. تُخزَّن تضمينات البحث في متجه التخزين الخاص بالتطبيق دون تشفير إضافي؛ تبقى على هذا الجهاز ولا تُرسل أبدًا إلى ذكاء سحابي. تصدير أو مشاركة عنصر يرسل فقط المحتوى الذي تختاره بنفسك.</string>
     <string name="settings_done">تم</string>
     <string name="settings_security_health">صحة الأمان</string>
     <string name="settings_auto_lock_after">قفل تلقائي بعد</string>
@@ -100,7 +100,6 @@
     <string name="settings_cloud_disclaimer">تبقى عمليات التكامل السحابية معطلة حتى إعداد بيانات اعتماد OAuth والإنتاج.</string>
     <string name="settings_theme">المظهر</string>
     <string name="settings_general">عام</string>
-    <string name="settings_affiliate_links">تفعيل روابط التسويق بالعمولة</string>
     <string name="settings_version">Nemory v%1$s</string>
     <string name="settings_security_protected">محمي</string>
     <string name="settings_security_at_risk">معرض للخطر - قم بإعداد رمز PIN أو القياسات الحيوية</string>
@@ -118,4 +117,20 @@
     <string name="settings_theme_dark">داكن</string>
     <string name="settings_magic_screenshot">التعرف الذكي على لقطات الشاشة</string>
     <string name="settings_magic_screenshot_permission">مطلوب إذن التخزين</string>
+    <string name="settings_magic_screenshot_disclosure_title">التعرف الذكي على لقطات الشاشة</string>
+    <string name="settings_magic_screenshot_disclosure_body">عند التفعيل، يراقب Nemory لقطات الشاشة ليقترح حفظ اللقطات المفيدة (إيصالات، تذاكر، إلخ) في خزنتك. الوصول إلى لقطات الشاشة يحدث محليًا وفقط عندما تختار الاستيراد. هذه الميزة اختيارية ويمكن إيقافها في أي وقت.</string>
+    <string name="settings_magic_screenshot_agree">تفعيل</string>
+    <string name="settings_magic_screenshot_decline">ليس الآن</string>
+    <string name="settings_screenshot_protection_disabled_title">لقطات الشاشة غير محظورة</string>
+    <string name="settings_screenshot_protection_disabled_body">جهازك والتطبيقات الأخرى يمكنها التقاط شاشة Nemory. ضع ذلك في الاعتبار عند عرض المستندات الحساسة في أماكن عامة أو مشتركة.</string>
+    <string name="settings_screenshot_protection_disabled_ack">أفهم</string>
+    <string name="pin_setup_title">تعيين رمز PIN</string>
+    <string name="pin_setup_decoy_title">تعيين رمز PIN الوهمي</string>
+    <string name="pin_setup_enter_subtitle">اختر رمز PIN من %1$d أرقام أو أكثر</string>
+    <string name="pin_setup_confirm_subtitle">أعد إدخال نفس الرمز للتأكيد</string>
+    <string name="pin_setup_too_short">يجب أن يكون الرمز %1$d أرقام على الأقل</string>
+    <string name="pin_setup_mismatch">الرمزان غير متطابقين. حاول مجددًا.</string>
+    <string name="pin_setup_continue">متابعة</string>
+    <string name="pin_setup_confirm">تأكيد</string>
+    <string name="pin_setup_backspace">مسح رقم</string>
 </resources>

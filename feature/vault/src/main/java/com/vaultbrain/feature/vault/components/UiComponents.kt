@@ -124,6 +124,11 @@ fun VaultItemCard(
         label = "card_shadow"
     )
 
+    val lensId = presentation.lensId
+    val topFields = remember(item.id, item.effectiveClassification, item.parsedMetadata) {
+        MetadataFields.topFields(item.effectiveClassification, item.parsedMetadata, limit = 2)
+    }
+
     SwipeToDismissBox(
         state = dismissState,
         backgroundContent = {
@@ -181,7 +186,7 @@ fun VaultItemCard(
                     var imageModifier = Modifier
                         .size(64.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        
+
                     if (sharedTransitionScope != null && animatedVisibilityScope != null) {
                         with(sharedTransitionScope) {
                             imageModifier = imageModifier.sharedElement(
@@ -190,7 +195,7 @@ fun VaultItemCard(
                             )
                         }
                     }
-                    
+
                     AsyncImage(
                         model = ImageRequest.Builder(context)
                             .data(uri)
@@ -202,17 +207,18 @@ fun VaultItemCard(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                 } else {
+                    val containerColor = lensId?.let { lensContainerColor(it) }
+                        ?: MaterialTheme.colorScheme.surfaceVariant
                     Box(
                         modifier = Modifier
                             .size(64.dp)
                             .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant),
+                            .background(containerColor),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            Icons.Default.Description,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        Text(
+                            text = lensId?.let { lensEmoji(it) } ?: "📁",
+                            style = MaterialTheme.typography.headlineMedium
                         )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
@@ -249,21 +255,25 @@ fun VaultItemCard(
                     Text(
                         text = dateText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (presentation.isUrgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    val topFields = MetadataFields.topFields(item.effectiveClassification, item.parsedMetadata)
-                    if (topFields.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(2.dp))
-                        topFields.forEach { (key, value) ->
-                            Text(
-                                text = bidi.unicodeWrap("${MetadataFields.label(key)}: $value"),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
+
+                    if (lensId != null || presentation.isUrgent || topFields.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            lensId?.let { LensChip(it) }
+                            if (presentation.isUrgent) {
+                                UrgencyChip(presentation.dateMillis, presentation.dateKind)
+                            }
+                            topFields.forEach { (key, value) ->
+                                MetadataChip(label = MetadataFields.label(key), value = value)
+                            }
                         }
                     }
+
                     if (extraContent != null) {
                         extraContent()
                     }
@@ -400,6 +410,57 @@ fun SkeletonItem(modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+@Composable
+private fun LensChip(lensId: String) {
+    SuggestionChip(
+        onClick = {},
+        label = { Text("${lensEmoji(lensId)} ${lensTitle(lensId)}") },
+        colors = SuggestionChipDefaults.suggestionChipColors(
+            containerColor = lensContainerColor(lensId).copy(alpha = 0.6f),
+            labelColor = MaterialTheme.colorScheme.onSurface
+        ),
+        border = null
+    )
+}
+
+@Composable
+private fun UrgencyChip(dateMillis: Long, dateKind: VaultCardDateKind) {
+    val label = when (dateKind) {
+        VaultCardDateKind.EXPIRES -> stringResource(R.string.card_chip_expires_soon)
+        VaultCardDateKind.DUE -> stringResource(R.string.card_chip_due_soon)
+        VaultCardDateKind.EVENT -> stringResource(R.string.card_chip_event_soon)
+        else -> stringResource(R.string.card_chip_soon)
+    }
+    SuggestionChip(
+        onClick = {},
+        label = { Text("$label ${formatDate(dateMillis)}") },
+        colors = SuggestionChipDefaults.suggestionChipColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer,
+            labelColor = MaterialTheme.colorScheme.onErrorContainer
+        ),
+        border = null
+    )
+}
+
+@Composable
+private fun MetadataChip(label: String, value: String) {
+    SuggestionChip(
+        onClick = {},
+        label = {
+            Text(
+                "$label: ${value.take(20)}",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        colors = SuggestionChipDefaults.suggestionChipColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+        ),
+        border = null
+    )
 }
 
 fun lensEmoji(lensId: String): String = when (lensId) {

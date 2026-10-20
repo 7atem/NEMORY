@@ -60,6 +60,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -134,7 +136,9 @@ fun SettingsScreen(
                         value = backupPassphrase,
                         onValueChange = { backupPassphrase = it },
                         label = { Text(stringResource(R.string.settings_backup_passphrase)) },
-                        singleLine = true
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password)
                     )
                 }
             },
@@ -186,8 +190,6 @@ fun SettingsScreen(
             
             GeneralSection(
                 lensAccess = uiState.lensAccess,
-                affiliateEnabled = uiState.affiliateLinksEnabled,
-                onAffiliateToggle = viewModel::setAffiliateLinksEnabled,
                 magicScreenshotEnabled = uiState.magicScreenshotEnabled,
                 onMagicScreenshotToggle = viewModel::setMagicScreenshotEnabled
             )
@@ -485,15 +487,20 @@ private fun DashboardRow(icon: androidx.compose.ui.graphics.vector.ImageVector, 
 @Composable
 private fun GeneralSection(
     lensAccess: Map<String, Boolean>,
-    affiliateEnabled: Boolean,
-    onAffiliateToggle: (Boolean) -> Unit,
     magicScreenshotEnabled: Boolean,
     onMagicScreenshotToggle: (Boolean) -> Unit
 ) {
     var helpVisible by remember { mutableStateOf(false) }
     var privacyVisible by remember { mutableStateOf(false) }
+    var magicDisclosureVisible by remember { mutableStateOf(false) }
 
     val context = androidx.compose.ui.platform.LocalContext.current
+    val mediaPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+        android.Manifest.permission.READ_MEDIA_IMAGES
+    } else {
+        android.Manifest.permission.READ_EXTERNAL_STORAGE
+    }
+
     val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
         androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
     ) { isGranted ->
@@ -503,11 +510,17 @@ private fun GeneralSection(
             android.widget.Toast.makeText(context, context.getString(R.string.settings_magic_screenshot_permission), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
-    
-    val mediaPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-        android.Manifest.permission.READ_MEDIA_IMAGES
-    } else {
-        android.Manifest.permission.READ_EXTERNAL_STORAGE
+
+    fun enableMagicScreenshot() {
+        val isGranted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            mediaPermission
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (isGranted) {
+            onMagicScreenshotToggle(true)
+        } else {
+            permissionLauncher.launch(mediaPermission)
+        }
     }
 
     val versionName = remember {
@@ -525,28 +538,16 @@ private fun GeneralSection(
             )
         }
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        
-        SettingsSwitch(
-            label = stringResource(R.string.settings_affiliate_links),
-            checked = affiliateEnabled,
-            onCheckedChange = onAffiliateToggle
-        )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         SettingsSwitch(
             label = stringResource(R.string.settings_magic_screenshot),
             checked = magicScreenshotEnabled,
             onCheckedChange = { enabled ->
                 if (enabled) {
-                    val isGranted = androidx.core.content.ContextCompat.checkSelfPermission(
-                        context,
-                        mediaPermission
-                    ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-                    
-                    if (isGranted) {
-                        onMagicScreenshotToggle(true)
+                    if (magicScreenshotEnabled) {
+                        enableMagicScreenshot()
                     } else {
-                        permissionLauncher.launch(mediaPermission)
+                        magicDisclosureVisible = true
                     }
                 } else {
                     onMagicScreenshotToggle(false)
@@ -587,6 +588,29 @@ private fun GeneralSection(
                 Text(stringResource(R.string.settings_privacy_summary_desc))
             },
             confirmButton = { TextButton(onClick = { privacyVisible = false }) { Text(stringResource(R.string.settings_done)) } }
+        )
+    }
+
+    if (magicDisclosureVisible) {
+        AlertDialog(
+            onDismissRequest = { magicDisclosureVisible = false },
+            title = { Text(stringResource(R.string.settings_magic_screenshot_disclosure_title)) },
+            text = {
+                Text(stringResource(R.string.settings_magic_screenshot_disclosure_body))
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        magicDisclosureVisible = false
+                        enableMagicScreenshot()
+                    }
+                ) { Text(stringResource(R.string.settings_magic_screenshot_agree)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { magicDisclosureVisible = false }) {
+                    Text(stringResource(R.string.settings_magic_screenshot_decline))
+                }
+            }
         )
     }
 }
@@ -637,6 +661,35 @@ private fun SecuritySection(
             }
         }
         
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(
+                    stringResource(R.string.settings_screenshot_protection_disabled_title),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    stringResource(R.string.settings_screenshot_protection_disabled_body),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
         SettingsSwitch(

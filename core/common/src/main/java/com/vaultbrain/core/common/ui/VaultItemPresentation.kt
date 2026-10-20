@@ -9,11 +9,16 @@ data class VaultCardPresentation(
     val summary: String?,
     val dateMillis: Long,
     val dateKind: VaultCardDateKind,
-    val category: String
+    val category: String,
+    val lensId: String?,
+    val isUrgent: Boolean
 )
 
 /** Deterministic, category-aware content for compact vault cards. */
 object VaultItemPresenter {
+    private const val URGENCY_DAYS = 30L
+    private const val MILLIS_PER_DAY = 24L * 60 * 60 * 1000
+
     fun present(item: VaultItem): VaultCardPresentation {
         val metadata = item.parsedMetadata
         val keyFact = (topAiHighlight(item) ?: topMetadataEntry(metadata))?.takeIf(String::isNotBlank)
@@ -29,7 +34,11 @@ object VaultItemPresenter {
         }
         val dateMillis = item.expiryDate ?: item.secondaryAlertDate ?: item.createdAt
         val category = buildCategoryLabel(item)
-        return VaultCardPresentation(keyFact, summary, dateMillis, dateKind, category)
+        val lensId = item.primaryLensId ?: item.lensTags.firstOrNull()
+        val isUrgent = dateMillis >= System.currentTimeMillis() &&
+            dateMillis <= System.currentTimeMillis() + URGENCY_DAYS * MILLIS_PER_DAY &&
+            dateKind in setOf(VaultCardDateKind.EXPIRES, VaultCardDateKind.DUE, VaultCardDateKind.EVENT)
+        return VaultCardPresentation(keyFact, summary, dateMillis, dateKind, category, lensId, isUrgent)
     }
 
     private fun buildCategoryLabel(item: VaultItem): String =

@@ -44,7 +44,6 @@ data class SettingsUiState(
     val decoyPinSet: Boolean = false,
     val driveBackupEnabled: Boolean = false,
     val gmailIntegrationEnabled: Boolean = false,
-    val affiliateLinksEnabled: Boolean = true,
     val magicScreenshotEnabled: Boolean = false,
     val showAuditLog: Boolean = false,
     val auditLogs: List<AuditLogEntity> = emptyList(),
@@ -239,10 +238,6 @@ class SettingsViewModel @Inject constructor(
             gmailIntegrationEnabled = false,
             toastMessage = null
         )
-    }
-
-    fun setAffiliateLinksEnabled(enabled: Boolean) {
-        _uiState.value = _uiState.value.copy(affiliateLinksEnabled = enabled)
     }
 
     fun setThemeMode(mode: ThemeMode) {

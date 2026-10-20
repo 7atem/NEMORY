@@ -64,13 +64,46 @@ class VaultItemPresenterTest {
         assertEquals("Wi-Fi 7 router", result.category)
     }
 
+    @Test
+    fun `lensId comes from primary lens or first lens tag`() {
+        val withPrimary = VaultItemPresenter.present(
+            item(classification = Classification.RECEIPT, lensTags = setOf("money"), primaryLensId = "money")
+        )
+        assertEquals("money", withPrimary.lensId)
+
+        val fallback = VaultItemPresenter.present(
+            item(classification = Classification.RECEIPT, lensTags = setOf("travel"), primaryLensId = null)
+        )
+        assertEquals("travel", fallback.lensId)
+
+        val none = VaultItemPresenter.present(item(classification = Classification.RECEIPT))
+        assertEquals(null, none.lensId)
+    }
+
+    @Test
+    fun `urgent flag is true for expiry within 30 days`() {
+        val soon = System.currentTimeMillis() + 5L * 24 * 60 * 60 * 1000
+        val urgent = VaultItemPresenter.present(
+            item(classification = Classification.PASSPORT, expiryDate = soon)
+        )
+        assertEquals(true, urgent.isUrgent)
+
+        val later = System.currentTimeMillis() + 60L * 24 * 60 * 60 * 1000
+        val notUrgent = VaultItemPresenter.present(
+            item(classification = Classification.PASSPORT, expiryDate = later)
+        )
+        assertEquals(false, notUrgent.isUrgent)
+    }
+
     private fun item(
         classification: Classification,
         metadata: Map<String, String> = emptyMap(),
         summary: String? = null,
         createdAt: Long = 100L,
         expiryDate: Long? = null,
-        subtype: String? = null
+        subtype: String? = null,
+        lensTags: Set<String> = emptySet(),
+        primaryLensId: String? = null
     ) = VaultItem(
         id = "item",
         title = "Title",
@@ -79,6 +112,8 @@ class VaultItemPresenterTest {
         aiClassification = classification,
         parsedMetadata = metadata,
         expiryDate = expiryDate,
-        subtype = subtype
+        subtype = subtype,
+        lensTags = lensTags,
+        primaryLensId = primaryLensId
     )
 }

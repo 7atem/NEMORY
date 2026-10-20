@@ -126,4 +126,65 @@ class DailyIntelligenceTest {
             ), emptyList(), emptyList())
         assertThat(result).isEmpty()
     }
+
+    @Test fun `deterministic expiring insight returned when model unavailable`() = runTest {
+        val model = mockk<LlmClient>()
+        every { model.isAvailable() } returns false
+        val result = DailyIntelligence(model, emptyTools(), clock = { fixedNow }).select(
+            listOf(VaultItem(id = "pass", updatedAt = 100L, title = "Passport", expiryDate = fixedNow + 5 * dayMs)),
+            emptyList(), emptyList())
+        assertThat(result).hasSize(1)
+        assertThat(result.first().itemId).isEqualTo("pass")
+        assertThat(result.first().evidence).contains("Expires")
+    }
+
+    @Test fun `deterministic utility bill gap insight`() = runTest {
+        val model = mockk<LlmClient>()
+        every { model.isAvailable() } returns false
+        val result = DailyIntelligence(model, emptyTools(), clock = { fixedNow }).select(
+            listOf(VaultItem(id = "bill", updatedAt = 100L, title = "Electricity",
+                aiClassification = Classification.UTILITY_BILL,
+                parsedMetadata = mapOf("merchant" to "North Power", "billing_period" to "2026-06"))),
+            emptyList(), emptyList())
+        assertThat(result.map { it.evidence }).contains("No north power utility bill found for August 2026.")
+    }
+
+    @Test fun `deterministic trip without hotel insight`() = runTest {
+        val model = mockk<LlmClient>()
+        every { model.isAvailable() } returns false
+        val result = DailyIntelligence(model, emptyTools(), clock = { fixedNow }).select(
+            listOf(
+                VaultItem(id = "flight", updatedAt = 100L, title = "Flight to Rome",
+                    aiClassification = Classification.TICKET,
+                    secondaryAlertDate = fixedNow + 10 * dayMs),
+                VaultItem(id = "hotel", updatedAt = 50L, title = "Hotel in Paris",
+                    aiClassification = Classification.HOTEL,
+                    secondaryAlertDate = fixedNow + 90 * dayMs)
+            ), emptyList(), emptyList())
+        assertThat(result.map { it.evidence }).contains("Trip coming up — no hotel saved yet.")
+    }
+
+    @Test fun `deterministic vehicle without insurance insight`() = runTest {
+        val model = mockk<LlmClient>()
+        every { model.isAvailable() } returns false
+        val result = DailyIntelligence(model, emptyTools(), clock = { fixedNow }).select(
+            listOf(VaultItem(id = "car", updatedAt = 100L, title = "Car registration",
+                parsedMetadata = mapOf("license_plate" to "ABC123"))),
+            emptyList(), emptyList())
+        assertThat(result).hasSize(1)
+        assertThat(result.first().evidence).isEqualTo("No saved insurance document for this vehicle.")
+    }
+
+    @Test fun `deterministic reminder due soon insight`() = runTest {
+        val model = mockk<LlmClient>()
+        every { model.isAvailable() } returns false
+        val reminder = com.vaultbrain.shared.model.VaultReminder(
+            id = "r1", title = "Pay credit card", dueAt = fixedNow + 3 * dayMs,
+            status = com.vaultbrain.shared.model.VaultReminderStatus.SCHEDULED
+        )
+        val result = DailyIntelligence(model, emptyTools(), clock = { fixedNow }).select(
+            emptyList(), emptyList(), listOf(reminder))
+        assertThat(result).hasSize(1)
+        assertThat(result.first().title).isEqualTo("Pay credit card")
+    }
 }

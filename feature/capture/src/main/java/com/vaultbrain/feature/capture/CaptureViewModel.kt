@@ -259,6 +259,8 @@ class CaptureViewModel @Inject constructor(
                         repository.addItemToCollection(item.id, collectionId)
                     }
                 }
+                // Exit demo mode the first time a real item is saved.
+                com.vaultbrain.core.common.OnboardingState.recordFirstRealItemSaved(context)
                 // Drain indexing/deferred analysis for the saved item in the background.
                 DeferredAnalysisWorker.enqueue(context)
                 if (gemmaModelManager.status.value == OnDeviceModelStatus.READY) {
@@ -290,21 +292,18 @@ class CaptureViewModel @Inject constructor(
                     // Show post-save suggestions
                     val followUps = PostSaveSuggestionEngine.suggestFollowUps(item.experienceId)
                     val expiry = item.expiryDate
-                    val needsReminderNudge = item.effectiveClassification in setOf(com.vaultbrain.shared.model.Classification.TICKET, com.vaultbrain.shared.model.Classification.HOTEL) 
+                    val needsReminderNudge = item.effectiveClassification in setOf(com.vaultbrain.shared.model.Classification.TICKET, com.vaultbrain.shared.model.Classification.HOTEL)
                         && expiry != null && expiry > System.currentTimeMillis()
+                    val insight = buildSavedInsight(item)
 
-                    if (followUps.isNotEmpty() || needsReminderNudge) {
-                        _uiState.value = CaptureUiState.Saved(
-                            savedExperienceId = item.experienceId,
-                            followUps = followUps,
-                            itemNeedsReminder = needsReminderNudge,
-                            savedItemId = item.id
-                        )
-                    } else {
-                        batchDrafts.clear()
-        batchTargetCollectionIds.clear()
-                        onComplete()
-                    }
+                    _uiState.value = CaptureUiState.Saved(
+                        savedExperienceId = item.experienceId,
+                        followUps = followUps,
+                        itemNeedsReminder = needsReminderNudge,
+                        savedItemId = item.id,
+                        savedItemTitle = item.title,
+                        savedItemInsight = insight
+                    )
                 }
             } catch (e: Exception) {
                 _uiState.value = CaptureUiState.Error(e.message ?: "Save failed")
@@ -326,6 +325,30 @@ class CaptureViewModel @Inject constructor(
         batchTargetCollectionIds.clear()
         batchIndex = 0
         _uiState.value = CaptureUiState.Camera
+    }
+
+    private fun buildSavedInsight(item: VaultItem): String {
+        val expiry = item.expiryDate ?: item.secondaryAlertDate
+        if (expiry != null && expiry > System.currentTimeMillis()) {
+            return context.getString(
+                R.string.feature_capture_saved_insight_expires,
+                formatSavedDate(expiry)
+            )
+        }
+        val amount = item.parsedMetadata["total"] ?: item.parsedMetadata["amount"]
+        val currency = item.parsedMetadata["currency"]
+        if (!amount.isNullOrBlank()) {
+            val formatted = if (!currency.isNullOrBlank()) "$currency $amount" else amount
+            return context.getString(R.string.feature_capture_saved_insight_total, formatted)
+        }
+        return context.getString(R.string.feature_capture_saved_insight_default)
+    }
+
+    private fun formatSavedDate(timestamp: Long): String {
+        val date = java.time.Instant.ofEpochMilli(timestamp)
+            .atZone(java.time.ZoneId.systemDefault())
+            .toLocalDate()
+        return java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", java.util.Locale.getDefault()).format(date)
     }
 
     private suspend fun analyze(input: CaptureInput): VaultItem {

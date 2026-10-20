@@ -94,6 +94,19 @@ fun VaultBrainNavGraph(
                         navController.navigate(destinationAfterUnlock) {
                             popUpTo(Screen.Onboarding.route) { inclusive = true }
                         }
+                    },
+                    onStartFirstCapture = {
+                        com.vaultbrain.core.common.OnboardingState.setHasSeenOnboarding(context, true)
+                        navController.navigate(Screen.Capture.route) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
+                    },
+                    onTryDemo = {
+                        com.vaultbrain.core.common.OnboardingState.setHasSeenOnboarding(context, true)
+                        com.vaultbrain.core.common.OnboardingState.setDemoModeEnabled(context, true)
+                        navController.navigate(destinationAfterUnlock) {
+                            popUpTo(Screen.Onboarding.route) { inclusive = true }
+                        }
                     }
                 )
             }

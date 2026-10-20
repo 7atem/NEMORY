@@ -15,9 +15,9 @@ class DocumentClassifierTest {
         var seenInput: ByteBuffer? = null
             private set
 
-        override fun run(input: ByteBuffer, out: Array<FloatArray>) {
+        override fun run(input: ByteBuffer, output: Array<FloatArray>) {
             seenInput = input
-            System.arraycopy(output, 0, out[0], 0, minOf(output.size, out[0].size))
+            System.arraycopy(this.output, 0, output[0], 0, minOf(this.output.size, output[0].size))
         }
     }
 

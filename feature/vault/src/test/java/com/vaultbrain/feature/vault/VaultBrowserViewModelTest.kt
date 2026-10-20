@@ -25,10 +25,14 @@ class VaultBrowserViewModelTest {
     private val dispatcher = StandardTestDispatcher()
     private val repository = mockk<VaultRepository>()
     private val intentParser = QueryIntentParser()
+    private val context = mockk<android.content.Context>()
+    private val prefs = mockk<android.content.SharedPreferences>()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
+        every { context.getSharedPreferences(any(), any()) } returns prefs
+        every { prefs.getBoolean(any(), any()) } returns false
     }
 
     @After
@@ -50,7 +54,7 @@ class VaultBrowserViewModelTest {
     fun `browser works with zero collections`() = runTest(dispatcher) {
         every { repository.observeActive() } returns flowOf(listOf(VaultItem(id = "i1", title = "Note")))
         every { repository.observeActiveCollections() } returns flowOf(emptyList())
-        val viewModel = VaultBrowserViewModel(repository, intentParser)
+        val viewModel = VaultBrowserViewModel(repository, intentParser, context)
         val states = mutableListOf<VaultBrowserUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }
         advanceUntilIdle()
@@ -70,7 +74,7 @@ class VaultBrowserViewModelTest {
         every { repository.observeItemsForCollection("c1") } returns flowOf(
             listOf(VaultItem(id = "i2", title = "Boarding pass"))
         )
-        val viewModel = VaultBrowserViewModel(repository, intentParser)
+        val viewModel = VaultBrowserViewModel(repository, intentParser, context)
         val states = mutableListOf<VaultBrowserUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }
         advanceUntilIdle()
@@ -100,7 +104,7 @@ class VaultBrowserViewModelTest {
         )
         every { repository.observeActiveCollections() } returns flowOf(listOf(collection("c1", "House")))
         every { repository.observeItemsForCollection("c1") } returns flowOf(emptyList())
-        val viewModel = VaultBrowserViewModel(repository, intentParser)
+        val viewModel = VaultBrowserViewModel(repository, intentParser, context)
         val states = mutableListOf<VaultBrowserUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }
         advanceUntilIdle()
@@ -115,6 +119,22 @@ class VaultBrowserViewModelTest {
         assertThat(states.last().activeCollectionId).isNull()
         assertThat(states.last().activeFilter).isEqualTo(BrowserFilter.PINNED)
         assertThat(states.last().items.map { it.id }).containsExactly("i1")
+        job.cancel()
+    }
+
+    @Test
+    fun `demo mode overlays sample items when vault is empty`() = runTest(dispatcher) {
+        every { prefs.getBoolean("demo_mode_enabled", false) } returns true
+        every { prefs.getBoolean("demo_mode_dismissed", false) } returns false
+        every { repository.observeActive() } returns flowOf(emptyList())
+        every { repository.observeActiveCollections() } returns flowOf(emptyList())
+        val viewModel = VaultBrowserViewModel(repository, intentParser, context)
+        val states = mutableListOf<VaultBrowserUiState>()
+        val job = launch { viewModel.uiState.collect { states.add(it) } }
+        advanceUntilIdle()
+
+        assertThat(states.last().demoMode).isTrue()
+        assertThat(states.last().items).isNotEmpty()
         job.cancel()
     }
 }

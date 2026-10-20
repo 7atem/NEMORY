@@ -56,7 +56,9 @@ data class HomeUiState(
     val todayGmail: List<ExternalRecord> = emptyList(),
     val todayReminders: List<VaultReminder> = emptyList(),
     val upcomingReminders: List<VaultReminder> = emptyList(),
-    val attentionItems: List<AttentionItem> = emptyList()
+    val attentionItems: List<AttentionItem> = emptyList(),
+    val demoMode: Boolean = false,
+    val demoItemIds: Set<String> = emptySet()
 )
 
 @HiltViewModel
@@ -70,7 +72,8 @@ class HomeViewModel @Inject constructor(
     private val vaultReminderManager: VaultReminderManager,
     private val backupNudgeStore: BackupNudgeStore,
     private val actionExecutor: ActionExecutor,
-    private val dailyIntelligence: com.vaultbrain.core.ai.rag.DailyIntelligence? = null
+    private val dailyIntelligence: com.vaultbrain.core.ai.rag.DailyIntelligence? = null,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
     private val _dailyInsights = MutableStateFlow<List<com.vaultbrain.core.ai.rag.DailyInsight>>(emptyList())
     val dailyInsights: StateFlow<List<com.vaultbrain.core.ai.rag.DailyInsight>> = _dailyInsights
@@ -193,25 +196,35 @@ class HomeViewModel @Inject constructor(
         )
     }
 
+    private val demoItems = com.vaultbrain.feature.vault.components.PreviewData.sampleItems
+    private val demoCollections = com.vaultbrain.feature.vault.components.PreviewData.demoCollections
+    private val demoItemIds = demoItems.map { it.id }.toSet()
+
     val uiState: StateFlow<HomeUiState> = combine(
         repository.observeRecent(50), // Increased to feed pattern detector
         repository.observeActive(),
         repository.observeActiveCollections(),
         temporalContext
     ) { recent, active, collections, temporal ->
-        val expiryThreshold = System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000
-        val suggestion = patternDetector.detectPattern(recent)
+        val now = System.currentTimeMillis()
+        val expiryThreshold = now + 7L * 24 * 60 * 60 * 1000
+        val demoMode = com.vaultbrain.core.common.OnboardingState.isDemoModeEnabled(context) &&
+            active.isEmpty() && collections.isEmpty()
+        val effectiveRecent = if (recent.isEmpty() && demoMode) demoItems else recent
+        val effectiveActive = if (active.isEmpty() && demoMode) demoItems else active
+        val effectiveCollections = if (collections.isEmpty() && demoMode) demoCollections else collections
+        val suggestion = patternDetector.detectPattern(effectiveRecent)
         HomeUiState(
-            recentItems = recent.take(10), // Only first 10 for UI
-            activeItems = active,
-            collections = collections,
-            needsReviewCount = active.count { it.needsReview },
-            expiringSoonCount = active.count { item ->
+            recentItems = effectiveRecent.take(10), // Only first 10 for UI
+            activeItems = effectiveActive,
+            collections = effectiveCollections,
+            needsReviewCount = effectiveActive.count { it.needsReview },
+            expiringSoonCount = effectiveActive.count { item ->
                 listOfNotNull(item.expiryDate, item.secondaryAlertDate)
-                    .any { it in System.currentTimeMillis()..expiryThreshold }
+                    .any { it in now..expiryThreshold }
             },
             quickCaptureSuggestion = suggestion,
-            collectionSuggestion = patternDetector.detectCollectionPattern(recent),
+            collectionSuggestion = patternDetector.detectCollectionPattern(effectiveRecent),
             todayEvents = temporal.todayEvents,
             upcomingEvents = temporal.upcomingEvents,
             todayReminders = temporal.todayReminders,
@@ -221,15 +234,17 @@ class HomeViewModel @Inject constructor(
                 todayReminders = temporal.todayReminders,
                 todayEvents = temporal.todayEvents,
                 todayGmail = temporal.todayGmail,
-                expiringDocuments = active.mapNotNull { item ->
+                expiringDocuments = effectiveActive.mapNotNull { item ->
                     listOfNotNull(item.expiryDate, item.secondaryAlertDate)
-                        .filter { it in System.currentTimeMillis()..expiryThreshold }
+                        .filter { it in now..expiryThreshold }
                         .minOrNull()
                         ?.let { due -> ExpiringDocument(item.id, item.title, due) }
                 },
-                recentDocuments = recent.take(10), // Supply recent documents for proactive AI insights
-                needsReviewCount = active.count { it.needsReview }
-            )
+                recentDocuments = effectiveRecent.take(10), // Supply recent documents for proactive AI insights
+                needsReviewCount = effectiveActive.count { it.needsReview }
+            ),
+            demoMode = demoMode,
+            demoItemIds = if (demoMode) demoItemIds else emptySet()
         )
     }.stateIn(
         scope = viewModelScope,
@@ -248,6 +263,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun archiveItem(item: VaultItem) {
+        if (item.id in demoItemIds) return
         viewModelScope.launch {
             repository.setArchived(item.id, true)
         }
@@ -257,6 +273,10 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             repository.setArchived(item.id, false)
         }
+    }
+
+    fun dismissDemoMode() {
+        com.vaultbrain.core.common.OnboardingState.setDemoModeEnabled(context, false)
     }
 
     fun createReminder(title: String, dueAt: Long) {

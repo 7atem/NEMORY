@@ -18,6 +18,7 @@ Assessment & validation status (14 September 2026):
 - Claim Grounding & Verification: `ClaimVerifier` enforces verbatim citations across both `VaultItem` and `ExternalRecord` without length caps, failing closed to quoted excerpts. `RagEngine.queryStream` verifies evidence once after token generation finishes and retains `answer = result.text` during the verification status chunk to eliminate UI flicker and text wiping.
 - Media Vault File-at-Rest Security: `MediaVaultStorage` stores files encrypted with AES-256-GCM at rest using hardware-backed keystore credentials, supports transparent streaming decryption via Coil's `VaultMediaFetcher`, and enforces complete fail-closed storage isolation in Decoy Mode (`DecoySessionState.isDecoy`).
 - Vector Store Decoy Isolation: `VectorStore` checks `DecoySessionState.isDecoy`, returning empty results and suppressing mutations during decoy sessions.
+- Vector Store Threat Model: `VaultEmbedding` rows live in the app-private ObjectBox vector store. They are protected by the Android sandbox and decoy-mode isolation but are not encrypted at rest with a separate key. Embeddings are derived from on-device OCR text and record summaries and are never sent to cloud AI. The privacy summary discloses this; do not treat the vector store as an encrypted vault.
 - Interactive Mutex Preemption: `QwenLlmClient` implements `preemptBackground()` so foreground Brain chat queries immediately abort or preempt background analysis workers holding `nativeMutex`.
 - Arabic Document Transparency: `ReviewScreen` renders honest bilingual guidance when Latin-optimized OCR detects sparse or missing text, prompting for Arabic titles and keywords.
 - Decoy mode Detail: `ItemDetailViewModel` observes `DecoySessionState.isDecoy` and immediately cancels load jobs and wipes `_uiState` upon decoy entry.
@@ -170,6 +171,11 @@ item — it stays searchable via FTS. `EmbeddingBackfillWorker` (unique work
 `embedding_backfill`, `KEEP`, enqueued from `VaultBrainApplication`) one-time embeds
 older items that have no rows in the vector store.
 
+**Vector-store threat model:** embeddings are stored in the app-private ObjectBox
+sandbox. They benefit from Android sandbox isolation and decoy-mode suppression, but
+they are not encrypted at rest with an application-managed key. This is a deliberate
+trade-off for local search performance; the settings privacy summary discloses it.
+
 ## Backup and Gmail integration
 
 `sync/drive/DriveBackupManager` implements portable SAF export/import, not direct Drive
@@ -253,5 +259,6 @@ ordering does not require an LLM.
 
 - All user-facing strings bilingual: `values/strings.xml` (EN) + `values-ar/strings.xml` (AR).
 - Minimal, surgical edits; match the surrounding style.
-- Build: `./gradlew :app:assembleDebug`
+- Build: `./gradlew :app:assembleDebug` (on Windows use `gradlew.bat`).
 - Unit tests: `./gradlew :core:database:testDebugUnitTest :feature:capture:testDebugUnitTest :core:ai:vision:testDebugUnitTest :core:ai:heuristics:testDebugUnitTest`
+- Windows CI / local verification: Gradle on Windows can hit incremental-build corruption and file-lock races when `clean`, `assemble`, and `lint` run concurrently. Run verification commands sequentially, or with `--max-workers=1`, and avoid `clean` while another Gradle process is active.

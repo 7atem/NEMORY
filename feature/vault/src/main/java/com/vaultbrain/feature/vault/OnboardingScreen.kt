@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,21 +46,49 @@ import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus
 import kotlin.math.absoluteValue
 import kotlinx.coroutines.launch
 
+private sealed class OnboardingPage {
+    data class Text(
+        val title: String,
+        val body: String,
+        val icon: androidx.compose.ui.graphics.vector.ImageVector,
+        val showScannerAnimation: Boolean = false
+    ) : OnboardingPage()
+
+    data object ScanInvite : OnboardingPage()
+}
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(
     onOnboardingComplete: () -> Unit,
+    onStartFirstCapture: () -> Unit = {},
+    onTryDemo: () -> Unit = {},
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
     val offerModelDownload by viewModel.offerModelDownload.collectAsState()
     val gemmaStatus by viewModel.gemmaStatus.collectAsState()
-    val slides = listOf(
-        Triple(stringResource(R.string.onboarding_vault_title), stringResource(R.string.onboarding_vault_body), Icons.Default.Storage),
-        Triple(stringResource(R.string.onboarding_organize_title), stringResource(R.string.onboarding_organize_body), Icons.Default.DocumentScanner),
-        Triple(stringResource(R.string.onboarding_private_title), stringResource(R.string.onboarding_private_body), Icons.Default.Lock)
+    val contentSlides = listOf(
+        OnboardingPage.Text(
+            stringResource(R.string.onboarding_vault_title),
+            stringResource(R.string.onboarding_vault_body),
+            Icons.Default.Storage
+        ),
+        OnboardingPage.Text(
+            stringResource(R.string.onboarding_organize_title),
+            stringResource(R.string.onboarding_organize_body),
+            Icons.Default.DocumentScanner,
+            showScannerAnimation = true
+        ),
+        OnboardingPage.Text(
+            stringResource(R.string.onboarding_private_title),
+            stringResource(R.string.onboarding_private_body),
+            Icons.Default.Lock
+        ),
+        OnboardingPage.ScanInvite
     )
     // The on-device model offer is appended as a final step on eligible devices only.
-    val pageCount = slides.size + if (offerModelDownload) 1 else 0
+    val pageCount = contentSlides.size + if (offerModelDownload) 1 else 0
+    val scanInviteIndex = contentSlides.indexOf(OnboardingPage.ScanInvite)
     val modelPageIndex = if (offerModelDownload) pageCount - 1 else -1
 
     val pagerState = rememberPagerState(pageCount = { pageCount })
@@ -82,10 +111,18 @@ fun OnboardingScreen(
                     ModelDownloadPage(status = gemmaStatus)
                     return@HorizontalPager
                 }
+                if (page == scanInviteIndex) {
+                    ScanInvitePage(
+                        onScanClick = onStartFirstCapture,
+                        onDemoClick = onTryDemo
+                    )
+                    return@HorizontalPager
+                }
+                val slide = contentSlides[page] as OnboardingPage.Text
                 // Calculate page offset for parallax effect
                 val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
                 val rtlMultiplier = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
-                
+
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
@@ -103,22 +140,22 @@ fun OnboardingScreen(
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (page == 1) {
+                        if (slide.showScannerAnimation) {
                             MockScannerAnimation()
                         } else {
                             Icon(
-                                imageVector = slides[page].third,
+                                imageVector = slide.icon,
                                 contentDescription = null,
                                 modifier = Modifier.size(120.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(32.dp))
-                    
+
                     Text(
-                        text = slides[page].first,
+                        text = slide.title,
                         style = MaterialTheme.typography.headlineMedium,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
@@ -128,11 +165,11 @@ fun OnboardingScreen(
                                 alpha = 1f - pageOffset
                             }
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Text(
-                        text = slides[page].second,
+                        text = slide.body,
                         style = MaterialTheme.typography.bodyLarge,
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -204,7 +241,15 @@ fun OnboardingScreen(
                             }
                         }
                     }
-                    pagerState.currentPage == slides.lastIndex && !offerModelDownload -> {
+                    pagerState.currentPage == scanInviteIndex -> {
+                        // Scan invite page supplies its own actions.
+                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            TextButton(onClick = onOnboardingComplete) {
+                                Text(stringResource(R.string.onboarding_skip))
+                            }
+                        }
+                    }
+                    pagerState.currentPage == contentSlides.lastIndex && !offerModelDownload -> {
                         Button(
                             onClick = onOnboardingComplete,
                             modifier = Modifier.fillMaxWidth().height(56.dp)
@@ -288,6 +333,52 @@ private fun ModelDownloadPage(status: OnDeviceModelStatus) {
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+    }
+}
+
+@Composable
+private fun ScanInvitePage(
+    onScanClick: () -> Unit,
+    onDemoClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Default.DocumentScanner,
+            contentDescription = null,
+            modifier = Modifier.size(120.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            text = stringResource(R.string.onboarding_scan_title),
+            style = MaterialTheme.typography.headlineMedium,
+            textAlign = TextAlign.Center
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
+            text = stringResource(R.string.onboarding_scan_body),
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+        Button(
+            onClick = onScanClick,
+            modifier = Modifier.fillMaxWidth().height(56.dp)
+        ) {
+            Text(stringResource(R.string.onboarding_scan_button))
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+        OutlinedButton(
+            onClick = onDemoClick,
+            modifier = Modifier.fillMaxWidth().height(56.dp)
+        ) {
+            Text(stringResource(R.string.onboarding_try_demo_button))
         }
     }
 }

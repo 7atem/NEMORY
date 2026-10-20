@@ -172,7 +172,7 @@ class RagEngine @Inject constructor(
             if (sources.size > 1) {
                 append("\n\nAdditional relevant items:\n")
                 sources.drop(1).forEach {
-                    append("â€¢ ${it.title}\n")
+                    append("• ${it.title}\n")
                 }
             }
             append(disclaimer)
@@ -708,13 +708,13 @@ class RagEngine @Inject constructor(
 
         val fallbackAnswer = if (isConversationalGreeting(query)) {
             if (containsArabic(query)) {
-                "Ø£Ù‡Ù„Ø§Ù‹ Ø¨Ùƒ! Ø£Ù†Ø§ Ù†ÙŠÙ…ÙˆØ±ÙŠ (Nemory)ØŒ Ù…Ø³Ø§Ø¹Ø¯Ùƒ Ø§Ù„Ø°ÙƒÙŠ Ø§Ù„Ø´Ø®ØµÙŠ Ø§Ù„Ø®Ø§Øµ Ø¹Ù„Ù‰ Ø§Ù„Ø¬Ù‡Ø§Ø². ÙŠÙ…ÙƒÙ†Ùƒ Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù…Ø³ØªÙ†Ø¯Ø§ØªØŒ Ø§Ù„Ø¥ÙŠØµØ§Ù„Ø§ØªØŒ Ø§Ù„Ù…Ù„Ø§Ø­Ø¸Ø§ØªØŒ ÙˆØ§Ù„Ø§Ø±ØªØ¨Ø§Ø·Ø§Øª Ø¥Ù„Ù‰ Ø®Ø²Ù†ØªÙƒØŒ ÙˆØ³Ø¤Ø§Ù„ÙŠ Ø¹Ù†Ù‡Ø§ ÙÙŠ Ø£ÙŠ ÙˆÙ‚Øª Ø¨Ø®ØµÙˆØµÙŠØ© ØªØ§Ù…Ø©."
+                "أهلاً بك! أنا نيموري (Nemory)، مساعدك الذكي الشخصي الخاص على الجهاز. يمكنك إضافة المستندات، الإيصالات، الملاحظات، والارتباطات إلى خزنتك، وسؤالي عنها في أي وقت بخصوصية تامة."
             } else {
                 "Hello! I'm Nemory, your private on-device intelligence assistant. You can scan or import documents, receipts, warranties, and notes into your vault, and ask me anything about them anytime with 100% privacy."
             }
         } else {
             if (containsArabic(query)) {
-                "Ù„Ù… Ø£Ø¬Ø¯ Ù…Ø³ØªÙ†Ø¯Ø§Øª ØªØ·Ø§Ø¨Ù‚ Ø¨Ø­Ø«Ùƒ ÙÙŠ Ø®Ø²Ù†ØªÙƒ. ÙŠÙ…ÙƒÙ†Ùƒ ØªØ¬Ø±Ø¨Ø© ÙƒÙ„Ù…Ø§Øª Ù…ÙØªØ§Ø­ÙŠØ© Ø£Ø®Ø±Ù‰ Ø£Ùˆ Ù…Ø³Ø­ Ù…Ø³ØªÙ†Ø¯ Ø¬Ø¯ÙŠØ¯ Ù„ØªØ®Ø²ÙŠÙ†Ù‡."
+                "لم أجد مستندات تطابق بحثك في خزنتك. يمكنك تجربة كلمات مفتاحية أخرى أو مسح مستند جديد لتخزينه."
             } else {
                 "I couldn't find any relevant documents in your vault matching your request. Try using different keywords or scanning a document into your vault."
             }
@@ -728,10 +728,10 @@ class RagEngine @Inject constructor(
         val greetings = setOf(
             "hello", "hi", "hey", "hello there", "hi there", "good morning", "good evening", "good afternoon",
             "who are you", "what can you do", "help", "who created you", "what is nemory", "what is vaultbrain",
-            "Ù…Ø±Ø­Ø¨Ø§", "Ù…Ø±Ø­Ø¨Ø§Ù‹", "Ø£Ù‡Ù„Ø§", "Ø£Ù‡Ù„Ø§Ù‹", "Ø§Ù‡Ù„Ø§", "Ø§Ù„Ø³Ù„Ø§Ù… Ø¹Ù„ÙŠÙƒÙ…", "Ø³Ù„Ø§Ù…", "ØµØ¨Ø§Ø­ Ø§Ù„Ø®ÙŠØ±", "Ù…Ø³Ø§Ø¡ Ø§Ù„Ø®ÙŠØ±",
-            "Ù…Ù† Ø£Ù†Øª", "Ù…Ù† Ø§Ù†Øª", "Ù…Ø§Ø°Ø§ ØªÙØ¹Ù„", "Ù…Ø§Ø°Ø§ ØªØ³ØªØ·ÙŠØ¹ Ø£Ù† ØªÙØ¹Ù„", "Ù…Ù† Ø§Ù†ØªØŸ", "Ù…Ù† Ø£Ù†ØªØŸ"
+            "مرحبا", "مرحباً", "أهلا", "أهلاً", "اهلا", "السلام عليكم", "سلام", "صباح الخير", "مساء الخير",
+            "من أنت", "من انت", "ماذا تفعل", "ماذا تستطيع أن تفعل", "من انت؟", "من أنت؟"
         )
-        return greetings.contains(q) || q.startsWith("hello") || q.startsWith("hi ") || q.startsWith("Ù…Ø±Ø­Ø¨Ø§") || q.startsWith("Ø£Ù‡Ù„Ø§")
+        return greetings.contains(q) || q.startsWith("hello") || q.startsWith("hi ") || q.startsWith("مرحبا") || q.startsWith("أهلا")
     }
 
     private fun containsArabic(text: String): Boolean =

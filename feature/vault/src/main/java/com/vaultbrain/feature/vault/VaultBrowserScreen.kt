@@ -26,6 +26,7 @@ import com.vaultbrain.core.common.ui.standardExitAnimation
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -38,6 +39,8 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -126,6 +129,7 @@ fun VaultBrowserScreen(
         },
         onItemClick = onItemClick,
         onBack = onBack,
+        onDismissDemoMode = viewModel::dismissDemoMode,
         snackbarHostState = snackbarHostState
     )
 }
@@ -147,6 +151,7 @@ internal fun VaultBrowserContent(
     onDeleteItem: (VaultItem) -> Unit,
     onItemClick: (String) -> Unit,
     onBack: () -> Unit,
+    onDismissDemoMode: () -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
     var showSortMenu by remember { mutableStateOf(false) }
@@ -221,6 +226,13 @@ internal fun VaultBrowserContent(
                 .wrapContentWidth(Alignment.CenterHorizontally)
                 .widthIn(max = 1000.dp)
         ) {
+            if (state.demoMode) {
+                DemoModeBrowserBanner(
+                    onDismiss = onDismissDemoMode,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+
             // Search Bar
             OutlinedTextField(
                 value = state.searchQuery,
@@ -514,6 +526,41 @@ private fun SwipeableSelectableVaultItem(
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DemoModeBrowserBanner(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.AutoAwesome,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = stringResource(R.string.browser_demo_mode_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.browser_demo_mode_dismiss),
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }

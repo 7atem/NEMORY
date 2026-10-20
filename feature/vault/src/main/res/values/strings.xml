@@ -53,6 +53,12 @@
     <string name="home_backup_nudge_body">Your data stays offline. Set up an encrypted backup to prevent data loss.</string>
     <string name="home_backup_nudge_setup">Setup Backup</string>
     <string name="home_backup_nudge_dismiss">Dismiss</string>
+    <string name="home_demo_mode_title">Demo mode</string>
+    <string name="home_demo_mode_body">These are sample items. Scan a real document to replace them.</string>
+    <string name="home_demo_mode_dismiss">Hide demo</string>
+    <string name="home_demo_mode_scan">Scan real document</string>
+    <string name="browser_demo_mode_body">Showing sample items. Save something to see your own vault.</string>
+    <string name="browser_demo_mode_dismiss">Hide demo</string>
     <string name="home_from_calendar">From your Calendar</string>
     <string name="home_vault_reminder_overline">Vault Reminder</string>
     <string name="home_action_paste">Paste text</string>
@@ -101,6 +107,10 @@
     <string name="card_date_expires">Expires %1$s</string>
     <string name="card_date_due">Due %1$s</string>
     <string name="card_date_event">Event %1$s</string>
+    <string name="card_chip_expires_soon">Expires</string>
+    <string name="card_chip_due_soon">Due</string>
+    <string name="card_chip_event_soon">Event</string>
+    <string name="card_chip_soon">Soon</string>
     <string name="review_title">Review</string>
     <string name="review_intro">Nothing here blocks saving. Confirm a suggestion now, or open the item to adjust it.</string>
     <string name="review_all_clear">You’re all caught up</string>
@@ -212,6 +222,10 @@
     <string name="onboarding_private_title">Private by default</string>
     <string name="onboarding_private_body">Your saved content stays on this device. Permissions are requested only when a feature needs them.</string>
     <string name="onboarding_start">Start using Nemory</string>
+    <string name="onboarding_scan_title">Scan your first document</string>
+    <string name="onboarding_scan_body">Capture a receipt, ID, bill, or ticket and see Nemory organize it instantly.</string>
+    <string name="onboarding_scan_button">Scan my first document</string>
+    <string name="onboarding_try_demo_button">Try a demo</string>
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_model_title">Smarter organization, still private</string>

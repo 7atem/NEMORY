@@ -105,6 +105,9 @@
     <string name="feature_capture_discard_confirm">إلغاء</string>
     <string name="feature_capture_cancel">تراجع</string>
     <string name="feature_capture_saved_success">تم الحفظ بنجاح!</string>
+    <string name="feature_capture_saved_insight_expires">ينتهي في %1$s — سنذكّرك.</string>
+    <string name="feature_capture_saved_insight_total">الإجمالي: %1$s</string>
+    <string name="feature_capture_saved_insight_default">تم الحفظ وهو جاهز للبحث.</string>
     <string name="feature_capture_reminder_prompt_title">هل تحتاج إلى تذكير لهذه الرحلة؟</string>
     <string name="feature_capture_reminder_prompt_body">قمنا بجدولة تنبيه تلقائي قبل الموعد.</string>
     <string name="feature_capture_got_it">حسناً</string>

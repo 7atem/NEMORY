@@ -131,6 +131,8 @@ fun HomeScreen(
         backupNudgeVisible = backupNudgeVisible,
         onBackupNudgeDismiss = viewModel::dismissBackupNudge,
         onAskBrain = onAskBrain,
+        onDismissDemoMode = viewModel::dismissDemoMode,
+        onTryRealScan = onCaptureClick,
         onAttentionClick = { attention ->
             when (attention.kind) {
                 com.vaultbrain.feature.vault.home.AttentionItem.Kind.REMINDER ->
@@ -253,6 +255,8 @@ internal fun HomeContent(
     backupNudgeVisible: Boolean = true,
     onBackupNudgeDismiss: () -> Unit = {},
     onAskBrain: (String) -> Unit = {},
+    onDismissDemoMode: () -> Unit = {},
+    onTryRealScan: () -> Unit = {},
     onAttentionClick: (AttentionItem) -> Unit = {}
 ) {
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -316,6 +320,15 @@ internal fun HomeContent(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
+                if (state.demoMode) {
+                    item {
+                        DemoModeBanner(
+                            onTryRealScan = onTryRealScan,
+                            onDismiss = onDismissDemoMode
+                        )
+                    }
+                }
+
                 item {
                     SectionHeader(
                         title = stringResource(R.string.home_your_collections),
@@ -597,7 +610,7 @@ internal fun HomeContent(
                                 VaultItemCard(
                                     item = item,
                                     onClick = { onItemClick(item.id) },
-                                    onArchive = { onArchiveItem(item) },
+                                    onArchive = if (item.id in state.demoItemIds) null else ({ onArchiveItem(item) }),
                                     modifier = Modifier.width(280.dp).graphicsLayer { alpha = itemAlpha }
                                 )
                             }
@@ -674,6 +687,49 @@ private fun OverviewStat(
         Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
         Text(count.toString(), style = MaterialTheme.typography.titleLarge)
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun DemoModeBanner(onTryRealScan: () -> Unit, onDismiss: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.AutoAwesome,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.home_demo_mode_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = onDismiss) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = stringResource(R.string.home_demo_mode_dismiss),
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+            Text(
+                text = stringResource(R.string.home_demo_mode_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+            TextButton(onClick = onTryRealScan, modifier = Modifier.padding(top = 4.dp)) {
+                Text(stringResource(R.string.home_demo_mode_scan))
+            }
+        }
     }
 }
 

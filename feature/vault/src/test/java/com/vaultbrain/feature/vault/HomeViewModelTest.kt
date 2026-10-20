@@ -40,10 +40,14 @@ class HomeViewModelTest {
     private val vaultReminderManager = mockk<VaultReminderManager>()
     private val backupNudgeStore = mockk<com.vaultbrain.core.notifications.BackupNudgeStore>(relaxed = true)
     private val actionExecutor = mockk<com.vaultbrain.core.integrations.action.ActionExecutor>(relaxed = true)
+    private val context = mockk<android.content.Context>()
+    private val prefs = mockk<android.content.SharedPreferences>()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
+        every { context.getSharedPreferences(any(), any()) } returns prefs
+        every { prefs.getBoolean(any(), any()) } returns false
         every { repository.observeRecent(any()) } returns flowOf(emptyList())
         every { repository.observeActive() } returns flowOf(emptyList())
         coEvery { gemmaDownloadEligibility.isPromptEligible() } returns false
@@ -74,7 +78,7 @@ class HomeViewModelTest {
         }
         val viewModel = HomeViewModel(repository, patternDetector, gemmaDownloadEligibility,
             gemmaModelManager, gemmaBannerStore, externalContextRepository, vaultReminderManager,
-            backupNudgeStore, actionExecutor, intelligence)
+            backupNudgeStore, actionExecutor, intelligence, context)
         advanceUntilIdle()
         assertThat(viewModel.dailyInsights.value.single().title).isEqualTo("Old title")
         items.value = listOf(items.value.single().copy(title = "Changed title"))
@@ -99,7 +103,8 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             repository, patternDetector,
             gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
-            externalContextRepository, vaultReminderManager, backupNudgeStore, actionExecutor
+            externalContextRepository, vaultReminderManager, backupNudgeStore, actionExecutor,
+            context = context
         )
         val states = mutableListOf<HomeUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }
@@ -124,7 +129,8 @@ class HomeViewModelTest {
         val viewModel = HomeViewModel(
             repository, patternDetector,
             gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
-            externalContextRepository, vaultReminderManager, backupNudgeStore, actionExecutor
+            externalContextRepository, vaultReminderManager, backupNudgeStore, actionExecutor,
+            context = context
         )
         val states = mutableListOf<HomeUiState>()
         val job = launch { viewModel.uiState.collect { states.add(it) } }
@@ -133,6 +139,47 @@ class HomeViewModelTest {
         assertThat(states.last().collections.map { it.name })
             .containsExactly("Bambu H2D", "Europe Trip", "PhD")
         assertThat(states.last().recentItems).hasSize(1)
+        job.cancel()
+    }
+
+    @Test
+    fun `demo mode overlays sample items when vault is empty`() = runTest(dispatcher) {
+        every { prefs.getBoolean("demo_mode_enabled", false) } returns true
+        every { prefs.getBoolean("demo_mode_dismissed", false) } returns false
+        every { repository.observeActiveCollections() } returns flowOf(emptyList())
+        val viewModel = HomeViewModel(
+            repository, patternDetector,
+            gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
+            externalContextRepository, vaultReminderManager, backupNudgeStore, actionExecutor,
+            context = context
+        )
+        val states = mutableListOf<HomeUiState>()
+        val job = launch { viewModel.uiState.collect { states.add(it) } }
+        advanceUntilIdle()
+
+        assertThat(states.last().demoMode).isTrue()
+        assertThat(states.last().recentItems).isNotEmpty()
+        assertThat(states.last().collections).isNotEmpty()
+        job.cancel()
+    }
+
+    @Test
+    fun `demo mode disabled when real items exist`() = runTest(dispatcher) {
+        every { prefs.getBoolean("demo_mode_enabled", false) } returns true
+        every { repository.observeActiveCollections() } returns flowOf(emptyList())
+        every { repository.observeActive() } returns flowOf(listOf(VaultItem(id = "real", title = "Real")))
+        val viewModel = HomeViewModel(
+            repository, patternDetector,
+            gemmaDownloadEligibility, gemmaModelManager, gemmaBannerStore,
+            externalContextRepository, vaultReminderManager, backupNudgeStore, actionExecutor,
+            context = context
+        )
+        val states = mutableListOf<HomeUiState>()
+        val job = launch { viewModel.uiState.collect { states.add(it) } }
+        advanceUntilIdle()
+
+        assertThat(states.last().demoMode).isFalse()
+        assertThat(states.last().activeItems.map { it.id }).containsExactly("real")
         job.cancel()
     }
 }

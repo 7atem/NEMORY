@@ -417,6 +417,9 @@
     <string name="feature_capture_discard_confirm">Discard</string>
     <string name="feature_capture_cancel">Cancel</string>
     <string name="feature_capture_saved_success">Saved successfully!</string>
+    <string name="feature_capture_saved_insight_expires">Expires %1$s — we’ll remind you.</string>
+    <string name="feature_capture_saved_insight_total">Total: %1$s</string>
+    <string name="feature_capture_saved_insight_default">Saved and ready to search.</string>
     <string name="feature_capture_reminder_prompt_title">Need a reminder for this trip?</string>
     <string name="feature_capture_reminder_prompt_body">We\'ve scheduled an automatic alert before the date.</string>
     <string name="feature_capture_got_it">Got it</string>

@@ -126,7 +126,7 @@ class HeuristicExtractorTest {
             BOARDING PASS
             Passenger: Doe/John
             Flight: BA 123
-            Date: 2026-10-15
+            Date: 2030-10-15
             Depart: 14:30
             Gate: A12
             Seat: 14B

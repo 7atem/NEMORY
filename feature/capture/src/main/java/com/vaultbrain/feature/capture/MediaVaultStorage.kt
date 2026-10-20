@@ -138,7 +138,7 @@ class MediaVaultStorage @Inject constructor(
     }
 
     private fun encryptBytes(plaintext: ByteArray): ByteArray {
-        val key = keystoreManager.getOrCreateDatabasePassphrase()
+        val key = keystoreManager.getOrCreateMediaPassphrase()
         val iv = ByteArray(IV_BYTES).apply { secureRandom.nextBytes(this) }
         val cipher = Cipher.getInstance(CIPHER_TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(GCM_TAG_BITS, iv))
@@ -146,7 +146,7 @@ class MediaVaultStorage @Inject constructor(
 
         val output = ByteArray(HEADER_SIZE + ciphertext.size)
         System.arraycopy(MAGIC, 0, output, 0, MAGIC.size)
-        output[4] = FORMAT_VERSION
+        output[4] = CURRENT_FORMAT_VERSION
         System.arraycopy(iv, 0, output, 5, IV_BYTES)
         System.arraycopy(ciphertext, 0, output, HEADER_SIZE, ciphertext.size)
         return output
@@ -154,7 +154,12 @@ class MediaVaultStorage @Inject constructor(
 
     private fun decryptBytes(encrypted: ByteArray): ByteArray {
         require(isEncrypted(encrypted)) { "Payload does not contain valid encrypted media header" }
-        val key = keystoreManager.getOrCreateDatabasePassphrase()
+        val version = encrypted[4]
+        val key = when (version) {
+            CURRENT_FORMAT_VERSION -> keystoreManager.getOrCreateMediaPassphrase()
+            LEGACY_FORMAT_VERSION -> keystoreManager.getOrCreateDatabasePassphrase()
+            else -> error("Unsupported encrypted media format version: $version")
+        }
         val iv = Arrays.copyOfRange(encrypted, 5, 5 + IV_BYTES)
         val ciphertext = Arrays.copyOfRange(encrypted, HEADER_SIZE, encrypted.size)
         val cipher = Cipher.getInstance(CIPHER_TRANSFORMATION)
@@ -183,7 +188,8 @@ class MediaVaultStorage @Inject constructor(
 
     companion object {
         private val MAGIC = byteArrayOf(0x4E, 0x4D, 0x45, 0x44) // NMED
-        private const val FORMAT_VERSION: Byte = 1
+        private const val CURRENT_FORMAT_VERSION: Byte = 2
+        private const val LEGACY_FORMAT_VERSION: Byte = 1
         private const val IV_BYTES = 12
         private const val GCM_TAG_BITS = 128
         private const val HEADER_SIZE = 5 + IV_BYTES // 4 magic + 1 version + 12 iv = 17 bytes

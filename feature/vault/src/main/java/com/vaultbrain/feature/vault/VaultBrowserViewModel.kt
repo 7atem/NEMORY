@@ -32,7 +32,9 @@ data class VaultBrowserUiState(
     val sortOrder: BrowserSort = BrowserSort.DATE_DESC,
     val isSelectionMode: Boolean = false,
     val selectedItemIds: Set<String> = emptySet(),
-    val filterCounts: Map<BrowserFilter, Int> = emptyMap()
+    val filterCounts: Map<BrowserFilter, Int> = emptyMap(),
+    val demoMode: Boolean = false,
+    val demoItemIds: Set<String> = emptySet()
 )
 
 /**
@@ -57,7 +59,8 @@ enum class BrowserSort(@StringRes val labelRes: Int) {
 @HiltViewModel
 class VaultBrowserViewModel @Inject constructor(
     private val repository: VaultRepository,
-    private val intentParser: QueryIntentParser
+    private val intentParser: QueryIntentParser,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val context: android.content.Context
 ) : ViewModel() {
 
     private val searchQuery = MutableStateFlow("")
@@ -65,6 +68,10 @@ class VaultBrowserViewModel @Inject constructor(
     private val activeCollectionId = MutableStateFlow<String?>(null)
     private val sortOrder = MutableStateFlow(BrowserSort.DATE_DESC)
     private val selectedItemIds = MutableStateFlow<Set<String>>(emptySet())
+
+    private val demoItems = com.vaultbrain.feature.vault.components.PreviewData.sampleItems
+    private val demoItemIds = demoItems.map { it.id }.toSet()
+    private val demoModeEnabled = com.vaultbrain.core.common.OnboardingState.isDemoModeEnabled(context)
 
     private var initialStateApplied = false
 
@@ -95,8 +102,13 @@ class VaultBrowserViewModel @Inject constructor(
         ) { allItems, filter, sort, selected, collections ->
             val now = System.currentTimeMillis()
             val expiryThreshold = now + 7L * 24 * 60 * 60 * 1000 // 7 days
+            val showDemo = demoModeEnabled &&
+                allItems.isEmpty() &&
+                searchQuery.value.isBlank() &&
+                activeCollectionId.value == null
+            val effectiveItems = if (showDemo) demoItems else allItems
 
-            var filtered = allItems
+            var filtered = effectiveItems
 
             // Natural-language filters share Brain's validated intent parser. Unknown
             // wording still uses encrypted FTS search above.
@@ -146,7 +158,9 @@ class VaultBrowserViewModel @Inject constructor(
                 sortOrder = sort,
                 isSelectionMode = selected.isNotEmpty(),
                 selectedItemIds = selected,
-                filterCounts = counts
+                filterCounts = counts,
+                demoMode = showDemo,
+                demoItemIds = if (showDemo) demoItemIds else emptySet()
             )
         }
     }.combine(searchQuery) { state, currentQuery ->
@@ -213,7 +227,7 @@ class VaultBrowserViewModel @Inject constructor(
             val ids = selectedItemIds.value
             if (ids.isEmpty()) return@launch
 
-            val all = uiState.value.items.filter { it.id in ids }
+            val all = uiState.value.items.filter { it.id in ids && it.id !in demoItemIds }
             all.forEach { item -> repository.delete(item) }
             clearSelection()
         }
@@ -221,18 +235,23 @@ class VaultBrowserViewModel @Inject constructor(
 
     fun pinSelected() {
         viewModelScope.launch {
-            val ids = selectedItemIds.value
-            repository.setPinnedForIds(ids.toList(), true)
+            val ids = selectedItemIds.value.filter { it !in demoItemIds }
+            if (ids.isNotEmpty()) repository.setPinnedForIds(ids, true)
             clearSelection()
         }
     }
 
     fun deleteItem(item: VaultItem) {
+        if (item.id in demoItemIds) return
         viewModelScope.launch { repository.delete(item) }
     }
 
     fun restoreItem(item: VaultItem) {
         viewModelScope.launch { repository.save(item) }
+    }
+
+    fun dismissDemoMode() {
+        com.vaultbrain.core.common.OnboardingState.setDemoModeEnabled(context, false)
     }
 
     private fun applyIntentFilter(items: List<VaultItem>, intent: QueryIntent?, now: Long): List<VaultItem> =

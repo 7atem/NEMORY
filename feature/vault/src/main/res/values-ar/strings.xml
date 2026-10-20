@@ -52,6 +52,12 @@
     <string name="home_backup_nudge_body">بياناتك تبقى على جهازك. قم بإعداد نسخة احتياطية مشفرة لمنع فقدان البيانات.</string>
     <string name="home_backup_nudge_setup">إعداد النسخ الاحتياطي</string>
     <string name="home_backup_nudge_dismiss">إغلاق</string>
+    <string name="home_demo_mode_title">وضع العرض التوضيحي</string>
+    <string name="home_demo_mode_body">هذه عناصر تجريبية. امسح مستندًا حقيقيًا لاستبدالها.</string>
+    <string name="home_demo_mode_dismiss">إخفاء العرض</string>
+    <string name="home_demo_mode_scan">مسح مستند حقيقي</string>
+    <string name="browser_demo_mode_body">جارٍ عرض عناصر تجريبية. احفظ شيئًا لرؤية خزنتك.</string>
+    <string name="browser_demo_mode_dismiss">إخفاء العرض</string>
     <string name="home_from_calendar">من تقويمك</string>
     <string name="home_vault_reminder_overline">تذكير الخزنة</string>
     <string name="home_action_paste">لصق نص</string>
@@ -108,6 +114,10 @@
     <string name="card_date_expires">ينتهي في %1$s</string>
     <string name="card_date_due">مستحق في %1$s</string>
     <string name="card_date_event">الموعد %1$s</string>
+    <string name="card_chip_expires_soon">ينتهي</string>
+    <string name="card_chip_due_soon">مستحق</string>
+    <string name="card_chip_event_soon">حدث</string>
+    <string name="card_chip_soon">قريبًا</string>
     <string name="review_title">المراجعة</string>
     <string name="review_intro">لا شيء هنا يمنع الحفظ. أكّد اقتراحًا الآن، أو افتح العنصر لتعديله.</string>
     <string name="review_all_clear">تمت مراجعة كل شيء</string>
@@ -198,6 +208,10 @@
     <string name="onboarding_private_title">الخصوصية افتراضيًا</string>
     <string name="onboarding_private_body">يبقى المحتوى المحفوظ على هذا الجهاز. نطلب الأذونات فقط عند الحاجة إليها.</string>
     <string name="onboarding_start">ابدأ استخدام Nemory</string>
+    <string name="onboarding_scan_title">امسح مستندك الأول</string>
+    <string name="onboarding_scan_body">صوّر إيصالاً أو هوية أو فاتورة أو تذكرة وشاهد Nemory ينظّمها فورًا.</string>
+    <string name="onboarding_scan_button">مسح مستندي الأول</string>
+    <string name="onboarding_try_demo_button">جرب العرض التوضيحي</string>
     <string name="onboarding_skip">تخطي</string>
     <string name="onboarding_next">التالي</string>
     <string name="onboarding_model_title">تنظيم أذكى مع الحفاظ على الخصوصية</string>

@@ -41,7 +41,9 @@ sealed interface CaptureUiState {
         val savedExperienceId: String?,
         val followUps: List<PostSaveSuggestionEngine.FollowUpSuggestion> = emptyList(),
         val itemNeedsReminder: Boolean = false,
-        val savedItemId: String? = null
+        val savedItemId: String? = null,
+        val savedItemTitle: String? = null,
+        val savedItemInsight: String? = null
     ) : CaptureUiState
 
     data class Error(val message: String) : CaptureUiState

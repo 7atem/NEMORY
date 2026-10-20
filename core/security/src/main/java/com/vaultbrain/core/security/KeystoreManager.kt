@@ -23,6 +23,7 @@ class KeystoreManager @Inject constructor(
 
     companion object {
         private const val PASSPHRASE_FILE_NAME = "vaultbrain_passphrase.bin"
+        private const val MEDIA_PASSPHRASE_FILE_NAME = "vaultbrain_media_passphrase.bin"
         private const val PASSPHRASE_LENGTH_BYTES = 32
         private val keyLock = Any()
     }
@@ -81,6 +82,31 @@ class KeystoreManager @Inject constructor(
     fun replaceDatabasePassphrase(passphrase: ByteArray) = synchronized(keyLock) {
         require(passphrase.size == PASSPHRASE_LENGTH_BYTES) { "Invalid database passphrase" }
         writePassphrase(File(context.filesDir, PASSPHRASE_FILE_NAME), passphrase)
+    }
+
+    /**
+     * Returns a dedicated media encryption passphrase, separate from the database key.
+     * Generated and wrapped by Android Keystore on first use.
+     */
+    fun getOrCreateMediaPassphrase(): ByteArray = synchronized(keyLock) {
+        val file = File(context.filesDir, MEDIA_PASSPHRASE_FILE_NAME)
+        val atomicFile = AtomicFile(file)
+        if (file.exists() || File(file.path + ".bak").exists()) {
+            atomicFile.openRead().close()
+            readPassphrase(file)
+        } else {
+            val passphrase = generatePassphrase()
+            writePassphrase(file, passphrase)
+            passphrase
+        }
+    }
+
+    /**
+     * Re-wraps an imported media encryption key with this device's Android Keystore key.
+     */
+    fun replaceMediaPassphrase(passphrase: ByteArray) = synchronized(keyLock) {
+        require(passphrase.size == PASSPHRASE_LENGTH_BYTES) { "Invalid media passphrase" }
+        writePassphrase(File(context.filesDir, MEDIA_PASSPHRASE_FILE_NAME), passphrase)
     }
 
     private fun generatePassphrase(): ByteArray {

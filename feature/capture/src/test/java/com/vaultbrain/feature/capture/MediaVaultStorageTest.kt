@@ -17,6 +17,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 class MediaVaultStorageTest {
 
@@ -27,6 +30,7 @@ class MediaVaultStorageTest {
     private val keystoreManager = mockk<KeystoreManager>()
     private val contentResolver = mockk<ContentResolver>(relaxed = true)
 
+    private val mockMediaPassphrase = ByteArray(32) { (it + 1).toByte() }
     private val mockDatabasePassphrase = ByteArray(32) { it.toByte() }
 
     private lateinit var noBackupDir: File
@@ -52,6 +56,7 @@ class MediaVaultStorageTest {
         every { context.noBackupFilesDir } returns noBackupDir
         every { context.cacheDir } returns cacheDir
         every { context.contentResolver } returns contentResolver
+        every { keystoreManager.getOrCreateMediaPassphrase() } returns mockMediaPassphrase
         every { keystoreManager.getOrCreateDatabasePassphrase() } returns mockDatabasePassphrase
 
         storage = MediaVaultStorage(context, keystoreManager)
@@ -84,6 +89,33 @@ class MediaVaultStorageTest {
         assertNotNull(decryptedStream)
         val readBytes = decryptedStream!!.readBytes()
         assertArrayEquals(testData, readBytes)
+    }
+
+    @Test
+    fun `legacy format v1 encrypted file decrypts with database passphrase fallback`() = runTest {
+        val legacyData = "LEGACY_FORMAT_V1_PAYLOAD".toByteArray()
+        val iv = ByteArray(12).apply { for (i in indices) this[i] = i.toByte() }
+        val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+        cipher.init(
+            Cipher.ENCRYPT_MODE,
+            SecretKeySpec(mockDatabasePassphrase, "AES"),
+            GCMParameterSpec(128, iv)
+        )
+        val ciphertext = cipher.doFinal(legacyData)
+
+        val encryptedBytes = ByteArray(17 + ciphertext.size)
+        System.arraycopy(byteArrayOf(0x4E, 0x4D, 0x45, 0x44), 0, encryptedBytes, 0, 4)
+        encryptedBytes[4] = 1
+        System.arraycopy(iv, 0, encryptedBytes, 5, 12)
+        System.arraycopy(ciphertext, 0, encryptedBytes, 17, ciphertext.size)
+
+        val vaultDir = File(noBackupDir, "vault_media").apply { mkdirs() }
+        val legacyFile = File(vaultDir, "legacy_v1.jpg").apply { writeBytes(encryptedBytes) }
+        val legacyUri = Uri.fromFile(legacyFile)
+
+        val stream = storage.openInputStream(legacyUri)
+        assertNotNull(stream)
+        assertArrayEquals(legacyData, stream!!.readBytes())
     }
 
     @Test

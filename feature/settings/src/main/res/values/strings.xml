@@ -87,7 +87,7 @@
     <string name="settings_privacy_policy">Privacy policy</string>
     <string name="settings_privacy_summary">Privacy summary</string>
     <string name="settings_help_support_desc">Capture with the camera, import images or PDFs, paste text, or use voice. Review every item before saving, then edit its lens-specific fields from the item page. Cloud sync is intentionally unavailable in this build.</string>
-    <string name="settings_privacy_summary_desc">Vault items and imported media stay in app-private storage on this device. On-device OCR and analysis process captures locally. Cloud and Gmail integrations are disabled in this build. Exporting or sharing an item sends only the content you explicitly choose.</string>
+    <string name="settings_privacy_summary_desc">Vault items and imported media stay encrypted in app-private storage on this device. On-device OCR and analysis process captures locally. Cloud and Gmail integrations are disabled in this build. Search embeddings live in the app-private vector store without extra encryption; they stay on this device and are never sent to cloud AI. Exporting or sharing an item sends only the content you explicitly choose.</string>
     <string name="settings_done">Done</string>
     <string name="settings_security_health">Security Health</string>
     <string name="settings_auto_lock_after">Auto-lock after</string>
@@ -100,7 +100,6 @@
     <string name="settings_cloud_disclaimer">Cloud integrations remain off until OAuth and production API credentials are configured.</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_general">General</string>
-    <string name="settings_affiliate_links">Enable affiliate links</string>
     <string name="settings_version">Nemory v%1$s</string>
     <string name="settings_security_protected">Protected</string>
     <string name="settings_security_at_risk">At Risk - Set up PIN or Biometrics</string>
@@ -118,4 +117,20 @@
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_magic_screenshot">Magic Screenshot Detection (Ambient AI)</string>
     <string name="settings_magic_screenshot_permission">Storage permission is required</string>
+    <string name="settings_magic_screenshot_disclosure_title">Magic Screenshot Detection</string>
+    <string name="settings_magic_screenshot_disclosure_body">When enabled, Nemory monitors device screenshots so it can suggest saving useful captures (receipts, tickets, etc.) to your vault. Screenshot access happens locally and only when you choose to import. This feature is optional and can be turned off at any time.</string>
+    <string name="settings_magic_screenshot_agree">Enable</string>
+    <string name="settings_magic_screenshot_decline">Not now</string>
+    <string name="settings_screenshot_protection_disabled_title">Screenshots are not blocked</string>
+    <string name="settings_screenshot_protection_disabled_body">Your device and other apps can capture the Nemory screen. Keep this in mind when viewing sensitive documents in public or shared spaces.</string>
+    <string name="settings_screenshot_protection_disabled_ack">I understand</string>
+    <string name="pin_setup_title">Set PIN</string>
+    <string name="pin_setup_decoy_title">Set decoy PIN</string>
+    <string name="pin_setup_enter_subtitle">Choose a %1$d-digit PIN or longer</string>
+    <string name="pin_setup_confirm_subtitle">Re-enter the same PIN to confirm</string>
+    <string name="pin_setup_too_short">PIN must be at least %1$d digits</string>
+    <string name="pin_setup_mismatch">PINs do not match. Try again.</string>
+    <string name="pin_setup_continue">Continue</string>
+    <string name="pin_setup_confirm">Confirm</string>
+    <string name="pin_setup_backspace">Backspace</string>
 </resources>

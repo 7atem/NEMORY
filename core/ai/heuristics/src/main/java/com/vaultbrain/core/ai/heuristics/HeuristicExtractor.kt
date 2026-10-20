@@ -818,8 +818,6 @@ class HeuristicExtractor @Inject constructor() {
     private fun normalizeForMatching(text: String): String = text
         .lowercase()
         .replace(ARABIC_INDIC_DIGIT_PATTERN) { match -> (match.value[0] - '٠').toString() }
-        .replace('-', '-')
-        .replace('-', '-')
         .replace(NEWLINE_PATTERN, " ")
         .replace(MULTI_SPACE_PATTERN, " ")
         .replace("b0arding", "boarding")

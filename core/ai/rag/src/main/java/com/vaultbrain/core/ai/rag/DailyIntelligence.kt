@@ -46,12 +46,15 @@ class DailyIntelligence @Inject constructor(
         events: List<com.vaultbrain.core.integrations.model.ExternalRecord>,
         reminders: List<com.vaultbrain.shared.model.VaultReminder>
     ): List<DailyInsight> {
-        if (!model.isAvailable() || DecoySessionState.isDecoy.value) return emptyList()
+        if (DecoySessionState.isDecoy.value) return emptyList()
         val now = clock()
-        
-        // 1. Gather context from Vault, Calendar, Reminders
+
         val eligible = items.filter { !it.isArchived && !it.isStealth &&
             it.enrichmentState != com.vaultbrain.shared.model.EnrichmentState.SKIPPED_PRIVACY }
+        val deterministic = deterministicInsights(eligible, events, reminders, now)
+        if (!model.isAvailable()) return deterministic
+
+        // 1. Gather context from Vault, Calendar, Reminders
         val curatedItems = (eligible.filter { (it.expiryDate ?: Long.MAX_VALUE) in now..(now + 90L * 86_400_000) }
             .sortedBy { it.expiryDate } + eligible.sortedByDescending { it.updatedAt }).distinctBy { it.id }.take(8)
         val curatedEvents = events.filter { !it.isResolved && (it.expiresAt?.let { expiry -> expiry > now } ?: true) }
@@ -60,7 +63,7 @@ class DailyIntelligence @Inject constructor(
             it.status == com.vaultbrain.shared.model.VaultReminderStatus.SCHEDULED ||
                 it.status == com.vaultbrain.shared.model.VaultReminderStatus.SNOOZED
         }.sortedBy { it.dueAt }.take(6)
-            
+
         // 2. Execute deterministic proactive tools
         val missingDocs = toolRegistry.execute("missing documents")?.evidence?.supportingFacts.orEmpty()
         val spendIncreases = toolRegistry.execute("recurring spend increases")?.evidence?.supportingFacts.orEmpty()
@@ -68,9 +71,9 @@ class DailyIntelligence @Inject constructor(
         val billGapFacts = utilityBillGapFacts(billGaps, now)
 
         if (curatedItems.isEmpty() && events.isEmpty() && reminders.isEmpty() && missingDocs.isEmpty() && spendIncreases.isEmpty()) {
-            return emptyList()
+            return deterministic
         }
-        
+
         return try {
             val contextJson = buildJsonObject {
                 put("now_epoch_ms", now)
@@ -153,10 +156,136 @@ class DailyIntelligence @Inject constructor(
 
                 Pair(score, DailyInsight(itemId, title, quote, updatedAt))
             }.sortedByDescending { it.first }.map { it.second }.distinctBy { it.evidence }.take(3)
-            
+
             if (DecoySessionState.isDecoy.value) emptyList() else validated
         } catch (cancelled: CancellationException) { throw cancelled }
-        catch (_: Exception) { emptyList() }
+        catch (_: Exception) { deterministic }
+    }
+
+    /**
+     * Lightweight, fully deterministic insights that do not require any LLM.
+     * These are verifiable facts derived directly from vault items and reminders.
+     */
+    internal fun deterministicInsights(
+        items: List<VaultItem>,
+        events: List<com.vaultbrain.core.integrations.model.ExternalRecord>,
+        reminders: List<com.vaultbrain.shared.model.VaultReminder>,
+        now: Long
+    ): List<DailyInsight> {
+        val results = mutableListOf<DailyInsight>()
+        val thirtyDays = now + 30L * 86_400_000
+        val fourteenDays = now + 14L * 86_400_000
+
+        // 1. Documents expiring within 30 days.
+        items.filter { !it.isArchived && !it.isStealth }
+            .mapNotNull { item ->
+                val due = item.expiryDate ?: item.secondaryAlertDate
+                if (due != null && due in now..thirtyDays) {
+                    item to due
+                } else null
+            }
+            .sortedBy { it.second }
+            .take(2)
+            .forEach { (item, due) ->
+                results.add(
+                    DailyInsight(
+                        itemId = item.id,
+                        title = item.title,
+                        evidence = "Expires ${formatDate(due)} — review or renew soon.",
+                        sourceUpdatedAt = item.updatedAt
+                    )
+                )
+            }
+
+        // 2. Utility bill gaps.
+        utilityBillGapMerchants(items, now).forEach { merchant ->
+            val missingMonth = YearMonth.from(Instant.ofEpochMilli(now).atZone(ZoneId.systemDefault())).minusMonths(1)
+            results.add(
+                DailyInsight(
+                    itemId = "bill_gap:$merchant",
+                    title = "Missing $merchant bill",
+                    evidence = "No $merchant utility bill found for ${missingMonth.month.getDisplayName(TextStyle.FULL, Locale.getDefault())} ${missingMonth.year}.",
+                    sourceUpdatedAt = now
+                )
+            )
+        }
+
+        // 3. Upcoming trips without a hotel.
+        items.filter {
+            it.effectiveClassification in TRAVEL_CATEGORIES &&
+                (it.secondaryAlertDate ?: it.expiryDate ?: Long.MAX_VALUE) in now..fourteenDays
+        }.forEach { trip ->
+            val tripDate = trip.secondaryAlertDate ?: trip.expiryDate ?: now
+            val hasHotel = items.any {
+                it.id != trip.id &&
+                    it.effectiveClassification == Classification.HOTEL &&
+                    (it.secondaryAlertDate ?: it.expiryDate ?: 0L) in
+                        (tripDate - 2L * 86_400_000)..(tripDate + 2L * 86_400_000)
+            }
+            if (!hasHotel) {
+                results.add(
+                    DailyInsight(
+                        itemId = trip.id,
+                        title = trip.title,
+                        evidence = "Trip coming up — no hotel saved yet.",
+                        sourceUpdatedAt = trip.updatedAt
+                    )
+                )
+            }
+        }
+
+        // 4. Vehicles without saved insurance.
+        val vehicleIdentifiers = items.mapNotNull { item ->
+            val id = item.parsedMetadata["vin"] ?: item.parsedMetadata["license_plate"]
+            if (!id.isNullOrBlank()) item to id.lowercase() else null
+        }
+        vehicleIdentifiers.forEach { (vehicle, identifier) ->
+            val hasInsurance = items.any { candidate ->
+                candidate.id != vehicle.id &&
+                    candidate.parsedMetadata["policy_number"] != null &&
+                    candidate.parsedMetadata.values.any { value ->
+                        value.isNotBlank() && value.lowercase().contains(identifier)
+                    }
+            }
+            if (!hasInsurance) {
+                results.add(
+                    DailyInsight(
+                        itemId = vehicle.id,
+                        title = vehicle.title,
+                        evidence = "No saved insurance document for this vehicle.",
+                        sourceUpdatedAt = vehicle.updatedAt
+                    )
+                )
+            }
+        }
+
+        // 5. Reminders due in the next 7 days.
+        reminders.filter {
+            (it.status == com.vaultbrain.shared.model.VaultReminderStatus.SCHEDULED ||
+                it.status == com.vaultbrain.shared.model.VaultReminderStatus.SNOOZED) &&
+                it.dueAt in now..(now + 7L * 86_400_000)
+        }
+            .sortedBy { it.dueAt }
+            .take(2)
+            .forEach { reminder ->
+                results.add(
+                    DailyInsight(
+                        itemId = "reminder:${reminder.id}",
+                        title = reminder.title,
+                        evidence = "Due ${formatDate(reminder.dueAt)}.",
+                        sourceUpdatedAt = reminder.updatedAt
+                    )
+                )
+            }
+
+        return results.take(3)
+    }
+
+    private fun formatDate(timestamp: Long): String {
+        val date = java.time.Instant.ofEpochMilli(timestamp)
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+        return java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault()).format(date)
     }
 
     /** Days-to-expiry decay: near-term expiry is the strongest urgency signal. */
@@ -227,5 +356,13 @@ class DailyIntelligence @Inject constructor(
             runCatching { YearMonth.parse(period) }.getOrNull()?.let { return it }
         }
         return runCatching { YearMonth.from(Instant.ofEpochMilli(item.createdAt).atZone(zone)) }.getOrNull()
+    }
+
+    private companion object {
+        val TRAVEL_CATEGORIES = setOf(
+            Classification.TICKET,
+            Classification.FLIGHT_BOARDING_PASS,
+            Classification.EVENT
+        )
     }
 }
