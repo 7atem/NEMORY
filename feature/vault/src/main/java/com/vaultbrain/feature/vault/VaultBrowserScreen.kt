@@ -19,10 +19,7 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import com.vaultbrain.core.common.ui.getGridSpacing
-import com.vaultbrain.core.common.ui.getHorizontalPadding
-import com.vaultbrain.core.common.ui.RevealingAnimatedVisibility
-import com.vaultbrain.core.common.ui.standardExitAnimation
+import com.vaultbrain.core.common.ui.getMaxContentWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -134,7 +131,7 @@ fun VaultBrowserScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 internal fun VaultBrowserContent(
     state: VaultBrowserUiState,
@@ -224,7 +221,7 @@ internal fun VaultBrowserContent(
                 .fillMaxSize()
                 .padding(padding)
                 .wrapContentWidth(Alignment.CenterHorizontally)
-                .widthIn(max = 1000.dp)
+                .widthIn(max = getMaxContentWidth(windowWidthSizeClass))
         ) {
             if (state.demoMode) {
                 DemoModeBrowserBanner(
@@ -389,7 +386,8 @@ internal fun VaultBrowserContent(
                                         }
                                     },
                                     onLongClick = { onToggleSelection(item.id) },
-                                    onDelete = { onDeleteItem(item) }
+                                    onDelete = { onDeleteItem(item) },
+                                    modifier = Modifier.animateItemPlacement()
                                 )
                             }
                         }
@@ -409,7 +407,8 @@ internal fun VaultBrowserContent(
                                     }
                                 },
                                 onLongClick = { onToggleSelection(item.id) },
-                                onDelete = { onDeleteItem(item) }
+                                onDelete = { onDeleteItem(item) },
+                                modifier = Modifier.animateItemPlacement()
                             )
                         }
                     }
@@ -454,7 +453,8 @@ private fun SwipeableSelectableVaultItem(
     isSelectionMode: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->
@@ -495,7 +495,7 @@ private fun SwipeableSelectableVaultItem(
         }
     ) {
         Box(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.medium)
                 .semantics { selected = isSelected }

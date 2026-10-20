@@ -13,4 +13,6 @@
     <string name="crash_copy_log">Copy Log</string>
     <string name="crash_copy_warning">WARNING: May contain sensitive keys or PII!</string>
     <string name="crash_copied_toast">Copied to clipboard. Beware of sensitive data!</string>
+    <string name="nav_back">Back</string>
+    <string name="lens_add_item">Add to %1$s</string>
 </resources>

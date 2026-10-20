@@ -27,8 +27,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,6 +38,11 @@ import com.vaultbrain.feature.vault.components.PreviewData
 import com.vaultbrain.feature.vault.components.VaultItemCard
 import com.vaultbrain.feature.vault.home.AttentionItem
 import com.vaultbrain.feature.voice.OnDeviceVoiceCaptureDialog
+import com.vaultbrain.core.common.ui.getMaxContentWidth
+import com.vaultbrain.core.common.ui.getStaggeredEnter
+import com.vaultbrain.core.common.ui.RevealingAnimatedVisibility
+import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.compose.ui.unit.Dp
 
 import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.shared.model.VaultReminder
@@ -316,7 +319,8 @@ internal fun HomeContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding)
-                    .widthIn(max = 1000.dp),
+                    .imePadding()
+                    .widthIn(max = getMaxContentWidth(windowWidthSizeClass)),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 88.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
@@ -365,7 +369,7 @@ internal fun HomeContent(
                                 CollectionCard(
                                     collection = collection,
                                     onClick = { onCollectionClick(collection.id) },
-                                    modifier = Modifier.width(280.dp)
+                                    modifier = Modifier.width(rowCardWidth(windowWidthSizeClass))
                                 )
                             }
                         }
@@ -406,7 +410,8 @@ internal fun HomeContent(
                                             Text(
                                                 text = insight.title,
                                                 style = MaterialTheme.typography.titleSmall,
-                                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.weight(1f)
                                             )
                                             IconButton(onClick = { onDismissInsight(insight) }) {
                                                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.home_dismiss_insight))
@@ -602,17 +607,17 @@ internal fun HomeContent(
                     } else {
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             itemsIndexed(state.recentItems, key = { _, it -> it.id }) { index, item ->
-                                val itemAlpha by animateFloatAsState(
-                                    targetValue = 1f,
-                                    animationSpec = tween(durationMillis = 500, delayMillis = index * 60),
-                                    label = "itemAlpha"
-                                )
-                                VaultItemCard(
-                                    item = item,
-                                    onClick = { onItemClick(item.id) },
-                                    onArchive = if (item.id in state.demoItemIds) null else ({ onArchiveItem(item) }),
-                                    modifier = Modifier.width(280.dp).graphicsLayer { alpha = itemAlpha }
-                                )
+                                RevealingAnimatedVisibility(
+                                    visible = true,
+                                    enter = getStaggeredEnter(index, state.recentItems.size)
+                                ) {
+                                    VaultItemCard(
+                                        item = item,
+                                        onClick = { onItemClick(item.id) },
+                                        onArchive = if (item.id in state.demoItemIds) null else ({ onArchiveItem(item) }),
+                                        modifier = Modifier.width(rowCardWidth(windowWidthSizeClass))
+                                    )
+                                }
                             }
                         }
                     }
@@ -1059,6 +1064,17 @@ private fun greetingText(): String {
             else -> R.string.home_greeting_evening
         }
     )
+}
+
+/**
+ * Adaptive width for horizontal-row cards (collections, recent items).
+ * Larger form factors get larger cards so the layout breathes on tablets.
+ */
+@Composable
+private fun rowCardWidth(windowWidthSizeClass: WindowWidthSizeClass): Dp = when (windowWidthSizeClass) {
+    WindowWidthSizeClass.Medium -> 300.dp
+    WindowWidthSizeClass.Expanded -> 340.dp
+    else -> 280.dp
 }
 
 @Composable

@@ -201,7 +201,7 @@ fun VaultItemCard(
                             .data(uri)
                             .crossfade(true)
                             .build(),
-                        contentDescription = "Image for ${item.title}",
+                        contentDescription = stringResource(R.string.vault_item_image_desc, item.title),
                         modifier = imageModifier,
                         contentScale = ContentScale.Crop
                     )
@@ -517,10 +517,11 @@ fun ConfidenceGauge(confidence: Float, modifier: Modifier = Modifier) {
         confidence >= 0.5f -> Color(0xFFFFC107)
         else -> Color(0xFFF44336)
     }
+    val label = stringResource(R.string.confidence_percent, (confidence * 100).toInt())
     Row(
-        modifier = modifier.semantics { 
-            contentDescription = "${(confidence * 100).toInt()}% Confidence" 
-        }, 
+        modifier = modifier.semantics {
+            contentDescription = label
+        },
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -530,7 +531,7 @@ fun ConfidenceGauge(confidence: Float, modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
-            text = "${(confidence * 100).toInt()}% Confidence",
+            text = label,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

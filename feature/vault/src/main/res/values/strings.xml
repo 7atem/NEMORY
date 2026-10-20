@@ -337,4 +337,7 @@
     <string name="auth_continue">Continue</string>
     <string name="auth_create_unlock">Create PIN &amp; Unlock</string>
     <string name="auth_use_biometrics">Use biometrics</string>
+    <string name="vault_item_image_desc">Image for %1$s</string>
+    <string name="confidence_percent">%1$d%% confidence</string>
+    <string name="nav_back">Back</string>
 </resources>

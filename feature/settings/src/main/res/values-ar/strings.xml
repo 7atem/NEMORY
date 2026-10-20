@@ -133,4 +133,5 @@
     <string name="pin_setup_continue">متابعة</string>
     <string name="pin_setup_confirm">تأكيد</string>
     <string name="pin_setup_backspace">مسح رقم</string>
+    <string name="nav_back">رجوع</string>
 </resources>

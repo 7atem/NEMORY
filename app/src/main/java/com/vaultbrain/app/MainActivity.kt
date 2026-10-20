@@ -70,7 +70,7 @@ class MainActivity : FragmentActivity() {
             val crashFile = java.io.File(filesDir, "vaultbrain_crash.txt")
             if (crashFile.exists()) {
                 val crashText = crashFile.readText()
-                MaterialTheme {
+                VaultBrainTheme(darkTheme = androidx.compose.foundation.isSystemInDarkTheme()) {
                     androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
                         val lines = crashText.lines()
                         androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {

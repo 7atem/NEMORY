@@ -13,4 +13,6 @@
     <string name="crash_copy_log">نسخ السجل</string>
     <string name="crash_copy_warning">تحذير: قد يحتوي على مفاتيح حساسة أو بيانات شخصية!</string>
     <string name="crash_copied_toast">تم النسخ إلى الحافظة. احذر من البيانات الحساسة!</string>
+    <string name="nav_back">رجوع</string>
+    <string name="lens_add_item">إضافة إلى %1$s</string>
 </resources>

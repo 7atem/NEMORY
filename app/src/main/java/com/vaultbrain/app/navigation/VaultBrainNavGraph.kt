@@ -539,7 +539,7 @@ private fun LensRouterScreen(
                     androidx.compose.material3.IconButton(onClick = onBack) {
                         Icon(
                             imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.nav_back)
                         )
                     }
                 }
@@ -547,7 +547,10 @@ private fun LensRouterScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { onAdd(lensId) }) {
-                Icon(androidx.compose.material.icons.Icons.Default.Add, contentDescription = "Add to ${state.title.ifBlank { lensId }}")
+                Icon(
+                    androidx.compose.material.icons.Icons.Default.Add,
+                    contentDescription = stringResource(R.string.lens_add_item, state.title.ifBlank { lensId })
+                )
             }
         }
     ) { innerPadding ->
