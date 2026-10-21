@@ -333,6 +333,15 @@ interface VaultItemDao {
 
     @Query("UPDATE vault_items SET user_notes = :notes, user_edited_at = :now, updated_at = :now WHERE id = :id")
     suspend fun updateNotes(id: String, notes: String?, now: Long)
+
+    @Query("UPDATE vault_items SET expiry_date = :expiryDate, secondary_alert_date = :secondaryAlertDate, updated_at = :now WHERE id = :id")
+    suspend fun updateDates(id: String, expiryDate: Long?, secondaryAlertDate: Long?, now: Long)
+
+    @Query("UPDATE vault_items SET title = :title, summary = :summary, user_edited_at = :now, updated_at = :now WHERE id = :id")
+    suspend fun updateCoreFields(id: String, title: String, summary: String?, now: Long)
+
+    @Query("UPDATE vault_items SET capture_latitude = :latitude, capture_longitude = :longitude, location_name = :locationName, updated_at = :now WHERE id = :id")
+    suspend fun updateLocation(id: String, latitude: Double?, longitude: Double?, locationName: String?, now: Long)
 }
 
 private fun VaultItemEntity.preserveConcurrentUserEditsFrom(current: VaultItemEntity): VaultItemEntity {

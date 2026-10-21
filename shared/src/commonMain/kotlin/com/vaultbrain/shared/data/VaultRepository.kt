@@ -290,8 +290,44 @@ class VaultRepository(private val database: SharedVaultDatabase) {
                 userNotes = entity.userNotes,
                 isArchived = entity.isArchived,
                 isPinned = entity.isPinned,
+                expiryDateMillis = entity.expiryDate ?: 0,
+                secondaryAlertDateMillis = entity.secondaryAlertDate ?: 0,
+                locationName = entity.locationName,
+                latitude = entity.captureLatitude ?: Double.NaN,
+                longitude = entity.captureLongitude ?: Double.NaN,
             )
         }
+
+    /** Sets or clears expiry/alert dates. A 0 millis means "clear". */
+    suspend fun setItemDates(id: String, expiryMillis: Long, alertMillis: Long) {
+        items.updateDates(
+            id = id,
+            expiryDate = expiryMillis.takeIf { it > 0 },
+            secondaryAlertDate = alertMillis.takeIf { it > 0 },
+            now = currentTimeMillis(),
+        )
+    }
+
+    /** Updates title and summary. A blank summary clears it. */
+    suspend fun updateItemCore(id: String, title: String, summary: String) {
+        items.updateCoreFields(
+            id = id,
+            title = title.trim().ifEmpty { "Untitled" },
+            summary = summary.trim().takeIf { it.isNotEmpty() },
+            now = currentTimeMillis(),
+        )
+    }
+
+    /** Attaches capture coordinates and a human-readable place name to an item. */
+    suspend fun setItemLocation(id: String, latitude: Double, longitude: Double, locationName: String) {
+        items.updateLocation(
+            id = id,
+            latitude = latitude,
+            longitude = longitude,
+            locationName = locationName.takeIf { it.isNotBlank() },
+            now = currentTimeMillis(),
+        )
+    }
 
     suspend fun renameCollection(id: String, name: String) {
         database.personalCollectionDao().rename(id, name, currentTimeMillis())

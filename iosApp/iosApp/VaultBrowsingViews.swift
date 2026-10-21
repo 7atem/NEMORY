@@ -15,6 +15,12 @@ struct VaultItemDetailView: View {
     @State private var notesDraft = ""
     @State private var notesLoaded = false
     @State private var showingDeleteConfirm = false
+    @State private var showingEditSheet = false
+    @State private var expiryEnabled = false
+    @State private var expiryDate = Date()
+    @State private var alertEnabled = false
+    @State private var alertDate = Date()
+    @State private var datesLoaded = false
 
     var body: some View {
         Group {
@@ -44,8 +50,28 @@ struct VaultItemDetailView: View {
                         if !detail.lensTags.isEmpty {
                             LabeledContent("Lenses", value: detail.lensTags.joined(separator: ", "))
                         }
+                        if let location = detail.locationName {
+                            LabeledContent("Location", value: location)
+                        }
                         LabeledContent("Created", value: formattedDate(detail.createdAtMillis))
                         LabeledContent("Updated", value: formattedDate(detail.updatedAtMillis))
+                    }
+                    Section {
+                        Toggle("Expiry date", isOn: $expiryEnabled)
+                        if expiryEnabled {
+                            DatePicker("Expires", selection: $expiryDate, displayedComponents: [.date])
+                        }
+                        Toggle("Reminder alert", isOn: $alertEnabled)
+                        if alertEnabled {
+                            DatePicker("Remind me", selection: $alertDate, displayedComponents: [.date])
+                        }
+                        Button("Save dates") {
+                            saveDates()
+                        }
+                        .disabled(!datesChanged())
+                        .accessibilityIdentifier("itemSaveDates")
+                    } header: {
+                        Text("Dates")
                     }
                     Section {
                         TextEditor(text: $notesDraft)
@@ -75,6 +101,11 @@ struct VaultItemDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Menu {
+                    Button {
+                        showingEditSheet = true
+                    } label: {
+                        Label("Edit title & summary", systemImage: "pencil")
+                    }
                     Button {
                         bridge.setItemPinned(id: itemId, pinned: !(detail?.isPinned ?? false)) { reload() }
                     } label: {
@@ -122,6 +153,16 @@ struct VaultItemDetailView: View {
         .sheet(isPresented: $showingCollectionsSheet) {
             ItemCollectionsSheet(itemId: itemId)
         }
+        .sheet(isPresented: $showingEditSheet) {
+            if let detail {
+                EditItemSheet(title: detail.title, summary: detail.summary ?? "") { newTitle, newSummary in
+                    bridge.updateItemCore(id: itemId, title: newTitle, summary: newSummary) {
+                        IosHomeBridge.shared.impactLight()
+                        reload()
+                    }
+                }
+            }
+        }
         .onAppear {
             guard !didLoad else { return }
             didLoad = true
@@ -136,14 +177,42 @@ struct VaultItemDetailView: View {
                 notesDraft = loaded?.userNotes ?? ""
                 notesLoaded = true
             }
+            if !datesLoaded, let loaded {
+                expiryEnabled = loaded.expiryDateMillis > 0
+                expiryDate = loaded.expiryDateMillis > 0
+                    ? Date(timeIntervalSince1970: TimeInterval(loaded.expiryDateMillis) / 1000.0)
+                    : Date().addingTimeInterval(7 * 24 * 60 * 60)
+                alertEnabled = loaded.secondaryAlertDateMillis > 0
+                alertDate = loaded.secondaryAlertDateMillis > 0
+                    ? Date(timeIntervalSince1970: TimeInterval(loaded.secondaryAlertDateMillis) / 1000.0)
+                    : Date().addingTimeInterval(6 * 24 * 60 * 60)
+                datesLoaded = true
+            }
             if let path = loaded?.capturedImageUri {
                 capturedImage = UIImage(contentsOfFile: path)
             }
         }
     }
 
+    private func datesChanged() -> Bool {
+        guard let detail else { return false }
+        let currentExpiry = expiryEnabled ? Int64(expiryDate.timeIntervalSince1970 * 1000) : 0
+        let currentAlert = alertEnabled ? Int64(alertDate.timeIntervalSince1970 * 1000) : 0
+        return currentExpiry != detail.expiryDateMillis || currentAlert != detail.secondaryAlertDateMillis
+    }
+
+    private func saveDates() {
+        let expiryMillis = expiryEnabled ? Int64(expiryDate.timeIntervalSince1970 * 1000) : 0
+        let alertMillis = alertEnabled ? Int64(alertDate.timeIntervalSince1970 * 1000) : 0
+        bridge.setItemDates(id: itemId, expiryMillis: expiryMillis, alertMillis: alertMillis) {
+            IosHomeBridge.shared.impactLight()
+            reload()
+        }
+    }
+
     private func saveNotes() {
         bridge.updateItemNotes(id: itemId, notes: notesDraft) {
+            IosHomeBridge.shared.impactLight()
             reload()
         }
     }
@@ -435,5 +504,47 @@ struct ItemCollectionsSheet: View {
                 memberIds = Set(summaries.map { $0.id })
             }
         }
+    }
+}
+
+// MARK: - Edit title & summary
+
+private struct EditItemSheet: View {
+    let onSave: (String, String) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State var title: String
+    @State var summary: String
+
+    init(title: String, summary: String, onSave: @escaping (String, String) -> Void) {
+        self.onSave = onSave
+        _title = State(initialValue: title)
+        _summary = State(initialValue: summary)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("Title", text: $title)
+                    .accessibilityIdentifier("editItemTitle")
+                TextField("Summary", text: $summary, axis: .vertical)
+                    .lineLimit(2...5)
+                    .accessibilityIdentifier("editItemSummary")
+            }
+            .navigationTitle("Edit Item")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(title, summary)
+                        dismiss()
+                    }
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .accessibilityIdentifier("editItemSave")
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }

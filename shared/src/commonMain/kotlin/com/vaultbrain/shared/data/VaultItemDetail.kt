@@ -15,4 +15,12 @@ data class VaultItemDetail(
     val userNotes: String? = null,
     val isArchived: Boolean = false,
     val isPinned: Boolean = false,
+    /** Expiry moment in millis; 0 = none. */
+    val expiryDateMillis: Long = 0,
+    /** Secondary reminder moment in millis; 0 = none. */
+    val secondaryAlertDateMillis: Long = 0,
+    val locationName: String? = null,
+    /** Capture coordinates; NaN = none. */
+    val latitude: Double = Double.NaN,
+    val longitude: Double = Double.NaN,
 )

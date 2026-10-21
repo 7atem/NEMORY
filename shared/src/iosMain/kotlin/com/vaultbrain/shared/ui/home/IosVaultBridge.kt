@@ -108,6 +108,30 @@ object IosVaultBridge {
         }
     }
 
+    /** Sets or clears dates; pass 0 millis to clear a date. */
+    fun setItemDates(id: String, expiryMillis: Long, alertMillis: Long, onDone: () -> Unit) {
+        scope.launch {
+            repository.setItemDates(id, expiryMillis, alertMillis)
+            onDone()
+        }
+    }
+
+    /** Updates title and summary; a blank summary clears it. */
+    fun updateItemCore(id: String, title: String, summary: String, onDone: () -> Unit) {
+        scope.launch {
+            repository.updateItemCore(id, title, summary)
+            onDone()
+        }
+    }
+
+    /** Attaches capture coordinates to an item. */
+    fun setItemLocation(id: String, latitude: Double, longitude: Double, locationName: String, onDone: () -> Unit) {
+        scope.launch {
+            repository.setItemLocation(id, latitude, longitude, locationName)
+            onDone()
+        }
+    }
+
     // endregion
 
     // region Collections

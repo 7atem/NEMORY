@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import PhotosUI
+import CoreLocation
 import shared
 
 // MARK: - Capture sheet
@@ -15,6 +16,7 @@ struct CaptureSheet: View {
     @State private var showCamera = false
     @State private var showGallery = false
     @State private var importFailed = false
+    @State private var includeLocation = true
 
     var body: some View {
         NavigationStack {
@@ -46,6 +48,11 @@ struct CaptureSheet: View {
                         .foregroundStyle(.red)
                 }
 
+                Toggle("Include location", isOn: $includeLocation)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("captureIncludeLocation")
+
                 Spacer()
             }
             .padding()
@@ -76,6 +83,8 @@ struct CaptureSheet: View {
         importFailed = false
         let group = DispatchGroup()
         var failures = 0
+        let idsLock = NSLock()
+        var importedIds: [String] = []
 
         for image in images {
             guard let jpeg = image.jpegData(compressionQuality: 0.9) else {
@@ -88,9 +97,14 @@ struct CaptureSheet: View {
                 continue
             }
             group.enter()
-            bridge.importCapturedImage(tempPath: tempPath, sourceName: source) { _ in
+            bridge.importCapturedImage(tempPath: tempPath, sourceName: source) { itemId in
                 // Temp file cleanup also happens on the Kotlin side; best-effort here.
                 try? FileManager.default.removeItem(atPath: tempPath)
+                if let itemId {
+                    idsLock.lock()
+                    importedIds.append(itemId)
+                    idsLock.unlock()
+                }
                 group.leave()
             }
         }
@@ -98,9 +112,58 @@ struct CaptureSheet: View {
         group.notify(queue: .main) {
             importFailed = failures > 0
             if failures == 0 {
-                dismiss()
+                if includeLocation && !importedIds.isEmpty {
+                    attachLocation(to: importedIds) { dismiss() }
+                } else {
+                    dismiss()
+                }
             }
         }
+    }
+
+    private func attachLocation(to itemIds: [String], completion: @escaping () -> Void) {
+        LocationFetcher().requestOnce { location in
+            guard let location else {
+                completion()
+                return
+            }
+            let name = String(format: "%.4f, %.4f", location.coordinate.latitude, location.coordinate.longitude)
+            let group = DispatchGroup()
+            for id in itemIds {
+                group.enter()
+                bridge.setItemLocation(id: id, latitude: location.coordinate.latitude,
+                                       longitude: location.coordinate.longitude, locationName: name) {
+                    group.leave()
+                }
+            }
+            group.notify(queue: .main) {
+                completion()
+            }
+        }
+    }
+}
+
+// MARK: - One-shot location
+
+final class LocationFetcher: NSObject, CLLocationManagerDelegate {
+    private let manager = CLLocationManager()
+    private var completion: ((CLLocation?) -> Void)?
+
+    func requestOnce(_ completion: @escaping (CLLocation?) -> Void) {
+        self.completion = completion
+        manager.delegate = self
+        manager.requestWhenInUseAuthorization()
+        manager.requestLocation()
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        completion?(locations.first)
+        completion = nil
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        completion?(nil)
+        completion = nil
     }
 }
 

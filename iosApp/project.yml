@@ -21,10 +21,11 @@ targets:
       path: iosApp/Info.plist
       properties:
         CADisableMinimumFrameDurationOnPhone: true
-        CFBundleVersion: "10"
+        CFBundleVersion: "11"
         NSFaceIDUsageDescription: "Nemory uses Face ID to demo the shared authentication layer."
         NSCameraUsageDescription: "Nemory uses the camera to capture documents and photos into your vault."
         NSPhotoLibraryUsageDescription: "Nemory lets you pick photos from your library to store in your vault."
+        NSLocationWhenInUseUsageDescription: "Nemory can attach your current location to captures so you remember where they happened."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nemory.ios.sample
