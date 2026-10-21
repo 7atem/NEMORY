@@ -5,6 +5,7 @@ import com.vaultbrain.shared.data.VaultItemDetail
 import com.vaultbrain.shared.data.VaultItemSummary
 import com.vaultbrain.shared.data.VaultRepository
 import com.vaultbrain.shared.database.getSharedVaultDatabase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
 
@@ -62,6 +63,41 @@ object IosVaultBridge {
     fun createCollection(name: String, onDone: () -> Unit) {
         scope.launch {
             repository.createCollection(name)
+            onDone()
+        }
+    }
+
+    // endregion
+
+    // region Membership
+
+    private val itemCollectionObservers = mutableMapOf<String, Job>()
+    private val collectionItemObservers = mutableMapOf<String, Job>()
+
+    /** Starts pushing the collections containing [itemId] to [onChange]. One observer per item id. */
+    fun startObservingCollectionsForItem(itemId: String, onChange: (List<CollectionSummary>) -> Unit) {
+        if (itemCollectionObservers.containsKey(itemId)) return
+        itemCollectionObservers[itemId] = scope.launch {
+            repository.observeCollectionsForItem(itemId).collect { summaries ->
+                onChange(summaries)
+            }
+        }
+    }
+
+    /** Starts pushing the items inside [collectionId] to [onChange]. One observer per collection id. */
+    fun startObservingCollectionItems(collectionId: String, onChange: (List<VaultItemSummary>) -> Unit) {
+        if (collectionItemObservers.containsKey(collectionId)) return
+        collectionItemObservers[collectionId] = scope.launch {
+            repository.observeCollectionItems(collectionId).collect { summaries ->
+                onChange(summaries)
+            }
+        }
+    }
+
+    /** Adds or removes [itemId] from [collectionId]. */
+    fun setItemInCollection(itemId: String, collectionId: String, member: Boolean, onDone: () -> Unit) {
+        scope.launch {
+            repository.setItemInCollection(itemId = itemId, collectionId = collectionId, member = member)
             onDone()
         }
     }

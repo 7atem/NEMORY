@@ -1,6 +1,7 @@
 package com.vaultbrain.shared.data
 
 import com.vaultbrain.shared.database.SharedVaultDatabase
+import com.vaultbrain.shared.database.dao.PersonalCollectionRow
 import com.vaultbrain.shared.database.entity.VaultItemEntity
 import com.vaultbrain.shared.model.SourceType
 import com.vaultbrain.shared.util.currentTimeMillis
@@ -52,15 +53,7 @@ class VaultRepository(private val database: SharedVaultDatabase) {
     /** Live view of active collections with item counts. */
     fun observeCollections(): Flow<List<CollectionSummary>> =
         database.personalCollectionDao().observeActive().map { rows ->
-            rows.map { row ->
-                CollectionSummary(
-                    id = row.id,
-                    name = row.name,
-                    itemCount = row.itemCount,
-                    createdAtMillis = row.createdAt,
-                    isPinned = row.isPinned,
-                )
-            }
+            rows.map { it.toSummary() }
         }
 
     /** Creates a user collection and returns its id. */
@@ -77,6 +70,38 @@ class VaultRepository(private val database: SharedVaultDatabase) {
         )
         return id
     }
+
+    // region Membership
+
+    /** Live view of the collections that contain [itemId]. */
+    fun observeCollectionsForItem(itemId: String): Flow<List<CollectionSummary>> =
+        database.personalCollectionDao().observeForItem(itemId).map { rows ->
+            rows.map { it.toSummary() }
+        }
+
+    /** Live view of the items inside one collection. */
+    fun observeCollectionItems(collectionId: String): Flow<List<VaultItemSummary>> =
+        database.personalCollectionDao().observeItems(collectionId).map { list ->
+            list.map { it.toSummary() }
+        }
+
+    /** Adds or removes [itemId] from [collectionId]. */
+    suspend fun setItemInCollection(itemId: String, collectionId: String, member: Boolean) {
+        val dao = database.personalCollectionDao()
+        if (member) {
+            dao.insertMembership(
+                com.vaultbrain.shared.database.entity.PersonalCollectionMembershipEntity(
+                    collectionId = collectionId,
+                    itemId = itemId,
+                    createdAt = currentTimeMillis(),
+                )
+            )
+        } else {
+            dao.removeMembership(collectionId = collectionId, itemId = itemId)
+        }
+    }
+
+    // endregion
 
     // endregion
 
@@ -106,6 +131,16 @@ class VaultRepository(private val database: SharedVaultDatabase) {
             summary = summary,
             createdAtMillis = createdAt,
             lensTags = parseLensTags(lensTags),
+        )
+    }
+
+    private fun PersonalCollectionRow.toSummary(): CollectionSummary {
+        return CollectionSummary(
+            id = id,
+            name = name,
+            itemCount = itemCount,
+            createdAtMillis = createdAt,
+            isPinned = isPinned,
         )
     }
 

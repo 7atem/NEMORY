@@ -9,6 +9,7 @@ struct VaultItemDetailView: View {
 
     @State private var detail: VaultItemDetail?
     @State private var didLoad = false
+    @State private var showingCollectionsSheet = false
 
     var body: some View {
         Group {
@@ -39,6 +40,20 @@ struct VaultItemDetailView: View {
             }
         }
         .navigationTitle(detail?.title ?? "Item")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showingCollectionsSheet = true
+                } label: {
+                    Image(systemName: "folder.badge.plus")
+                }
+                .accessibilityIdentifier("itemManageCollections")
+                .disabled(detail == nil)
+            }
+        }
+        .sheet(isPresented: $showingCollectionsSheet) {
+            ItemCollectionsSheet(itemId: itemId)
+        }
         .onAppear {
             guard !didLoad else { return }
             didLoad = true
@@ -76,6 +91,12 @@ struct CollectionsListView: View {
             } else {
                 List {
                     ForEach(collections, id: \.id) { collection in
+                        NavigationLink {
+                            CollectionDetailView(
+                                collectionId: collection.id,
+                                collectionName: collection.name
+                            )
+                        } label: {
                         HStack {
                             if collection.isPinned {
                                 Image(systemName: "pin.fill")
@@ -89,6 +110,7 @@ struct CollectionsListView: View {
                                     .foregroundStyle(.secondary)
                             }
                             .accessibilityIdentifier("collection_\(collection.id)")
+                        }
                         }
                     }
                 }
@@ -149,5 +171,134 @@ private struct CreateCollectionSheet: View {
             }
         }
         .presentationDetents([.medium])
+    }
+}
+
+// MARK: - Collection detail
+
+/// Items inside one collection, live from the shared Room database.
+struct CollectionDetailView: View {
+    let collectionId: String
+    let collectionName: String
+    private let bridge = IosVaultBridge.shared
+
+    @State private var items: [VaultItemSummary] = []
+    @State private var didStartObserving = false
+
+    var body: some View {
+        Group {
+            if items.isEmpty {
+                ContentUnavailableView {
+                    Label("No items yet", systemImage: "tray")
+                } description: {
+                    Text("Open any vault item and use the folder button to add it to this collection.")
+                }
+            } else {
+                List {
+                    ForEach(items, id: \.id) { item in
+                        NavigationLink {
+                            VaultItemDetailView(itemId: item.id)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.title)
+                                    .font(.headline)
+                                if let summary = item.summary {
+                                    Text(summary)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .accessibilityIdentifier("collectionItem_\(item.id)")
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(collectionName)
+        .onAppear {
+            guard !didStartObserving else { return }
+            didStartObserving = true
+            bridge.startObservingCollectionItems(collectionId: collectionId) { summaries in
+                items = summaries
+            }
+        }
+    }
+}
+
+// MARK: - Item membership sheet
+
+/// Lists every collection with a checkmark for the ones containing this item.
+/// Tapping a row adds or removes the membership in the shared database.
+struct ItemCollectionsSheet: View {
+    let itemId: String
+    private let bridge = IosVaultBridge.shared
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var allCollections: [CollectionSummary] = []
+    @State private var memberIds: Set<String> = []
+    @State private var didStartObserving = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if allCollections.isEmpty {
+                    ContentUnavailableView {
+                        Label("No collections yet", systemImage: "folder.badge.plus")
+                    } description: {
+                        Text("Create a collection first, then come back to file this item.")
+                    }
+                } else {
+                    List {
+                        ForEach(allCollections, id: \.id) { collection in
+                            Button {
+                                let isMember = memberIds.contains(collection.id)
+                                bridge.setItemInCollection(
+                                    itemId: itemId,
+                                    collectionId: collection.id,
+                                    member: !isMember
+                                ) { }
+                            } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(collection.name)
+                                            .font(.headline)
+                                            .foregroundStyle(.primary)
+                                        Text("\(collection.itemCount) item\(collection.itemCount == 1 ? "" : "s")")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if memberIds.contains(collection.id) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.tint)
+                                    } else {
+                                        Image(systemName: "circle")
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                            }
+                            .accessibilityIdentifier("membership_\(collection.id)")
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Collections")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .onAppear {
+            guard !didStartObserving else { return }
+            didStartObserving = true
+            bridge.startObservingCollections { summaries in
+                allCollections = summaries
+            }
+            bridge.startObservingCollectionsForItem(itemId: itemId) { summaries in
+                memberIds = Set(summaries.map { $0.id })
+            }
+        }
     }
 }
