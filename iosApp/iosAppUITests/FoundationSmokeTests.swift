@@ -19,6 +19,7 @@ final class FoundationSmokeTests: XCTestCase {
 
     func testSharedDetectionAndLanguageSwitch() {
         app.launch()
+        openSample()
 
         let result = app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: 15))
@@ -40,6 +41,7 @@ final class FoundationSmokeTests: XCTestCase {
 
     func testLanguageToggleChurnRestoresHeaders() {
         app.launch()
+        openSample()
 
         let toggle = languageToggle
         XCTAssertTrue(toggle.waitForExistence(timeout: 15))
@@ -64,6 +66,7 @@ final class FoundationSmokeTests: XCTestCase {
 
     func testArabicModeAppliesLayoutAndKeepsSharedResult() {
         app.launch()
+        openSample()
 
         let result = app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch
         XCTAssertTrue(result.waitForExistence(timeout: 15))
@@ -82,6 +85,15 @@ final class FoundationSmokeTests: XCTestCase {
         sleep(2)
         XCTAssertTrue(element(labelContaining: "Grocery receipts").waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any).matching(identifier: "sharedDetectionResult").firstMatch.waitForExistence(timeout: 15))
+    }
+
+    /// The app now launches into a home shell; navigate into the bilingual
+    /// sample before asserting on its elements.
+    private func openSample() {
+        let entry = app.descendants(matching: .any).matching(identifier: "openSample").firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 15))
+        entry.tap()
+        XCTAssertTrue(languageToggle.waitForExistence(timeout: 15))
     }
 
     private func capture(_ name: String) {
