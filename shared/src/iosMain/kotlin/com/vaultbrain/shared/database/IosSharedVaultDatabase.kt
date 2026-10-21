@@ -28,7 +28,7 @@ fun getSharedVaultDatabase(): SharedVaultDatabase {
 
     return Room.databaseBuilder<SharedVaultDatabase>(
         name = dbPath,
-        factory = { SharedVaultDatabase::class.instantiateImpl() },
+        factory = { SharedVaultDatabaseConstructor.initialize() },
     )
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.Default)
