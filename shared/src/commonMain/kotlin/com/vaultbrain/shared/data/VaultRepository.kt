@@ -47,6 +47,58 @@ class VaultRepository(private val database: SharedVaultDatabase) {
         items.deleteById(id)
     }
 
+    // region Collections
+
+    /** Live view of active collections with item counts. */
+    fun observeCollections(): Flow<List<CollectionSummary>> =
+        database.personalCollectionDao().observeActive().map { rows ->
+            rows.map { row ->
+                CollectionSummary(
+                    id = row.id,
+                    name = row.name,
+                    itemCount = row.itemCount,
+                    createdAtMillis = row.createdAt,
+                    isPinned = row.isPinned,
+                )
+            }
+        }
+
+    /** Creates a user collection and returns its id. */
+    suspend fun createCollection(name: String): String {
+        val now = currentTimeMillis()
+        val id = "ios-collection-$now"
+        database.personalCollectionDao().insertCollection(
+            com.vaultbrain.shared.database.entity.PersonalCollectionEntity(
+                id = id,
+                name = name,
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+        return id
+    }
+
+    // endregion
+
+    // region Item detail
+
+    /** Loads full detail for one item, or null if it no longer exists. */
+    suspend fun getItemDetail(id: String): VaultItemDetail? =
+        items.getById(id)?.let { entity ->
+            VaultItemDetail(
+                id = entity.id,
+                title = entity.title,
+                summary = entity.summary,
+                rawOcrText = entity.rawOcrText,
+                sourceTypeName = entity.sourceType.name,
+                lensTags = parseLensTags(entity.lensTags),
+                createdAtMillis = entity.createdAt,
+                updatedAtMillis = entity.updatedAt,
+            )
+        }
+
+    // endregion
+
     private fun VaultItemEntity.toSummary(): VaultItemSummary {
         return VaultItemSummary(
             id = id,

@@ -22,27 +22,35 @@ struct VaultListView: View {
             } else {
                 List {
                     ForEach(items, id: \.id) { item in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(item.title)
-                                .font(.headline)
-                            if let summary = item.summary {
-                                Text(summary)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                            HStack {
-                                Text(formattedDate(item.createdAtMillis))
-                                if !item.lensTags.isEmpty {
-                                    Text("·")
-                                    Text(item.lensTags.joined(separator: ", "))
+                        NavigationLink {
+                            VaultItemDetailView(itemId: item.id)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(item.title)
+                                    .font(.headline)
+                                if let summary = item.summary {
+                                    Text(summary)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
                                 }
+                                HStack {
+                                    Text(formattedDate(item.createdAtMillis))
+                                    if !item.lensTags.isEmpty {
+                                        Text("·")
+                                        Text(item.lensTags.joined(separator: ", "))
+                                    }
+                                }
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                             }
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .accessibilityIdentifier("vaultItem_\(item.id)")
                         }
-                        .accessibilityIdentifier("vaultItem_\(item.id)")
+                        .swipeActions {
+                            Button("Delete", role: .destructive) {
+                                bridge.deleteItem(id: item.id) { }
+                            }
+                        }
                     }
-                    .onDelete(perform: deleteItems)
                 }
             }
         }
@@ -64,13 +72,6 @@ struct VaultListView: View {
 
     private func addItem() {
         bridge.addSampleItem { }
-    }
-
-    private func deleteItems(at offsets: IndexSet) {
-        for index in offsets {
-            let id = items[index].id
-            bridge.deleteItem(id: id) { }
-        }
     }
 
     private func formattedDate(_ millis: Int64) -> String {

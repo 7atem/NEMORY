@@ -18,6 +18,13 @@ struct HomeView: View {
                     .accessibilityIdentifier("openVault")
 
                     NavigationLink {
+                        CollectionsListView()
+                    } label: {
+                        Label("Collections", systemImage: "folder")
+                    }
+                    .accessibilityIdentifier("openCollections")
+
+                    NavigationLink {
                         ContentView()
                     } label: {
                         Label("Bilingual Sample", systemImage: "globe")
