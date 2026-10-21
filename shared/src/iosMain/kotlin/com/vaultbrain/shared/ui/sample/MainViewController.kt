@@ -1,5 +1,7 @@
 package com.vaultbrain.shared.ui.sample
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -24,32 +26,39 @@ import platform.UIKit.UIViewController
 fun MainViewController(): UIViewController = ComposeUIViewController {
     val arabic = SampleLanguageState.isArabic.value
 
-    SampleLanguageToggle(arabic)
+    // Sibling composables at the root container overlap; the toggle and the
+    // hosted screen must be arranged by an explicit layout.
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        SampleLanguageToggle(arabic)
 
-    if (arabic) {
-        SharedSampleScreen(
-            collectionLabel = "المجموعة",
-            collectionName = "إيصالات البقالة",
-            itemLabel = "عنصر",
-            itemName = "تسوق السبت",
-            amountLabel = "المبلغ",
-            amount = "123.45 دولار",
-            dateLabel = "التاريخ",
-            date = "17 سبتمبر 2026",
-            isRtl = true
-        )
-    } else {
-        SharedSampleScreen(
-            collectionLabel = "Collection",
-            collectionName = "Grocery receipts",
-            itemLabel = "Item",
-            itemName = "Saturday shop",
-            amountLabel = "Amount",
-            amount = "$123.45",
-            dateLabel = "Date",
-            date = "17 Sep 2026",
-            isRtl = false
-        )
+        if (arabic) {
+            SharedSampleScreen(
+                collectionLabel = "المجموعة",
+                collectionName = "إيصالات البقالة",
+                itemLabel = "عنصر",
+                itemName = "تسوق السبت",
+                amountLabel = "المبلغ",
+                amount = "123.45 دولار",
+                dateLabel = "التاريخ",
+                date = "17 سبتمبر 2026",
+                isRtl = true
+            )
+        } else {
+            SharedSampleScreen(
+                collectionLabel = "Collection",
+                collectionName = "Grocery receipts",
+                itemLabel = "Item",
+                itemName = "Saturday shop",
+                amountLabel = "Amount",
+                amount = "$123.45",
+                dateLabel = "Date",
+                date = "17 Sep 2026",
+                isRtl = false
+            )
+        }
     }
 }
 

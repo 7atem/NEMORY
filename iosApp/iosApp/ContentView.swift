@@ -31,6 +31,9 @@ struct ContentView: View {
             }
             .padding(.vertical)
         }
+        // The UIWindow behind the content defaults to black, which shows as
+        // solid black bands in the top/bottom safe areas on device.
+        .background(Color.white.ignoresSafeArea())
     }
 }
 
