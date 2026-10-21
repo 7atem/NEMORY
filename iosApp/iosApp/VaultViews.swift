@@ -32,23 +32,33 @@ struct VaultListView: View {
                         NavigationLink {
                             VaultItemDetailView(itemId: item.id)
                         } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(item.title)
-                                    .font(.headline)
-                                if let summary = item.summary {
-                                    Text(summary)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                                HStack {
-                                    Text(formattedDate(item.createdAtMillis))
-                                    if !item.lensTags.isEmpty {
-                                        Text("·")
-                                        Text(item.lensTags.joined(separator: ", "))
+                            HStack(spacing: 10) {
+                                CaptureThumbnail(path: item.capturedImageUri)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 6) {
+                                        if item.isPinned {
+                                            Image(systemName: "pin.fill")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Text(item.title)
+                                            .font(.headline)
                                     }
+                                    if let summary = item.summary {
+                                        Text(summary)
+                                            .font(.subheadline)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    HStack {
+                                        Text(formattedDate(item.createdAtMillis))
+                                        if !item.lensTags.isEmpty {
+                                            Text("·")
+                                            Text(item.lensTags.joined(separator: ", "))
+                                        }
+                                    }
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
                                 }
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
                             }
                             .accessibilityIdentifier("vaultItem_\(item.id)")
                         }

@@ -197,7 +197,59 @@ object IosVaultBridge {
 
     // endregion
 
-    // region Capture
+    // region Brain + Briefing
+
+    private var observingBrain = false
+
+    /** Starts pushing persisted brain turns to [onChange]. Subsequent calls are no-ops. */
+    fun startObservingBrainMessages(onChange: (List<BrainMessage>) -> Unit) {
+        if (observingBrain) return
+        observingBrain = true
+        scope.launch {
+            repository.observeBrainMessages().collect { messages ->
+                onChange(messages)
+            }
+        }
+    }
+
+    /** Asks the local brain: stores the user turn, computes the reply off the main thread. */
+    fun askBrain(query: String, onResult: (String?) -> Unit) {
+        scope.launch {
+            try {
+                repository.addBrainMessage(role = "user", text = query)
+                val (reply, _) = withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    repository.brainReply(query)
+                }
+                repository.addBrainMessage(role = "assistant", text = reply)
+                onResult(reply)
+            } catch (e: Exception) {
+                onResult(null)
+            }
+        }
+    }
+
+    fun clearBrain(onDone: () -> Unit) {
+        scope.launch {
+            repository.clearBrainMessages()
+            onDone()
+        }
+    }
+
+    /** One-shot briefing digest for the briefing screen. */
+    fun loadBriefing(onResult: (BriefingSnapshot?) -> Unit) {
+        scope.launch {
+            try {
+                val snapshot = withContext(kotlinx.coroutines.Dispatchers.Default) {
+                    repository.loadBriefing()
+                }
+                onResult(snapshot)
+            } catch (e: Exception) {
+                onResult(null)
+            }
+        }
+    }
+
+    // endregion
 
     private val mediaStorage by lazy { com.vaultbrain.shared.storage.IosMediaVaultStorage() }
 

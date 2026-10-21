@@ -25,6 +25,20 @@ struct HomeView: View {
                     .accessibilityIdentifier("openCollections")
 
                     NavigationLink {
+                        BrainView()
+                    } label: {
+                        Label("Brain", systemImage: "brain.head.profile")
+                    }
+                    .accessibilityIdentifier("openBrain")
+
+                    NavigationLink {
+                        BriefingView()
+                    } label: {
+                        Label("Briefing", systemImage: "sunrise")
+                    }
+                    .accessibilityIdentifier("openBriefing")
+
+                    NavigationLink {
                         ContentView()
                     } label: {
                         Label("Bilingual Sample", systemImage: "globe")

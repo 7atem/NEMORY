@@ -147,7 +147,132 @@ class VaultRepository(private val database: SharedVaultDatabase) {
 
     // endregion
 
-    // region Item detail
+    // region Brain chat (local vault-aware responder)
+
+    fun observeBrainMessages(): Flow<List<BrainMessage>> =
+        database.brainMessageDao().observeAll().map { list ->
+            list.sortedBy { it.createdAt }.map { entity ->
+                BrainMessage(
+                    id = entity.id,
+                    role = entity.role,
+                    text = entity.text,
+                    isError = entity.isError,
+                    createdAtMillis = entity.createdAt,
+                )
+            }
+        }
+
+    suspend fun addBrainMessage(role: String, text: String, isError: Boolean = false) {
+        val now = currentTimeMillis()
+        database.brainMessageDao().upsert(
+            com.vaultbrain.shared.database.entity.BrainMessageEntity(
+                id = "brain-$now-${(0..9999).random()}",
+                role = role,
+                text = text,
+                isError = isError,
+                createdAt = now,
+            )
+        )
+    }
+
+    suspend fun clearBrainMessages() {
+        database.brainMessageDao().clear()
+    }
+
+    /**
+     * Local, offline responder: answers about the vault itself using live data.
+     * Returns the reply text plus the vault item ids it referenced.
+     */
+    suspend fun brainReply(query: String): Pair<String, List<String>> {
+        val active = items.getActive()
+        val archived = items.getArchived()
+        val q = query.trim().lowercase()
+
+        fun titles(list: List<VaultItemEntity>, limit: Int = 3) =
+            list.take(limit).map { "• ${it.title}" }
+
+        return when {
+            q.isEmpty() ->
+                "Ask me about your vault — try \"how many items\", \"latest\", \"collections\" or any keyword." to emptyList()
+            q in setOf("hi", "hello", "hey", "salam", "مرحبا") ->
+                "Hello! I'm your local Nemory brain — fully offline. Ask me about what's in your vault." to emptyList()
+
+            q.contains("how many") || q.contains("count") || q.contains("total") ->
+                "You have ${active.size} active item${if (active.size == 1) "" else "s"}" +
+                    " and ${archived.size} archived." to emptyList()
+
+            q.contains("latest") || q.contains("recent") || q.contains("new") -> {
+                val fresh = active.sortedByDescending { it.createdAt }.take(3)
+                if (fresh.isEmpty()) "Your vault is empty — capture something first." to emptyList()
+                else "Your latest items:\n" + titles(fresh).joinToString("\n") to fresh.map { it.id }
+            }
+
+            q.contains("collection") -> {
+                val cols = database.personalCollectionDao().getActiveRows()
+                if (cols.isEmpty()) "You haven't created any collections yet." to emptyList()
+                else "Your collections:\n" + cols.take(5)
+                    .joinToString("\n") { "• ${it.name} (${it.itemCount})" } to emptyList()
+            }
+
+            q.contains("expir") || q.contains("deadline") -> {
+                val soon = items.getExpiringSoon(currentTimeMillis(), 5)
+                if (soon.isEmpty()) "Nothing is expiring soon. Set expiry dates on items and I'll track them." to emptyList()
+                else "Expiring soon:\n" + titles(soon).joinToString("\n") to soon.map { it.id }
+            }
+
+            q.contains("photo") || q.contains("camera") || q.contains("picture") || q.contains("image") -> {
+                val captured = active.count { it.sourceType == SourceType.CAMERA }
+                val gallery = active.count { it.sourceType == SourceType.GALLERY }
+                "You have $captured camera capture${if (captured == 1) "" else "s"} and " +
+                    "$gallery gallery import${if (gallery == 1) "" else "s"} in the vault." to emptyList()
+            }
+
+            q.contains("archive") ->
+                "${archived.size} item${if (archived.size == 1) "" else "s"} archived right now." to emptyList()
+
+            else -> {
+                val sanitized = sanitizeFtsQuery(q)
+                val matches = if (sanitized != null) items.searchFts(sanitized) else emptyList()
+                val visible = matches.filter { !it.isArchived }.take(3)
+                when {
+                    visible.isNotEmpty() ->
+                        "Here's what I found for \"$query\":\n" +
+                            titles(visible).joinToString("\n") to visible.map { it.id }
+                    else ->
+                        "I searched your vault for \"$query\" and found nothing. " +
+                            "Try a keyword from a title, or ask \"how many items\"." to emptyList()
+                }
+            }
+        }
+    }
+
+    // endregion
+
+    // region Briefing
+
+    /** One-shot digest for the briefing screen. */
+    suspend fun loadBriefing(): BriefingSnapshot {
+        val now = currentTimeMillis()
+        val dayAgo = now - 24L * 60 * 60 * 1000
+        val active = items.getActive()
+        val archived = items.getArchived()
+        val recent = active.filter { it.createdAt >= dayAgo }.sortedByDescending { it.createdAt }
+        val expiring = items.getExpiringSoon(now, 5)
+            .filter { !it.isArchived }
+        val needsReview = active.count { it.needsReview }
+        val collections = database.personalCollectionDao().getActiveRows().map { it.toSummary() }
+        return BriefingSnapshot(
+            totalActive = active.size,
+            totalArchived = archived.size,
+            newSinceMillis = dayAgo,
+            recentItems = recent.take(5).map { it.toSummary() },
+            expiringSoon = expiring.map { it.toSummary() },
+            needsReviewCount = needsReview,
+            collections = collections,
+        )
+    }
+
+    // endregion
 
     /** Loads full detail for one item, or null if it no longer exists. */
     suspend fun getItemDetail(id: String): VaultItemDetail? =
@@ -207,6 +332,8 @@ class VaultRepository(private val database: SharedVaultDatabase) {
             summary = summary,
             createdAtMillis = createdAt,
             lensTags = parseLensTags(lensTags),
+            isPinned = isPinned,
+            capturedImageUri = capturedImageUri,
         )
     }
 
