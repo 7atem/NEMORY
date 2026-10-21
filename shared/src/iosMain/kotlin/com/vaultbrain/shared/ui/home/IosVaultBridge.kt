@@ -11,8 +11,7 @@ import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
-import platform.Foundation.NSData
-import platform.Foundation.NSFileManager
+import platform.Foundation.*
 import platform.posix.memcpy
 
 /**
