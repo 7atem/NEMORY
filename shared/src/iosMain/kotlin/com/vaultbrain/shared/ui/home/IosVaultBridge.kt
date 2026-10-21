@@ -5,9 +5,15 @@ import com.vaultbrain.shared.data.VaultItemDetail
 import com.vaultbrain.shared.data.VaultItemSummary
 import com.vaultbrain.shared.data.VaultRepository
 import com.vaultbrain.shared.database.getSharedVaultDatabase
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import platform.Foundation.NSData
+import platform.Foundation.NSFileManager
+import platform.posix.memcpy
 
 /**
  * Vault bridge for the SwiftUI shell: live item list plus add/delete,
@@ -110,6 +116,49 @@ object IosVaultBridge {
     fun loadItemDetail(id: String, onResult: (VaultItemDetail?) -> Unit) {
         scope.launch {
             onResult(repository.getItemDetail(id))
+        }
+    }
+
+    // endregion
+
+    // region Capture
+
+    private val mediaStorage by lazy { com.vaultbrain.shared.storage.IosMediaVaultStorage() }
+
+    /**
+     * Imports an image the shell wrote to a temp file: moves it into protected
+     * vault storage, inserts a vault item referencing it, then removes the temp
+     * file. [onResult] receives the new item id, or null on failure.
+     */
+    @OptIn(ExperimentalForeignApi::class)
+    fun importCapturedImage(tempPath: String, sourceName: String, onResult: (String?) -> Unit) {
+        scope.launch {
+            try {
+                val nsData = NSData.dataWithContentsOfFile(tempPath)
+                if (nsData == null || nsData.length.toInt() == 0) {
+                    onResult(null)
+                    return@launch
+                }
+                val bytes = ByteArray(nsData.length.toInt())
+                bytes.usePinned { pinned ->
+                    memcpy(pinned.addressOf(0), nsData.bytes, nsData.length)
+                }
+                val now = com.vaultbrain.shared.util.currentTimeMillis()
+                val fileName = "capture-$now.jpg"
+                val storedPath = mediaStorage.saveMedia(fileName, bytes)
+                val source = com.vaultbrain.shared.model.SourceType.entries
+                    .firstOrNull { it.name == sourceName }
+                    ?: com.vaultbrain.shared.model.SourceType.MANUAL
+                val itemId = repository.addCapturedItem(
+                    title = "Capture ${now % 100_000}",
+                    source = source,
+                    capturedImageUri = storedPath,
+                )
+                NSFileManager.defaultManager.removeItemAtPath(tempPath, error = null)
+                onResult(itemId)
+            } catch (e: Exception) {
+                onResult(null)
+            }
         }
     }
 

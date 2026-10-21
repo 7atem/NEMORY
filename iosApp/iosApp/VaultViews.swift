@@ -7,6 +7,7 @@ struct VaultListView: View {
     private let bridge = IosVaultBridge.shared
     @State private var items: [VaultItemSummary] = []
     @State private var didStartObserving = false
+    @State private var showingCaptureSheet = false
 
     var body: some View {
         Group {
@@ -56,10 +57,21 @@ struct VaultListView: View {
         }
         .navigationTitle("Vault")
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    showingCaptureSheet = true
+                } label: {
+                    Image(systemName: "camera")
+                }
+                .accessibilityIdentifier("vaultCapture")
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Add") { addItem() }
                     .accessibilityIdentifier("vaultAdd")
             }
+        }
+        .sheet(isPresented: $showingCaptureSheet) {
+            CaptureSheet()
         }
         .onAppear {
             guard !didStartObserving else { return }

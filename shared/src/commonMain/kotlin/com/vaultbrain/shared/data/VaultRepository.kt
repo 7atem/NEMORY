@@ -119,8 +119,27 @@ class VaultRepository(private val database: SharedVaultDatabase) {
                 lensTags = parseLensTags(entity.lensTags),
                 createdAtMillis = entity.createdAt,
                 updatedAtMillis = entity.updatedAt,
+                capturedImageUri = entity.capturedImageUri,
             )
         }
+
+    /** Inserts a vault item that references an already-stored image file. Returns the item id. */
+    suspend fun addCapturedItem(title: String, source: SourceType, capturedImageUri: String): String {
+        val now = currentTimeMillis()
+        val id = "ios-item-$now"
+        items.insert(
+            VaultItemEntity(
+                id = id,
+                title = title,
+                summary = "Captured from the iOS shell",
+                sourceType = source,
+                capturedImageUri = capturedImageUri,
+                parsedMetadata = "{}",
+                lensTags = "[\"MONEY\"]",
+            )
+        )
+        return id
+    }
 
     // endregion
 

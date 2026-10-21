@@ -10,4 +10,6 @@ data class VaultItemDetail(
     val lensTags: List<String>,
     val createdAtMillis: Long,
     val updatedAtMillis: Long,
+    /** Absolute path of the captured image inside protected vault storage, if any. */
+    val capturedImageUri: String? = null,
 )

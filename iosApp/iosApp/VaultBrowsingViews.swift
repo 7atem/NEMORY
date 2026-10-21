@@ -1,5 +1,6 @@
 import SwiftUI
 import shared
+import UIKit
 
 // MARK: - Item detail
 
@@ -10,11 +11,21 @@ struct VaultItemDetailView: View {
     @State private var detail: VaultItemDetail?
     @State private var didLoad = false
     @State private var showingCollectionsSheet = false
+    @State private var capturedImage: UIImage?
 
     var body: some View {
         Group {
             if let detail {
                 List {
+                    if let capturedImage {
+                        Section {
+                            Image(uiImage: capturedImage)
+                                .resizable()
+                                .scaledToFit()
+                                .cornerRadius(8)
+                                .accessibilityIdentifier("itemCapturedImage")
+                        }
+                    }
                     Section("Item") {
                         LabeledContent("Title", value: detail.title)
                         if let summary = detail.summary {
@@ -59,6 +70,9 @@ struct VaultItemDetailView: View {
             didLoad = true
             bridge.loadItemDetail(id: itemId) { loaded in
                 detail = loaded
+                if let path = loaded?.capturedImageUri {
+                    capturedImage = UIImage(contentsOfFile: path)
+                }
             }
         }
     }
