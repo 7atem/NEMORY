@@ -1,5 +1,7 @@
 package com.vaultbrain.shared.ui.home
 
+import com.vaultbrain.shared.data.BrainMessage
+import com.vaultbrain.shared.data.BriefingSnapshot
 import com.vaultbrain.shared.data.CollectionSummary
 import com.vaultbrain.shared.data.VaultItemDetail
 import com.vaultbrain.shared.data.VaultItemSummary
@@ -8,9 +10,11 @@ import com.vaultbrain.shared.database.getSharedVaultDatabase
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.usePinned
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import platform.Foundation.*
 import platform.posix.memcpy
 
@@ -217,7 +221,7 @@ object IosVaultBridge {
         scope.launch {
             try {
                 repository.addBrainMessage(role = "user", text = query)
-                val (reply, _) = withContext(kotlinx.coroutines.Dispatchers.Default) {
+                val (reply, _) = withContext(Dispatchers.Default) {
                     repository.brainReply(query)
                 }
                 repository.addBrainMessage(role = "assistant", text = reply)
@@ -239,7 +243,7 @@ object IosVaultBridge {
     fun loadBriefing(onResult: (BriefingSnapshot?) -> Unit) {
         scope.launch {
             try {
-                val snapshot = withContext(kotlinx.coroutines.Dispatchers.Default) {
+                val snapshot = withContext(Dispatchers.Default) {
                     repository.loadBriefing()
                 }
                 onResult(snapshot)
