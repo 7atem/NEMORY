@@ -12,6 +12,9 @@ struct VaultItemDetailView: View {
     @State private var didLoad = false
     @State private var showingCollectionsSheet = false
     @State private var capturedImage: UIImage?
+    @State private var notesDraft = ""
+    @State private var notesLoaded = false
+    @State private var showingDeleteConfirm = false
 
     var body: some View {
         Group {
@@ -32,11 +35,29 @@ struct VaultItemDetailView: View {
                             LabeledContent("Summary", value: summary)
                         }
                         LabeledContent("Source", value: detail.sourceTypeName)
+                        if detail.isPinned {
+                            LabeledContent("Pinned", value: "Yes")
+                        }
+                        if detail.isArchived {
+                            LabeledContent("Archived", value: "Yes")
+                        }
                         if !detail.lensTags.isEmpty {
                             LabeledContent("Lenses", value: detail.lensTags.joined(separator: ", "))
                         }
                         LabeledContent("Created", value: formattedDate(detail.createdAtMillis))
                         LabeledContent("Updated", value: formattedDate(detail.updatedAtMillis))
+                    }
+                    Section {
+                        TextEditor(text: $notesDraft)
+                            .frame(minHeight: 80)
+                            .accessibilityIdentifier("itemNotesEditor")
+                        Button("Save notes") {
+                            saveNotes()
+                        }
+                        .disabled(notesDraft == (detail.userNotes ?? ""))
+                        .accessibilityIdentifier("itemNotesSave")
+                    } header: {
+                        Text("Notes")
                     }
                     if let ocr = detail.rawOcrText, !ocr.isEmpty {
                         Section("Extracted text") {
@@ -52,6 +73,36 @@ struct VaultItemDetailView: View {
         }
         .navigationTitle(detail?.title ?? "Item")
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Menu {
+                    Button {
+                        bridge.setItemPinned(id: itemId, pinned: !(detail?.isPinned ?? false)) { reload() }
+                    } label: {
+                        Label(detail?.isPinned == true ? "Unpin" : "Pin",
+                              systemImage: detail?.isPinned == true ? "pin.slash" : "pin")
+                    }
+                    Button {
+                        if detail?.isArchived == true {
+                            bridge.unarchiveItem(id: itemId) { reload() }
+                        } else {
+                            bridge.archiveItem(id: itemId) { reload() }
+                        }
+                    } label: {
+                        Label(detail?.isArchived == true ? "Unarchive" : "Archive",
+                              systemImage: "archivebox")
+                    }
+                    Divider()
+                    Button(role: .destructive) {
+                        showingDeleteConfirm = true
+                    } label: {
+                        Label("Delete permanently", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+                .accessibilityIdentifier("itemActions")
+                .disabled(detail == nil)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showingCollectionsSheet = true
@@ -62,18 +113,38 @@ struct VaultItemDetailView: View {
                 .disabled(detail == nil)
             }
         }
+        .confirmationDialog("Delete this item permanently?", isPresented: $showingDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                bridge.deleteItem(id: itemId) { }
+            }
+            Button("Cancel", role: .cancel) { }
+        }
         .sheet(isPresented: $showingCollectionsSheet) {
             ItemCollectionsSheet(itemId: itemId)
         }
         .onAppear {
             guard !didLoad else { return }
             didLoad = true
-            bridge.loadItemDetail(id: itemId) { loaded in
-                detail = loaded
-                if let path = loaded?.capturedImageUri {
-                    capturedImage = UIImage(contentsOfFile: path)
-                }
+            reload()
+        }
+    }
+
+    private func reload() {
+        bridge.loadItemDetail(id: itemId) { loaded in
+            detail = loaded
+            if !notesLoaded {
+                notesDraft = loaded?.userNotes ?? ""
+                notesLoaded = true
             }
+            if let path = loaded?.capturedImageUri {
+                capturedImage = UIImage(contentsOfFile: path)
+            }
+        }
+    }
+
+    private func saveNotes() {
+        bridge.updateItemNotes(id: itemId, notes: notesDraft) {
+            reload()
         }
     }
 
@@ -90,6 +161,9 @@ struct CollectionsListView: View {
     @State private var collections: [CollectionSummary] = []
     @State private var didStartObserving = false
     @State private var showingCreateSheet = false
+    @State private var renamingCollection: CollectionSummary?
+    @State private var renameDraft = ""
+    @State private var deletingCollection: CollectionSummary?
 
     var body: some View {
         Group {
@@ -126,6 +200,21 @@ struct CollectionsListView: View {
                             .accessibilityIdentifier("collection_\(collection.id)")
                         }
                         }
+                        .swipeActions {
+                            Button("Rename", systemImage: "pencil") {
+                                renamingCollection = collection
+                                renameDraft = collection.name
+                            }
+                            .tint(.blue)
+                            Button(collection.isPinned ? "Unpin" : "Pin",
+                                   systemImage: collection.isPinned ? "pin.slash" : "pin") {
+                                bridge.setCollectionPinned(id: collection.id, pinned: !collection.isPinned) { }
+                            }
+                            .tint(.orange)
+                            Button("Delete", systemImage: "trash", role: .destructive) {
+                                deletingCollection = collection
+                            }
+                        }
                     }
                 }
             }
@@ -145,6 +234,38 @@ struct CollectionsListView: View {
             CreateCollectionSheet { name in
                 bridge.createCollection(name: name) { }
             }
+        }
+        .alert("Rename collection", isPresented: Binding(
+            get: { renamingCollection != nil },
+            set: { if !$0 { renamingCollection = nil } }
+        )) {
+            TextField("Name", text: $renameDraft)
+            Button("Save") {
+                if let target = renamingCollection {
+                    let trimmed = renameDraft.trimmingCharacters(in: .whitespaces)
+                    if !trimmed.isEmpty {
+                        bridge.renameCollection(id: target.id, name: trimmed) { }
+                    }
+                }
+                renamingCollection = nil
+            }
+            Button("Cancel", role: .cancel) { renamingCollection = nil }
+        }
+        .confirmationDialog(
+            "Delete \"\(deletingCollection?.name ?? "")\"? Items inside stay in the vault.",
+            isPresented: Binding(
+                get: { deletingCollection != nil },
+                set: { if !$0 { deletingCollection = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let target = deletingCollection {
+                    bridge.deleteCollection(id: target.id) { }
+                }
+                deletingCollection = nil
+            }
+            Button("Cancel", role: .cancel) { deletingCollection = nil }
         }
         .onAppear {
             guard !didStartObserving else { return }

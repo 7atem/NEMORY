@@ -12,4 +12,7 @@ data class VaultItemDetail(
     val updatedAtMillis: Long,
     /** Absolute path of the captured image inside protected vault storage, if any. */
     val capturedImageUri: String? = null,
+    val userNotes: String? = null,
+    val isArchived: Boolean = false,
+    val isPinned: Boolean = false,
 )

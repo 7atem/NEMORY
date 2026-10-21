@@ -330,6 +330,9 @@ interface VaultItemDao {
 
     @Query("UPDATE vault_items SET is_pinned = :isPinned, updated_at = :updatedAt WHERE id IN (:ids)")
     suspend fun updatePinnedStateForIds(ids: List<String>, isPinned: Boolean, updatedAt: Long)
+
+    @Query("UPDATE vault_items SET user_notes = :notes, user_edited_at = :now, updated_at = :now WHERE id = :id")
+    suspend fun updateNotes(id: String, notes: String?, now: Long)
 }
 
 private fun VaultItemEntity.preserveConcurrentUserEditsFrom(current: VaultItemEntity): VaultItemEntity {

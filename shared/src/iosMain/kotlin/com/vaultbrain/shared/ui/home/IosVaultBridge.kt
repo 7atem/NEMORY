@@ -50,6 +50,62 @@ object IosVaultBridge {
         }
     }
 
+    // region Search, archive, notes
+
+    private val searchObservers = mutableMapOf<String, Job>()
+    private var archivedObserver: Job? = null
+
+    /** Starts pushing search results for [query] to [onChange]. Blank query = active list.
+     * Only one search observer runs at a time; previous ones are cancelled. */
+    fun startObservingSearch(query: String, onChange: (List<VaultItemSummary>) -> Unit) {
+        searchObservers.values.forEach { it.cancel() }
+        searchObservers.clear()
+        searchObservers[query] = scope.launch {
+            repository.observeSearch(query).collect { summaries ->
+                onChange(summaries)
+            }
+        }
+    }
+
+    fun startObservingArchived(onChange: (List<VaultItemSummary>) -> Unit) {
+        if (archivedObserver != null) return
+        archivedObserver = scope.launch {
+            repository.observeArchivedItems().collect { summaries ->
+                onChange(summaries)
+            }
+        }
+    }
+
+    fun archiveItem(id: String, onDone: () -> Unit) {
+        scope.launch {
+            repository.archiveItem(id)
+            onDone()
+        }
+    }
+
+    fun unarchiveItem(id: String, onDone: () -> Unit) {
+        scope.launch {
+            repository.unarchiveItem(id)
+            onDone()
+        }
+    }
+
+    fun setItemPinned(id: String, pinned: Boolean, onDone: () -> Unit) {
+        scope.launch {
+            repository.setItemPinned(id, pinned)
+            onDone()
+        }
+    }
+
+    fun updateItemNotes(id: String, notes: String, onDone: () -> Unit) {
+        scope.launch {
+            repository.updateItemNotes(id, notes)
+            onDone()
+        }
+    }
+
+    // endregion
+
     // region Collections
 
     private var observingCollections = false
@@ -68,6 +124,27 @@ object IosVaultBridge {
     fun createCollection(name: String, onDone: () -> Unit) {
         scope.launch {
             repository.createCollection(name)
+            onDone()
+        }
+    }
+
+    fun renameCollection(id: String, name: String, onDone: () -> Unit) {
+        scope.launch {
+            repository.renameCollection(id, name)
+            onDone()
+        }
+    }
+
+    fun deleteCollection(id: String, onDone: () -> Unit) {
+        scope.launch {
+            repository.deleteCollection(id)
+            onDone()
+        }
+    }
+
+    fun setCollectionPinned(id: String, pinned: Boolean, onDone: () -> Unit) {
+        scope.launch {
+            repository.setCollectionPinned(id, pinned)
             onDone()
         }
     }

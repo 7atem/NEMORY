@@ -21,11 +21,53 @@ class VaultRepository(private val database: SharedVaultDatabase) {
 
     private val items get() = database.vaultItemDao()
 
-    /** Live view of all vault items, newest first. */
+    /** Live view of active (non-archived) vault items, newest first. */
     fun observeItems(): Flow<List<VaultItemSummary>> =
-        items.observeAll().map { list ->
-            list.sortedByDescending { it.createdAt }.map { it.toSummary() }
+        items.observeActive().map { list ->
+            list.map { it.toSummary() }
         }
+
+    /** Live view of archived vault items, newest first. */
+    fun observeArchivedItems(): Flow<List<VaultItemSummary>> =
+        items.observeArchived().map { list ->
+            list.map { it.toSummary() }
+        }
+
+    /**
+     * Live full-text search over title, summary, OCR text and tags.
+     * Falls back to the active list when the query has no searchable tokens.
+     */
+    fun observeSearch(query: String): Flow<List<VaultItemSummary>> {
+        val sanitized = sanitizeFtsQuery(query)
+        if (sanitized == null) return observeItems()
+        return items.observeSearchFts(sanitized).map { list ->
+            list.filter { !it.isArchived }.map { it.toSummary() }
+        }
+    }
+
+    private fun sanitizeFtsQuery(query: String): String? {
+        val tokens = query.trim().split(Regex("\\s+"))
+            .map { it.replace(Regex("[^\\p{L}\\p{N}_]"), "") }
+            .filter { it.isNotEmpty() }
+        if (tokens.isEmpty()) return null
+        return tokens.joinToString(" AND ") { "\"$it\"" }
+    }
+
+    suspend fun archiveItem(id: String) {
+        items.updateArchiveState(id, true, currentTimeMillis())
+    }
+
+    suspend fun unarchiveItem(id: String) {
+        items.updateArchiveState(id, false, currentTimeMillis())
+    }
+
+    suspend fun setItemPinned(id: String, pinned: Boolean) {
+        items.updatePinnedState(id, pinned, currentTimeMillis())
+    }
+
+    suspend fun updateItemNotes(id: String, notes: String?) {
+        items.updateNotes(id, notes?.takeIf { it.isNotBlank() }, currentTimeMillis())
+    }
 
     /** Inserts a small demo item and returns its id. */
     suspend fun addSampleItem(title: String? = null): String {
@@ -120,8 +162,23 @@ class VaultRepository(private val database: SharedVaultDatabase) {
                 createdAtMillis = entity.createdAt,
                 updatedAtMillis = entity.updatedAt,
                 capturedImageUri = entity.capturedImageUri,
+                userNotes = entity.userNotes,
+                isArchived = entity.isArchived,
+                isPinned = entity.isPinned,
             )
         }
+
+    suspend fun renameCollection(id: String, name: String) {
+        database.personalCollectionDao().rename(id, name, currentTimeMillis())
+    }
+
+    suspend fun deleteCollection(id: String) {
+        database.personalCollectionDao().deletePermanently(id)
+    }
+
+    suspend fun setCollectionPinned(id: String, pinned: Boolean) {
+        database.personalCollectionDao().setPinned(id, pinned, currentTimeMillis())
+    }
 
     /** Inserts a vault item that references an already-stored image file. Returns the item id. */
     suspend fun addCapturedItem(title: String, source: SourceType, capturedImageUri: String): String {
