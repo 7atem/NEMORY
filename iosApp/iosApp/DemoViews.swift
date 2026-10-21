@@ -82,7 +82,7 @@ struct AuthDemoView: View {
         }
         .navigationTitle("Biometrics")
         .onAppear {
-            availability = bridge.canAuthenticate().boolValue ? "Available" : "Not available"
+            availability = bridge.canAuthenticate() ? "Available" : "Not available"
         }
     }
 }
