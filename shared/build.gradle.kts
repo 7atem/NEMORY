@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 kotlin {
@@ -47,6 +48,7 @@ kotlin {
             implementation(compose.material3)
             implementation(compose.ui)
             api(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.coroutines.core)
         }
@@ -55,6 +57,14 @@ kotlin {
             implementation(kotlin("test"))
         }
     }
+}
+
+// Room annotation processor, per platform compilation (commonMain sources are
+// processed as part of each target compilation in KSP multiplatform setups).
+dependencies {
+    add("kspAndroid", libs.room.compiler)
+    add("kspIosArm64", libs.room.compiler)
+    add("kspIosSimulatorArm64", libs.room.compiler)
 }
 
 android {

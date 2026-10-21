@@ -21,7 +21,7 @@ targets:
       path: iosApp/Info.plist
       properties:
         CADisableMinimumFrameDurationOnPhone: true
-        CFBundleVersion: "4"
+        CFBundleVersion: "5"
         NSFaceIDUsageDescription: "Nemory uses Face ID to demo the shared authentication layer."
     settings:
       base:

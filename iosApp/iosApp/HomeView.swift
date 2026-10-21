@@ -11,6 +11,13 @@ struct HomeView: View {
             List {
                 Section {
                     NavigationLink {
+                        VaultListView()
+                    } label: {
+                        Label("Vault", systemImage: "archivebox")
+                    }
+                    .accessibilityIdentifier("openVault")
+
+                    NavigationLink {
                         ContentView()
                     } label: {
                         Label("Bilingual Sample", systemImage: "globe")
