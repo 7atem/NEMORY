@@ -2,6 +2,7 @@ package com.vaultbrain.shared.database
 
 import androidx.room.Room
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.Dispatchers
 import platform.Foundation.NSDocumentDirectory
 import platform.Foundation.NSFileManager
@@ -15,6 +16,7 @@ import platform.Foundation.NSUserDomainMask
  * database yet) and is currently unencrypted — wire the SQLCipher-equivalent
  * driver before storing real user data on iOS.
  */
+@OptIn(ExperimentalForeignApi::class)
 fun getSharedVaultDatabase(): SharedVaultDatabase {
     val documentDirectory = NSFileManager.defaultManager.URLForDirectory(
         directory = NSDocumentDirectory,
