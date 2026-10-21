@@ -37,7 +37,7 @@ struct NotificationsDemoView: View {
                     .accessibilityIdentifier("notificationPermissionStatus")
                 Button("Request permission") {
                     bridge.requestNotificationPermission { granted in
-                        permissionStatus = granted ? "Granted" : "Denied"
+                        permissionStatus = granted.boolValue ? "Granted" : "Denied"
                     }
                 }
                 .accessibilityIdentifier("requestNotificationPermission")
@@ -82,7 +82,7 @@ struct AuthDemoView: View {
         }
         .navigationTitle("Biometrics")
         .onAppear {
-            availability = bridge.canAuthenticate() ? "Available" : "Not available"
+            availability = bridge.canAuthenticate().boolValue ? "Available" : "Not available"
         }
     }
 }
