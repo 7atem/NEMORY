@@ -42,7 +42,7 @@ struct VaultItemDetailView: View {
         .onAppear {
             guard !didLoad else { return }
             didLoad = true
-            bridge.loadItemDetail(itemId: itemId) { loaded in
+            bridge.loadItemDetail(id: itemId) { loaded in
                 detail = loaded
             }
         }
