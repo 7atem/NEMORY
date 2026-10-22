@@ -7,7 +7,7 @@ import NaturalLanguage
 
 /// Swift bridge implementing Apple Foundation Models and system-level on-device intelligence.
 /// Registered with `AppleFoundationModelsClient.companion.delegate` at app startup.
-final class AppleIntelligenceBridge: NSObject, AppleFoundationModelDelegate {
+final class AppleIntelligenceBridge: NSObject, AppleFoundationModelDelegate, @unchecked Sendable {
     static let shared = AppleIntelligenceBridge()
 
     private override init() {
