@@ -41,3 +41,6 @@ evaluation/reports/generated/
 .git-credentials
 /app/release/
 /iosApp/*.xcodeproj/
+
+__pycache__/
+/samples/

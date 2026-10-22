@@ -299,6 +299,60 @@ object IosVaultBridge {
     private val mediaStorage by lazy { com.vaultbrain.shared.storage.IosMediaVaultStorage() }
 
     /**
+     * Imports an analyzed document with OCR text, rich parsed metadata, lens tags, and evidence coordinates.
+     */
+    @OptIn(ExperimentalForeignApi::class)
+    fun importCapturedDocument(
+        tempPath: String,
+        sourceName: String,
+        title: String,
+        summary: String?,
+        rawOcrText: String?,
+        parsedMetadataJson: String,
+        lensTags: List<String>,
+        primaryLensId: String?,
+        expiryDateMillis: Long,
+        evidenceCoordinatesJson: String?,
+        onResult: (String?) -> Unit
+    ) {
+        scope.launch {
+            try {
+                val nsData = NSData.dataWithContentsOfFile(tempPath)
+                if (nsData == null || nsData.length.toInt() == 0) {
+                    onResult(null)
+                    return@launch
+                }
+                val bytes = ByteArray(nsData.length.toInt())
+                bytes.usePinned { pinned ->
+                    memcpy(pinned.addressOf(0), nsData.bytes, nsData.length)
+                }
+                val now = com.vaultbrain.shared.util.currentTimeMillis()
+                val fileName = "capture-$now.jpg"
+                val storedPath = mediaStorage.saveMedia(fileName, bytes)
+                val source = com.vaultbrain.shared.model.SourceType.entries
+                    .firstOrNull { it.name == sourceName }
+                    ?: com.vaultbrain.shared.model.SourceType.CAMERA
+                val itemId = repository.addCapturedItem(
+                    title = title,
+                    source = source,
+                    capturedImageUri = storedPath,
+                    summary = summary,
+                    rawOcrText = rawOcrText,
+                    parsedMetadataJson = parsedMetadataJson,
+                    lensTags = lensTags,
+                    primaryLensId = primaryLensId,
+                    expiryDateMillis = expiryDateMillis.takeIf { it > 0 },
+                    evidenceCoordinatesJson = evidenceCoordinatesJson,
+                )
+                NSFileManager.defaultManager.removeItemAtPath(tempPath, error = null)
+                onResult(itemId)
+            } catch (e: Exception) {
+                onResult(null)
+            }
+        }
+    }
+
+    /**
      * Imports an image the shell wrote to a temp file: moves it into protected
      * vault storage, inserts a vault item referencing it, then removes the temp
      * file. [onResult] receives the new item id, or null on failure.

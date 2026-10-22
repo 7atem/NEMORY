@@ -10,10 +10,15 @@ import VisionKit
 
 // MARK: - Capture sheet
 
+struct PendingCaptureReview: Identifiable {
+    let id = UUID()
+    let image: UIImage
+    let source: String
+}
+
 /// Entry point for adding real captures to the vault: smart document scanner,
 /// standard camera, or photo library.
-/// Images are handed to the shared layer, which stores them in protected vault
-/// storage and inserts the vault item.
+/// Images are analyzed on-device with Apple VisionKit OCR and reviewed before saving.
 struct CaptureSheet: View {
     private let bridge = IosVaultBridge.shared
     @Environment(\.dismiss) private var dismiss
@@ -23,6 +28,7 @@ struct CaptureSheet: View {
     @State private var showGallery = false
     @State private var importFailed = false
     @State private var includeLocation = true
+    @State private var pendingReview: PendingCaptureReview? = nil
 
     var body: some View {
         NavigationStack {
@@ -159,7 +165,9 @@ struct CaptureSheet: View {
             #if canImport(VisionKit)
             .sheet(isPresented: $showDocumentScanner) {
                 DocumentScannerPicker { images in
-                    importImages(images, source: "CAMERA")
+                    if let first = images.first {
+                        pendingReview = PendingCaptureReview(image: first, source: "CAMERA")
+                    }
                 } onCancel: {
                     showDocumentScanner = false
                 }
@@ -167,15 +175,30 @@ struct CaptureSheet: View {
             #endif
             .sheet(isPresented: $showCamera) {
                 CameraPicker { image in
-                    importImages([image], source: "CAMERA")
+                    pendingReview = PendingCaptureReview(image: image, source: "CAMERA")
                 } onCancel: {
                     showCamera = false
                 }
             }
             .sheet(isPresented: $showGallery) {
                 GalleryPicker { images in
-                    importImages(images, source: "GALLERY")
+                    if let first = images.first {
+                        pendingReview = PendingCaptureReview(image: first, source: "GALLERY")
+                    }
                 }
+            }
+            .sheet(item: $pendingReview) { reviewItem in
+                CaptureReviewView(
+                    image: reviewItem.image,
+                    sourceName: reviewItem.source,
+                    onSaveCompleted: {
+                        pendingReview = nil
+                        dismiss()
+                    },
+                    onCancel: {
+                        pendingReview = nil
+                    }
+                )
             }
         }
         .presentationDetents([.medium])

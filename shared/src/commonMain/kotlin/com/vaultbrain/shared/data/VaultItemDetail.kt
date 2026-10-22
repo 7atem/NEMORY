@@ -23,4 +23,10 @@ data class VaultItemDetail(
     /** Capture coordinates; NaN = none. */
     val latitude: Double = Double.NaN,
     val longitude: Double = Double.NaN,
+    /** Serialized key-value metadata map extracted from document. */
+    val parsedMetadataJson: String = "{}",
+    val primaryLensId: String? = null,
+    val aiClassificationName: String? = null,
+    /** JSON map of field names to bounding box rectangles (x, y, width, height) in normalized coordinates. */
+    val evidenceCoordinatesJson: String? = null,
 )

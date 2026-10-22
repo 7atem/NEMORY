@@ -40,11 +40,17 @@ def fetch_log(job_id):
         with urllib.request.urlopen(location, timeout=60) as resp:
             return resp.read().decode('utf-8', errors='replace')
 
-target_runs = [39781871673, 39781871656]
+# Fetch latest runs for branch 'main'
+runs_data = api_get("https://api.github.com/repos/7atem/NEMORY/actions/runs?branch=main&per_page=5")
+latest_runs = runs_data['workflow_runs'][:2]
+target_runs = [r['id'] for r in latest_runs]
+print("Monitoring latest runs:", [(r['id'], r['name']) for r in latest_runs])
 
-for attempt in range(25):
+ios_run_id = next((r['id'] for r in latest_runs if 'iOS' in r['name']), target_runs[0])
+
+for attempt in range(40):
     all_done = True
-    print(f"\n--- Poll {attempt+1}/25 at {time.strftime('%H:%M:%S')} ---")
+    print(f"\n--- Poll {attempt+1}/40 at {time.strftime('%H:%M:%S')} ---")
     for run_id in target_runs:
         run = api_get(f"https://api.github.com/repos/7atem/NEMORY/actions/runs/{run_id}")
         status = run['status']
@@ -74,12 +80,12 @@ for attempt in range(25):
     if all_done:
         print("\nAll target runs completed!")
         break
-    time.sleep(15)
+    time.sleep(20)
 
 # List artifacts for iOS run
 try:
-    artifacts = api_get(f"https://api.github.com/repos/7atem/NEMORY/actions/runs/39781871656/artifacts")
-    print(f"\nArtifacts for iOS run (Total {artifacts['total_count']}):")
+    artifacts = api_get(f"https://api.github.com/repos/7atem/NEMORY/actions/runs/{ios_run_id}/artifacts")
+    print(f"\nArtifacts for iOS run {ios_run_id} (Total {artifacts['total_count']}):")
     for a in artifacts['artifacts']:
         print(f"  - {a['name']} ({a['size_in_bytes']} bytes), download URL: {a['archive_download_url']}")
 except Exception as e:

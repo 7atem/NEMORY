@@ -22,6 +22,9 @@ struct VaultItemDetailView: View {
     @State private var alertDate = Date()
     @State private var datesLoaded = false
     @State private var selectedGroundingField: String?
+    @State private var showingFullScreenImage = false
+    @State private var copiedOcr = false
+    @State private var isOcrExpanded = false
 
     var body: some View {
         Group {
@@ -29,64 +32,136 @@ struct VaultItemDetailView: View {
                 List {
                     if let capturedImage {
                         Section {
-                            VStack(spacing: 8) {
-                                ZStack {
+                            VStack(spacing: 10) {
+                                ZStack(alignment: .topTrailing) {
                                     Image(uiImage: capturedImage)
                                         .resizable()
                                         .scaledToFit()
-                                        .cornerRadius(10)
+                                        .cornerRadius(12)
                                         .accessibilityIdentifier("itemCapturedImage")
-
-                                    if let field = selectedGroundingField {
-                                        // Luminous extraction coordinate highlight
-                                        RoundedRectangle(cornerRadius: 6)
-                                            .stroke(Color.accentColor, lineWidth: 2.5)
-                                            .background(Color.accentColor.opacity(0.18))
-                                            .frame(width: 140, height: 38)
-                                            .position(x: 130, y: field == "Date" ? 60 : (field == "Lens" ? 110 : 30))
-                                            .shadow(color: Color.accentColor.opacity(0.6), radius: 8)
-                                            .transition(.scale.combined(with: .opacity))
-                                    }
-                                }
-
-                                HStack(spacing: 6) {
-                                    Image(systemName: "sparkle.magnifyingglass")
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(.secondary)
-                                    Text("VERIFIED EVIDENCE:")
-                                        .font(.system(size: 10, weight: .bold))
-                                        .foregroundStyle(.secondary)
-                                    ForEach(["Title", "Date", "Lens"], id: \.self) { field in
-                                        Button {
-                                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
-                                                selectedGroundingField = (selectedGroundingField == field) ? nil : field
-                                            }
-                                        } label: {
-                                            Text(field)
-                                                .font(.caption2.weight(.medium))
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 4)
-                                                .background(
-                                                    selectedGroundingField == field
-                                                        ? Color.accentColor.opacity(0.25)
-                                                        : Color(.secondarySystemBackground),
-                                                    in: Capsule()
-                                                )
-                                                .overlay(
-                                                    Capsule().stroke(
-                                                        selectedGroundingField == field ? Color.accentColor : Color.clear,
-                                                        lineWidth: 1
+                                        .overlay(
+                                            GeometryReader { geo in
+                                                if let field = selectedGroundingField,
+                                                   let coords = parsedEvidenceCoordinates[field], coords.count == 4 {
+                                                    let rect = CGRect(
+                                                        x: coords[0] * geo.size.width,
+                                                        y: coords[1] * geo.size.height,
+                                                        width: coords[2] * geo.size.width,
+                                                        height: coords[3] * geo.size.height
                                                     )
-                                                )
+                                                    RoundedRectangle(cornerRadius: 6)
+                                                        .stroke(Color.accentColor, lineWidth: 2.5)
+                                                        .background(Color.accentColor.opacity(0.2))
+                                                        .frame(width: max(rect.width, 24), height: max(rect.height, 16))
+                                                        .position(x: rect.midX, y: rect.midY)
+                                                        .shadow(color: Color.accentColor.opacity(0.8), radius: 6)
+                                                        .transition(.scale.combined(with: .opacity))
+                                                }
+                                            }
+                                        )
+                                        .onTapGesture {
+                                            showingFullScreenImage = true
                                         }
-                                        .buttonStyle(.plain)
+
+                                    Button {
+                                        showingFullScreenImage = true
+                                    } label: {
+                                        Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundStyle(.white)
+                                            .padding(8)
+                                            .background(.ultraThinMaterial, in: Circle())
+                                            .padding(10)
                                     }
+                                    .buttonStyle(.plain)
                                 }
-                                .padding(.top, 4)
+
+                                if !availableEvidenceKeys.isEmpty {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack(spacing: 5) {
+                                            Image(systemName: "sparkle.magnifyingglass")
+                                                .font(.system(size: 11))
+                                                .foregroundStyle(.secondary)
+                                            Text("VERIFIED EVIDENCE GROUNDING")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundStyle(.secondary)
+                                        }
+
+                                        ScrollView(.horizontal, showsIndicators: false) {
+                                            HStack(spacing: 8) {
+                                                ForEach(availableEvidenceKeys, id: \.self) { field in
+                                                    Button {
+                                                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                                            selectedGroundingField = (selectedGroundingField == field) ? nil : field
+                                                        }
+                                                    } label: {
+                                                        HStack(spacing: 4) {
+                                                            Image(systemName: iconForEvidenceKey(field))
+                                                                .font(.system(size: 10))
+                                                            Text(field)
+                                                                .font(.caption2.weight(.medium))
+                                                        }
+                                                        .padding(.horizontal, 10)
+                                                        .padding(.vertical, 5)
+                                                        .background(
+                                                            selectedGroundingField == field
+                                                                ? Color.accentColor.opacity(0.25)
+                                                                : Color(.secondarySystemBackground),
+                                                            in: Capsule()
+                                                        )
+                                                        .overlay(
+                                                            Capsule().stroke(
+                                                                selectedGroundingField == field ? Color.accentColor : Color.clear,
+                                                                lineWidth: 1.5
+                                                            )
+                                                        )
+                                                    }
+                                                    .buttonStyle(.plain)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .padding(.top, 2)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+
+                    if !parsedMetadata.isEmpty || detail.aiClassificationName != nil {
+                        Section("Extracted Intelligence") {
+                            if let classification = detail.aiClassificationName, !classification.isEmpty {
+                                LabeledContent {
+                                    Text(classification)
+                                        .font(.subheadline.weight(.semibold))
+                                } label: {
+                                    Label("Classification", systemImage: "sparkles")
+                                }
+                            }
+                            if let primaryLens = detail.primaryLensId, !primaryLens.isEmpty {
+                                LabeledContent {
+                                    Text(primaryLens.capitalized)
+                                        .font(.subheadline.weight(.medium))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 2)
+                                        .background(Color.accentColor.opacity(0.15), in: Capsule())
+                                } label: {
+                                    Label("Primary Lens", systemImage: "circle.grid.2x2")
+                                }
+                            }
+                            ForEach(parsedMetadata, id: \.key) { item in
+                                LabeledContent {
+                                    Text(item.value)
+                                        .font(.subheadline)
+                                        .multilineTextAlignment(.trailing)
+                                } label: {
+                                    Label(item.key, systemImage: iconForMetadataKey(item.key))
+                                }
                             }
                         }
                     }
+
                     Section("Item") {
                         LabeledContent("Title", value: detail.title)
                         if let summary = detail.summary {
@@ -138,15 +213,53 @@ struct VaultItemDetailView: View {
                         Text("Notes")
                     }
                     if let ocr = detail.rawOcrText, !ocr.isEmpty {
-                        Section("Extracted text") {
-                            Text(ocr)
-                                .font(.body.monospaced())
-                                .textSelection(.enabled)
+                        Section {
+                            VStack(alignment: .leading, spacing: 10) {
+                                HStack {
+                                    Text(isOcrExpanded ? "Full Recognition" : "Preview")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Spacer()
+                                    Button {
+                                        UIPasteboard.general.string = ocr
+                                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                        withAnimation { copiedOcr = true }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                            withAnimation { copiedOcr = false }
+                                        }
+                                    } label: {
+                                        Label(copiedOcr ? "Copied" : "Copy text", systemImage: copiedOcr ? "checkmark" : "doc.on.doc")
+                                            .font(.caption.weight(.medium))
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .tint(copiedOcr ? .green : .accentColor)
+                                }
+
+                                Text(ocr)
+                                    .font(.system(.footnote, design: .monospaced))
+                                    .lineLimit(isOcrExpanded ? nil : 8)
+                                    .textSelection(.enabled)
+
+                                if ocr.components(separatedBy: .newlines).count > 8 || ocr.count > 300 {
+                                    Button(isOcrExpanded ? "Show less" : "Show all text") {
+                                        withAnimation { isOcrExpanded.toggle() }
+                                    }
+                                    .font(.caption.weight(.semibold))
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        } header: {
+                            Text("Extracted text (On-Device OCR)")
                         }
                     }
                 }
             } else {
                 ContentUnavailableView("Item not found", systemImage: "questionmark.folder")
+            }
+        }
+        .fullScreenCover(isPresented: $showingFullScreenImage) {
+            if let capturedImage {
+                FullScreenImageViewer(image: capturedImage)
             }
         }
         .navigationTitle(detail?.title ?? "Item")
@@ -272,6 +385,119 @@ struct VaultItemDetailView: View {
     private func formattedDate(_ millis: Int64) -> String {
         let date = Date(timeIntervalSince1970: TimeInterval(millis) / 1000.0)
         return date.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    private var parsedMetadata: [(key: String, value: String)] {
+        guard let detail,
+              let data = detail.parsedMetadataJson.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return []
+        }
+        return dict.compactMap { key, value in
+            guard let str = value as? String, !str.isEmpty else { return nil }
+            return (key, str)
+        }.sorted { $0.key < $1.key }
+    }
+
+    private var parsedEvidenceCoordinates: [String: [CGFloat]] {
+        guard let detail,
+              let json = detail.evidenceCoordinatesJson,
+              let data = json.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: [NSNumber]] else {
+            return [:]
+        }
+        return dict.reduce(into: [String: [CGFloat]]()) { result, entry in
+            result[entry.key] = entry.value.map { CGFloat(truncating: $0) }
+        }
+    }
+
+    private var availableEvidenceKeys: [String] {
+        parsedEvidenceCoordinates.keys.sorted()
+    }
+
+    private func iconForMetadataKey(_ key: String) -> String {
+        let lower = key.lowercased()
+        if lower.contains("merchant") || lower.contains("issuer") || lower.contains("vendor") {
+            return "building.2.fill"
+        } else if lower.contains("amount") || lower.contains("total") || lower.contains("price") {
+            return "dollarsign.circle.fill"
+        } else if lower.contains("expiry") {
+            return "calendar.badge.clock"
+        } else if lower.contains("date") {
+            return "calendar"
+        } else if lower.contains("type") {
+            return "doc.text.fill"
+        } else {
+            return "tag.fill"
+        }
+    }
+
+    private func iconForEvidenceKey(_ key: String) -> String {
+        switch key.lowercased() {
+        case "total", "amount": return "dollarsign.circle"
+        case "merchant", "vendor": return "building.2"
+        case "date": return "calendar"
+        case "expiry": return "clock"
+        case "title": return "doc.text"
+        default: return "sparkle"
+        }
+    }
+}
+
+// MARK: - Full Screen Image Viewer
+
+struct FullScreenImageViewer: View {
+    let image: UIImage
+    @Environment(\.dismiss) private var dismiss
+    @State private var scale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+
+    var body: some View {
+        NavigationStack {
+            GeometryReader { geo in
+                ScrollView([.horizontal, .vertical], showsIndicators: false) {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: geo.size.width * max(scale, 1.0))
+                        .gesture(
+                            MagnificationGesture()
+                                .onChanged { val in
+                                    scale = max(1.0, min(lastScale * val, 5.0))
+                                }
+                                .onEnded { _ in
+                                    lastScale = scale
+                                }
+                        )
+                        .onTapGesture(count: 2) {
+                            withAnimation(.spring()) {
+                                if scale > 1.0 {
+                                    scale = 1.0
+                                    lastScale = 1.0
+                                } else {
+                                    scale = 2.5
+                                    lastScale = 2.5
+                                }
+                            }
+                        }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.black.ignoresSafeArea())
+            }
+            .navigationTitle("Document Photo")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.white)
+                }
+            }
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+        }
     }
 }
 

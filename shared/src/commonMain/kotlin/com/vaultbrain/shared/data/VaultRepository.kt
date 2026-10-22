@@ -235,12 +235,27 @@ class VaultRepository(private val database: SharedVaultDatabase) {
                 val matches = if (sanitized != null) items.searchFts(sanitized) else emptyList()
                 val visible = matches.filter { !it.isArchived }.take(3)
                 when {
-                    visible.isNotEmpty() ->
-                        "Here's what I found for \"$query\":\n" +
-                            titles(visible).joinToString("\n") to visible.map { it.id }
+                    visible.isNotEmpty() -> {
+                        val details = visible.map { item ->
+                            val metaClean = if (item.parsedMetadata.isNotBlank() && item.parsedMetadata != "{}") {
+                                val pairs = item.parsedMetadata
+                                    .trim('{', '}')
+                                    .split(',')
+                                    .mapNotNull {
+                                        val parts = it.split(':')
+                                        if (parts.size == 2) "${parts[0].trim('"', ' ')}: ${parts[1].trim('"', ' ')}" else null
+                                    }
+                                if (pairs.isNotEmpty()) "\n  " + pairs.take(3).joinToString(" | ") else ""
+                            } else if (!item.summary.isNullOrBlank()) {
+                                "\n  ${item.summary}"
+                            } else ""
+                            "• ${item.title}$metaClean"
+                        }.joinToString("\n")
+                        "Here's what I found for \"$query\":\n$details" to visible.map { it.id }
+                    }
                     else ->
                         "I searched your vault for \"$query\" and found nothing. " +
-                            "Try a keyword from a title, or ask \"how many items\"." to emptyList()
+                            "Try searching by store name, amount, or keyword from the document." to emptyList()
                 }
             }
         }
@@ -295,6 +310,10 @@ class VaultRepository(private val database: SharedVaultDatabase) {
                 locationName = entity.locationName,
                 latitude = entity.captureLatitude ?: Double.NaN,
                 longitude = entity.captureLongitude ?: Double.NaN,
+                parsedMetadataJson = entity.parsedMetadata,
+                primaryLensId = entity.primaryLensId ?: parseLensTags(entity.lensTags).firstOrNull(),
+                aiClassificationName = entity.aiClassification?.name,
+                evidenceCoordinatesJson = entity.customFields,
             )
         }
 
@@ -341,19 +360,38 @@ class VaultRepository(private val database: SharedVaultDatabase) {
         database.personalCollectionDao().setPinned(id, pinned, currentTimeMillis())
     }
 
-    /** Inserts a vault item that references an already-stored image file. Returns the item id. */
-    suspend fun addCapturedItem(title: String, source: SourceType, capturedImageUri: String): String {
+    /** Inserts a vault item that references an already-stored image file with optional OCR and metadata. */
+    suspend fun addCapturedItem(
+        title: String,
+        source: SourceType,
+        capturedImageUri: String,
+        summary: String? = null,
+        rawOcrText: String? = null,
+        parsedMetadataJson: String = "{}",
+        lensTags: List<String> = listOf("MONEY"),
+        primaryLensId: String? = null,
+        expiryDateMillis: Long? = null,
+        alertDateMillis: Long? = null,
+        evidenceCoordinatesJson: String? = null,
+    ): String {
         val now = currentTimeMillis()
         val id = "ios-item-$now"
+        val effectiveLens = primaryLensId ?: lensTags.firstOrNull() ?: "MONEY"
+        val tags = if (lensTags.isEmpty()) listOf(effectiveLens) else lensTags
         items.insert(
             VaultItemEntity(
                 id = id,
-                title = title,
-                summary = "Captured from the iOS shell",
+                title = title.trim().ifEmpty { "Scanned Document" },
+                summary = summary?.trim()?.takeIf { it.isNotEmpty() } ?: "Document stored in Nemory Vault",
+                rawOcrText = rawOcrText?.trim()?.takeIf { it.isNotEmpty() },
                 sourceType = source,
                 capturedImageUri = capturedImageUri,
-                parsedMetadata = "{}",
-                lensTags = "[\"MONEY\"]",
+                parsedMetadata = parsedMetadataJson.trim().ifEmpty { "{}" },
+                lensTags = serializeLensTags(tags),
+                primaryLensId = effectiveLens,
+                expiryDate = expiryDateMillis?.takeIf { it > 0 },
+                secondaryAlertDate = alertDateMillis?.takeIf { it > 0 },
+                customFields = evidenceCoordinatesJson,
             )
         )
         return id
@@ -381,6 +419,10 @@ class VaultRepository(private val database: SharedVaultDatabase) {
             createdAtMillis = createdAt,
             isPinned = isPinned,
         )
+    }
+
+    private fun serializeLensTags(tags: List<String>): String {
+        return tags.joinToString(separator = ",", prefix = "[", postfix = "]") { "\"$it\"" }
     }
 
     private fun parseLensTags(json: String): List<String> = runCatching {

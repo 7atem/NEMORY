@@ -8,7 +8,7 @@ def get_token():
 
 headers = {'Authorization': f'Bearer {get_token()}', 'Accept': 'application/vnd.github+json', 'User-Agent': 'Nemory'}
 
-for run_id in [39781871673, 39781871656]:
+for run_id in [39791696734, 39791696621]:
     req = urllib.request.Request(f'https://api.github.com/repos/7atem/NEMORY/actions/runs/{run_id}/jobs', headers=headers)
     with urllib.request.urlopen(req) as r:
         data = json.load(r)
