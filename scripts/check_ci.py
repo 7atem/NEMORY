@@ -2,6 +2,7 @@ import urllib.request
 import json
 import subprocess
 import sys
+import time
 
 def get_token():
     proc = subprocess.run(['git', 'credential', 'fill'], input='protocol=https\nhost=github.com\n', capture_output=True, text=True)
@@ -21,6 +22,17 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
 
+def api_get(url, retries=3):
+    for i in range(retries):
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                return json.load(resp)
+        except Exception as e:
+            if i == retries - 1:
+                raise e
+            time.sleep(2)
+
 def fetch_log(job_id):
     req = urllib.request.Request(f"https://api.github.com/repos/7atem/NEMORY/actions/jobs/{job_id}/logs", headers=headers)
     opener = urllib.request.build_opener(NoRedirect)
@@ -31,44 +43,33 @@ def fetch_log(job_id):
         if error.code != 302:
             raise
         location = error.headers['Location']
-        # Fetch from redirected Azure URL without GitHub token
-        with urllib.request.urlopen(location) as resp:
+        with urllib.request.urlopen(location, timeout=60) as resp:
             return resp.read().decode('utf-8', errors='replace')
 
-def check_run(run_id, name):
-    print(f"\n==================== RUN {run_id} ({name}) ====================")
-    req = urllib.request.Request(f'https://api.github.com/repos/7atem/NEMORY/actions/runs/{run_id}/jobs', headers=headers)
-    with urllib.request.urlopen(req) as resp:
-        jobs = json.load(resp)['jobs']
-    for job in jobs:
-        print(f"\nJob: {job['name']} (ID: {job['id']}) - Status: {job['status']}, Conclusion: {job['conclusion']}")
-        for step in job['steps']:
-            if step['conclusion'] == 'failure':
-                print(f"  FAILED STEP: {step['name']}")
-                
-        if job['conclusion'] == 'failure':
-            try:
-                log_text = fetch_log(job['id'])
-                lines = log_text.splitlines()
-                err_lines = []
-                for i, l in enumerate(lines):
-                    lower = l.lower()
-                    if any(w in lower for w in ['error:', 'fatal:', 'failed', 'failure', 'exception', 'what went wrong']):
-                        start = max(0, i - 2)
-                        end = min(len(lines), i + 8)
-                        for idx in range(start, end):
-                            err_lines.append(f"{idx+1}: {lines[idx]}")
-                print(f"Total lines in log: {len(lines)}")
-                print("\n--- ERROR LOG EXCERPT ---")
-                seen = set()
-                filtered = []
-                for el in err_lines:
-                    if el not in seen:
-                        seen.add(el)
-                        filtered.append(el)
-                print('\n'.join(filtered[-60:]))
-            except Exception as e:
-                print(f"Could not load log: {e}")
+def check_latest():
+    data = api_get('https://api.github.com/repos/7atem/NEMORY/actions/runs?per_page=4')
+    for run in data['workflow_runs']:
+        print(f"\n==================== RUN {run['id']}: {run['name']} ====================")
+        print(f"Commit: {run['head_sha'][:7]} | Branch: {run['head_branch']} | Status: {run['status']} | Conclusion: {run['conclusion']}")
+        print(f"URL: {run['html_url']}")
+        
+        jobs_data = api_get(f"https://api.github.com/repos/7atem/NEMORY/actions/runs/{run['id']}/jobs")
+        for job in jobs_data['jobs']:
+            print(f"  Job: {job['name']} -> {job['status']} ({job['conclusion']})")
+            for step in job['steps']:
+                if step['conclusion'] == 'failure':
+                    print(f"    FAILED STEP: {step['name']}")
+            
+            if job['conclusion'] == 'failure':
+                try:
+                    log_text = fetch_log(job['id'])
+                    lines = log_text.splitlines()
+                    err_lines = [l for l in lines if any(w in l.lower() for w in ['error:', 'fatal:', 'failed', 'failure:'])]
+                    print("    Recent Errors:")
+                    for el in err_lines[-10:]:
+                        print(f"      {el[:150]}")
+                except Exception as e:
+                    print(f"    (Could not fetch log: {e})")
 
-check_run('39771048460', 'iOS validation')
-check_run('39771048380', 'Android validation')
+if __name__ == '__main__':
+    check_latest()

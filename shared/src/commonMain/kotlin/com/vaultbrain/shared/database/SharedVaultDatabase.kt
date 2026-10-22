@@ -51,6 +51,7 @@ import com.vaultbrain.shared.database.entity.VaultReminderEntity
     version = 20,
     exportSchema = false // Handled by Android
 )
+@ConstructedBy(SharedVaultDatabaseConstructor::class)
 @androidx.room.TypeConverters(com.vaultbrain.shared.database.util.RoomTypeConverters::class)
 abstract class SharedVaultDatabase : RoomDatabase() {
     abstract fun knowledgeGraphDao(): KnowledgeGraphDao
