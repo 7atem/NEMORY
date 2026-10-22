@@ -228,6 +228,7 @@ object IosVaultBridge {
     // region Brain + Briefing
 
     private var observingBrain = false
+    private val foundationModelsClient by lazy { com.vaultbrain.shared.intelligence.AppleFoundationModelsClient() }
 
     /** Starts pushing persisted brain turns to [onChange]. Subsequent calls are no-ops. */
     fun startObservingBrainMessages(onChange: (List<BrainMessage>) -> Unit) {
@@ -240,16 +241,32 @@ object IosVaultBridge {
         }
     }
 
-    /** Asks the local brain: stores the user turn, computes the reply off the main thread. */
+    /** Asks the local brain: stores the user turn, computes the reply off the main thread.
+     * Uses grounded vault retrieval first, enhanced by Apple Foundation Models when available. */
     fun askBrain(query: String, onResult: (String?) -> Unit) {
         scope.launch {
             try {
                 repository.addBrainMessage(role = "user", text = query)
-                val (reply, _) = withContext(Dispatchers.Default) {
+                val (groundedSummary, _) = withContext(Dispatchers.Default) {
                     repository.brainReply(query)
                 }
-                repository.addBrainMessage(role = "assistant", text = reply)
-                onResult(reply)
+
+                val finalAnswer = withContext(Dispatchers.Default) {
+                    if (foundationModelsClient.isAvailable() && !com.vaultbrain.shared.security.DecoySessionState.isDecoy) {
+                        val prompt = "You are Nemory Brain, an on-device private assistant. Answer using ONLY these vault facts:\n$groundedSummary\n\nQuestion: $query"
+                        val aiResult = foundationModelsClient.generateText(prompt, maxTokens = 256)
+                        if (aiResult.isSuccess && !aiResult.getOrNull().isNullOrBlank()) {
+                            aiResult.getOrNull()!!
+                        } else {
+                            groundedSummary
+                        }
+                    } else {
+                        groundedSummary
+                    }
+                }
+
+                repository.addBrainMessage(role = "assistant", text = finalAnswer)
+                onResult(finalAnswer)
             } catch (e: Exception) {
                 onResult(null)
             }

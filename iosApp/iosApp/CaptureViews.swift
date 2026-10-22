@@ -4,15 +4,21 @@ import PhotosUI
 import CoreLocation
 import shared
 
+#if canImport(VisionKit)
+import VisionKit
+#endif
+
 // MARK: - Capture sheet
 
-/// Entry point for adding real captures to the vault: camera or photo library.
+/// Entry point for adding real captures to the vault: smart document scanner,
+/// standard camera, or photo library.
 /// Images are handed to the shared layer, which stores them in protected vault
 /// storage and inserts the vault item.
 struct CaptureSheet: View {
     private let bridge = IosVaultBridge.shared
     @Environment(\.dismiss) private var dismiss
 
+    @State private var showDocumentScanner = false
     @State private var showCamera = false
     @State private var showGallery = false
     @State private var importFailed = false
@@ -20,48 +26,145 @@ struct CaptureSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
+                #if canImport(VisionKit)
+                if VNDocumentCameraViewController.isSupported {
+                    Button {
+                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                        showDocumentScanner = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "doc.viewfinder")
+                                .font(.title3)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Scan Document")
+                                    .font(.headline)
+                                Text("Auto edge-detection & perspective correction")
+                                    .font(.caption)
+                                    .foregroundStyle(.white.opacity(0.85))
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.white.opacity(0.7))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.accentColor, Color.accentColor.opacity(0.85)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            in: RoundedRectangle(cornerRadius: 16)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.white.opacity(0.2), lineWidth: 0.5)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.white)
+                    .accessibilityIdentifier("captureScanDocument")
+                }
+                #endif
+
                 Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     showCamera = true
                 } label: {
-                    Label("Take Photo", systemImage: "camera")
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 12) {
+                        Image(systemName: "camera")
+                            .font(.title3)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Take Photo")
+                                .font(.headline)
+                            Text("Standard full-resolution photo capture")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                    )
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                .buttonStyle(.plain)
                 .accessibilityIdentifier("captureCamera")
                 .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
 
                 Button {
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     showGallery = true
                 } label: {
-                    Label("Choose from Library", systemImage: "photo.on.rectangle")
-                        .frame(maxWidth: .infinity)
+                    HStack(spacing: 12) {
+                        Image(systemName: "photo.on.rectangle")
+                            .font(.title3)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Choose from Library")
+                                .font(.headline)
+                            Text("Import existing images or receipts")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                    )
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                .buttonStyle(.plain)
                 .accessibilityIdentifier("captureGallery")
 
                 if importFailed {
-                    Text("Import failed — please try again.")
-                        .font(.footnote)
-                        .foregroundStyle(.red)
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                        Text("Import failed — please try again.")
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .padding(.top, 4)
                 }
 
-                Toggle("Include location", isOn: $includeLocation)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("captureIncludeLocation")
+                Toggle(isOn: $includeLocation) {
+                    Label("Attach current location", systemImage: "location.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 4)
+                .padding(.top, 8)
+                .accessibilityIdentifier("captureIncludeLocation")
 
                 Spacer()
             }
             .padding()
             .navigationTitle("Add Capture")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
             }
+            #if canImport(VisionKit)
+            .sheet(isPresented: $showDocumentScanner) {
+                DocumentScannerPicker { images in
+                    importImages(images, source: "CAMERA")
+                } onCancel: {
+                    showDocumentScanner = false
+                }
+            }
+            #endif
             .sheet(isPresented: $showCamera) {
                 CameraPicker { image in
                     importImages([image], source: "CAMERA")
@@ -98,7 +201,6 @@ struct CaptureSheet: View {
             }
             group.enter()
             bridge.importCapturedImage(tempPath: tempPath, sourceName: source) { itemId in
-                // Temp file cleanup also happens on the Kotlin side; best-effort here.
                 try? FileManager.default.removeItem(atPath: tempPath)
                 if let itemId {
                     idsLock.lock()
@@ -112,6 +214,7 @@ struct CaptureSheet: View {
         group.notify(queue: .main) {
             importFailed = failures > 0
             if failures == 0 {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                 if includeLocation && !importedIds.isEmpty {
                     attachLocation(to: importedIds) { dismiss() }
                 } else {
@@ -142,6 +245,58 @@ struct CaptureSheet: View {
         }
     }
 }
+
+// MARK: - VisionKit Document Scanner
+
+#if canImport(VisionKit)
+struct DocumentScannerPicker: UIViewControllerRepresentable {
+    let onScan: ([UIImage]) -> Void
+    let onCancel: () -> Void
+
+    func makeUIViewController(context: Context) -> VNDocumentCameraViewController {
+        let scanner = VNDocumentCameraViewController()
+        scanner.delegate = context.coordinator
+        return scanner
+    }
+
+    func updateUIViewController(_ uiViewController: VNDocumentCameraViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(onScan: onScan, onCancel: onCancel)
+    }
+
+    final class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
+        let onScan: ([UIImage]) -> Void
+        let onCancel: () -> Void
+
+        init(onScan: @escaping ([UIImage]) -> Void, onCancel: @escaping () -> Void) {
+            self.onScan = onScan
+            self.onCancel = onCancel
+        }
+
+        func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            var images: [UIImage] = []
+            for i in 0..<scan.pageCount {
+                images.append(scan.imageOfPage(at: i))
+            }
+            controller.dismiss(animated: true) {
+                self.onScan(images)
+            }
+        }
+
+        func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
+            controller.dismiss(animated: true)
+            onCancel()
+        }
+
+        func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
+            controller.dismiss(animated: true)
+            onCancel()
+        }
+    }
+}
+#endif
 
 // MARK: - One-shot location
 

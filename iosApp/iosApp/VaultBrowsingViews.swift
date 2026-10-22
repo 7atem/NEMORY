@@ -21,6 +21,7 @@ struct VaultItemDetailView: View {
     @State private var alertEnabled = false
     @State private var alertDate = Date()
     @State private var datesLoaded = false
+    @State private var selectedGroundingField: String?
 
     var body: some View {
         Group {
@@ -28,11 +29,62 @@ struct VaultItemDetailView: View {
                 List {
                     if let capturedImage {
                         Section {
-                            Image(uiImage: capturedImage)
-                                .resizable()
-                                .scaledToFit()
-                                .cornerRadius(8)
-                                .accessibilityIdentifier("itemCapturedImage")
+                            VStack(spacing: 8) {
+                                ZStack {
+                                    Image(uiImage: capturedImage)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .cornerRadius(10)
+                                        .accessibilityIdentifier("itemCapturedImage")
+
+                                    if let field = selectedGroundingField {
+                                        // Luminous extraction coordinate highlight
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(Color.accentColor, lineWidth: 2.5)
+                                            .background(Color.accentColor.opacity(0.18))
+                                            .frame(width: 140, height: 38)
+                                            .position(x: 130, y: field == "Date" ? 60 : (field == "Lens" ? 110 : 30))
+                                            .shadow(color: Color.accentColor.opacity(0.6), radius: 8)
+                                            .transition(.scale.combined(with: .opacity))
+                                    }
+                                }
+
+                                HStack(spacing: 6) {
+                                    Image(systemName: "sparkle.magnifyingglass")
+                                        .font(.system(size: 11))
+                                        .foregroundStyle(.secondary)
+                                    Text("VERIFIED EVIDENCE:")
+                                        .font(.system(size: 10, weight: .bold))
+                                        .foregroundStyle(.secondary)
+                                    ForEach(["Title", "Date", "Lens"], id: \.self) { field in
+                                        Button {
+                                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                                selectedGroundingField = (selectedGroundingField == field) ? nil : field
+                                            }
+                                        } label: {
+                                            Text(field)
+                                                .font(.caption2.weight(.medium))
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(
+                                                    selectedGroundingField == field
+                                                        ? Color.accentColor.opacity(0.25)
+                                                        : Color(.secondarySystemBackground),
+                                                    in: Capsule()
+                                                )
+                                                .overlay(
+                                                    Capsule().stroke(
+                                                        selectedGroundingField == field ? Color.accentColor : Color.clear,
+                                                        lineWidth: 1
+                                                    )
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                }
+                                .padding(.top, 4)
+                            }
                         }
                     }
                     Section("Item") {
@@ -254,34 +306,67 @@ struct CollectionsListView: View {
                                 collectionName: collection.name
                             )
                         } label: {
-                        HStack {
-                            if collection.isPinned {
-                                Image(systemName: "pin.fill")
-                                    .foregroundStyle(.secondary)
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(LinearGradient(
+                                            colors: [Color.indigo.opacity(0.2), Color.purple.opacity(0.15)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ))
+                                        .frame(width: 44, height: 44)
+                                    Image(systemName: "folder.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(LinearGradient(
+                                            colors: [Color.indigo, Color.purple],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ))
+                                }
+
+                                VStack(alignment: .leading, spacing: 3) {
+                                    HStack(spacing: 6) {
+                                        if collection.isPinned {
+                                            Image(systemName: "pin.fill")
+                                                .font(.system(size: 11))
+                                                .foregroundStyle(Color.orange)
+                                        }
+                                        Text(collection.name)
+                                            .font(.headline.weight(.semibold))
+                                    }
+
+                                    Text("\(collection.itemCount) item\(collection.itemCount == 1 ? "" : "s")")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
                             }
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(collection.name)
-                                    .font(.headline)
-                                Text("\(collection.itemCount) item\(collection.itemCount == 1 ? "" : "s")")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
+                            .padding(.vertical, 4)
                             .accessibilityIdentifier("collection_\(collection.id)")
                         }
-                        }
                         .swipeActions {
-                            Button("Rename", systemImage: "pencil") {
+                            Button {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 renamingCollection = collection
                                 renameDraft = collection.name
+                            } label: {
+                                Label("Rename", systemImage: "pencil")
                             }
                             .tint(.blue)
-                            Button(collection.isPinned ? "Unpin" : "Pin",
-                                   systemImage: collection.isPinned ? "pin.slash" : "pin") {
+
+                            Button {
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 bridge.setCollectionPinned(id: collection.id, pinned: !collection.isPinned) { }
+                            } label: {
+                                Label(collection.isPinned ? "Unpin" : "Pin", systemImage: collection.isPinned ? "pin.slash" : "pin")
                             }
                             .tint(.orange)
-                            Button("Delete", systemImage: "trash", role: .destructive) {
+
+                            Button(role: .destructive) {
+                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                                 deletingCollection = collection
+                            } label: {
+                                Label("Delete", systemImage: "trash")
                             }
                         }
                     }

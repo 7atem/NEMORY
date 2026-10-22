@@ -1,5 +1,12 @@
 package com.vaultbrain.feature.vault
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -338,13 +345,43 @@ internal fun CollectionCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(modifier = modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    val haptic = LocalHapticFeedback.current
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                onClick()
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f)
+        ),
+        border = BorderStroke(
+            0.5.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.Folder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(collection.name, style = MaterialTheme.typography.titleMedium)
                 Text(
@@ -353,7 +390,13 @@ internal fun CollectionCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            if (collection.isPinned) Icon(Icons.Default.PushPin, stringResource(R.string.collection_pinned))
+            if (collection.isPinned) {
+                Icon(
+                    Icons.Default.PushPin,
+                    contentDescription = stringResource(R.string.collection_pinned),
+                    tint = MaterialTheme.colorScheme.tertiary
+                )
+            }
         }
     }
 }
