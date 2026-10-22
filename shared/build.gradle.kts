@@ -62,7 +62,6 @@ kotlin {
 // Room annotation processor, per platform compilation (commonMain sources are
 // processed as part of each target compilation in KSP multiplatform setups).
 dependencies {
-    add("kspAndroid", libs.room.compiler)
     add("kspIosArm64", libs.room.compiler)
     add("kspIosSimulatorArm64", libs.room.compiler)
 }

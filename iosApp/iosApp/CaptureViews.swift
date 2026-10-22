@@ -265,6 +265,7 @@ struct DocumentScannerPicker: UIViewControllerRepresentable {
         Coordinator(onScan: onScan, onCancel: onCancel)
     }
 
+    @MainActor
     final class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
         let onScan: ([UIImage]) -> Void
         let onCancel: () -> Void
@@ -341,6 +342,7 @@ struct CameraPicker: UIViewControllerRepresentable {
         Coordinator(onImage: onImage, onCancel: onCancel)
     }
 
+    @MainActor
     final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
         let onImage: (UIImage) -> Void
         let onCancel: () -> Void
@@ -369,6 +371,23 @@ struct CameraPicker: UIViewControllerRepresentable {
 
 // MARK: - Gallery picker
 
+private final class SafeImageAccumulator: @unchecked Sendable {
+    private let lock = NSLock()
+    private var items: [UIImage] = []
+
+    func append(_ image: UIImage) {
+        lock.lock()
+        defer { lock.unlock() }
+        items.append(image)
+    }
+
+    func getAll() -> [UIImage] {
+        lock.lock()
+        defer { lock.unlock() }
+        return items
+    }
+}
+
 struct GalleryPicker: UIViewControllerRepresentable {
     let onImages: ([UIImage]) -> Void
 
@@ -387,6 +406,7 @@ struct GalleryPicker: UIViewControllerRepresentable {
         Coordinator(onImages: onImages)
     }
 
+    @MainActor
     final class Coordinator: NSObject, PHPickerViewControllerDelegate {
         let onImages: ([UIImage]) -> Void
 
@@ -399,24 +419,21 @@ struct GalleryPicker: UIViewControllerRepresentable {
             guard !results.isEmpty else { return }
 
             let group = DispatchGroup()
-            var images: [UIImage] = []
-            let lock = NSLock()
+            let accumulator = SafeImageAccumulator()
 
             for result in results {
                 guard result.itemProvider.canLoadObject(ofClass: UIImage.self) else { continue }
                 group.enter()
                 result.itemProvider.loadObject(ofClass: UIImage.self) { object, _ in
                     if let image = object as? UIImage {
-                        lock.lock()
-                        images.append(image)
-                        lock.unlock()
+                        accumulator.append(image)
                     }
                     group.leave()
                 }
             }
 
             group.notify(queue: .main) {
-                self.onImages(images)
+                self.onImages(accumulator.getAll())
             }
         }
     }
