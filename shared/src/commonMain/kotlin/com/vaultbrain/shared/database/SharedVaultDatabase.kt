@@ -36,6 +36,7 @@ import com.vaultbrain.shared.database.entity.VaultReminderEntity
         VaultItemEntity::class,
         VaultItemFts::class,
         AuditLogEntity::class,
+        NotificationQueueEntity::class,
         BrainMessageEntity::class,
         ExternalConnectionEntity::class,
         ExternalRecordEntity::class,
