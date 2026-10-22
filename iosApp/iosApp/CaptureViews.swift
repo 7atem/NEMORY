@@ -266,7 +266,7 @@ struct DocumentScannerPicker: UIViewControllerRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, VNDocumentCameraViewControllerDelegate {
+    final class Coordinator: NSObject, @preconcurrency VNDocumentCameraViewControllerDelegate {
         let onScan: ([UIImage]) -> Void
         let onCancel: () -> Void
 
@@ -275,25 +275,31 @@ struct DocumentScannerPicker: UIViewControllerRepresentable {
             self.onCancel = onCancel
         }
 
-        func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        nonisolated func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
             var images: [UIImage] = []
             for i in 0..<scan.pageCount {
                 images.append(scan.imageOfPage(at: i))
             }
-            controller.dismiss(animated: true) {
-                self.onScan(images)
+            Task { @MainActor in
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                controller.dismiss(animated: true) {
+                    self.onScan(images)
+                }
             }
         }
 
-        func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
-            controller.dismiss(animated: true)
-            onCancel()
+        nonisolated func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
+            Task { @MainActor in
+                controller.dismiss(animated: true)
+                self.onCancel()
+            }
         }
 
-        func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
-            controller.dismiss(animated: true)
-            onCancel()
+        nonisolated func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
+            Task { @MainActor in
+                controller.dismiss(animated: true)
+                self.onCancel()
+            }
         }
     }
 }

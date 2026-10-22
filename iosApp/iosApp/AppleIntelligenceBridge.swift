@@ -7,7 +7,6 @@ import NaturalLanguage
 
 /// Swift bridge implementing Apple Foundation Models and system-level on-device intelligence.
 /// Registered with `AppleFoundationModelsClient.companion.delegate` at app startup.
-@MainActor
 final class AppleIntelligenceBridge: NSObject, AppleFoundationModelDelegate {
     static let shared = AppleIntelligenceBridge()
 
@@ -16,6 +15,7 @@ final class AppleIntelligenceBridge: NSObject, AppleFoundationModelDelegate {
     }
 
     /// Registers this bridge with the shared Kotlin Multiplatform intelligence runtime.
+    @MainActor
     func register() {
         AppleFoundationModelsClient.companion.delegate = self
     }
