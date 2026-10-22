@@ -473,14 +473,17 @@ struct HomeView: View {
                 clipboard.checkClipboard()
                 bridge.startObservingItems { loaded in
                     items = loaded
-                    pulse.refresh(
-                        calendarEvents: calendar.upcomingEvents,
-                        reminders: [],
-                        expiringCount: loaded.filter { $0.hasAlert }.count
-                    )
                 }
                 bridge.startObservingCollections { loaded in
                     collections = loaded
+                }
+                bridge.loadBriefing { snapshot in
+                    briefing = snapshot
+                    pulse.refresh(
+                        calendarEvents: calendar.upcomingEvents,
+                        reminders: [],
+                        expiringCount: snapshot?.expiringSoon.count ?? 0
+                    )
                 }
             }
         }
