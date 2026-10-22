@@ -342,7 +342,7 @@ struct CaptureReviewView: View {
                 isSaving = false
                 if let itemId {
                     if !notes.trimmingCharacters(in: .whitespaces).isEmpty {
-                        bridge.saveUserNotes(id: itemId, notes: notes) {}
+                        bridge.updateItemNotes(id: itemId, notes: notes) {}
                     }
                     UINotificationFeedbackGenerator().notificationOccurred(.success)
                     onSaveCompleted()

@@ -108,6 +108,10 @@ object IosVaultBridge {
         }
     }
 
+    fun saveUserNotes(id: String, notes: String, onDone: () -> Unit) {
+        updateItemNotes(id, notes, onDone)
+    }
+
     /** Sets or clears dates; pass 0 millis to clear a date. */
     fun setItemDates(id: String, expiryMillis: Long, alertMillis: Long, onDone: () -> Unit) {
         scope.launch {
