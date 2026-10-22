@@ -40,15 +40,23 @@ def fetch_log(job_id):
         with urllib.request.urlopen(location, timeout=60) as resp:
             return resp.read().decode('utf-8', errors='replace')
 
-# Fetch latest runs for branch 'main'
-runs_data = api_get("https://api.github.com/repos/7atem/NEMORY/actions/runs?branch=main&per_page=5")
-latest_runs = runs_data['workflow_runs'][:2]
+# Fetch latest runs for commit HEAD
+head_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode().strip()
+print(f"Waiting for CI runs for commit {head_sha[:7]}...")
+latest_runs = []
+for _ in range(12):
+    runs_data = api_get(f"https://api.github.com/repos/7atem/NEMORY/actions/runs?head_sha={head_sha}")
+    if runs_data and runs_data.get('workflow_runs'):
+        latest_runs = runs_data['workflow_runs']
+        break
+    time.sleep(4)
+
 target_runs = [r['id'] for r in latest_runs]
 print("Monitoring latest runs:", [(r['id'], r['name']) for r in latest_runs])
 
-ios_run_id = next((r['id'] for r in latest_runs if 'iOS' in r['name']), target_runs[0])
+ios_run_id = next((r['id'] for r in latest_runs if 'iOS' in r['name']), target_runs[0] if target_runs else None)
 
-for attempt in range(40):
+for attempt in range(50):
     all_done = True
     print(f"\n--- Poll {attempt+1}/40 at {time.strftime('%H:%M:%S')} ---")
     for run_id in target_runs:

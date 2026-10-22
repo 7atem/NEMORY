@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
 /**
@@ -69,20 +70,48 @@ class VaultRepository(private val database: SharedVaultDatabase) {
         items.updateNotes(id, notes?.takeIf { it.isNotBlank() }, currentTimeMillis())
     }
 
-    /** Inserts a small demo item and returns its id. */
+    /** Inserts a realistic sample item with rich metadata, OCR text, and summary. */
     suspend fun addSampleItem(title: String? = null): String {
         val now = currentTimeMillis()
         val id = "ios-item-$now"
-        items.insert(
-            VaultItemEntity(
+        val variant = ((now / 1000) % 3).toInt()
+
+        val item = when (variant) {
+            0 -> VaultItemEntity(
                 id = id,
-                title = title ?: "Vault item ${now % 10_000}",
-                summary = "Added from the iOS shell",
+                title = title ?: "Blue Bottle Coffee Receipt",
+                summary = "Coffee and pastries receipt from Blue Bottle Coffee. Total $16.75 paid via Apple Pay.",
                 sourceType = SourceType.MANUAL,
-                parsedMetadata = "{}",
+                rawOcrText = "BLUE BOTTLE COFFEE\n115 W 40th St, New York, NY\nOrder #90421\nDate: 2026-10-18 09:42 AM\n1x Hayes Valley Espresso  $4.50\n1x Oat Milk Latte  $6.25\n1x Almond Croissant  $4.25\nSubtotal: $15.00\nTax (8.875%): $1.75\nTOTAL: $16.75\nPAID WITH APPLE PAY (VISA ****4291)\nThank you for visiting!",
+                parsedMetadata = """{"Document Type":"Receipt","Merchant / Issuer":"Blue Bottle Coffee","Total Amount":"$16.75","Subtotal":"$15.00","Tax":"$1.75","Date":"2026-10-18","Payment Method":"Apple Pay (Visa ****4291)","Receipt Number":"REC-90421","Phone":"(212) 555-0142"}""",
+                primaryLensId = "MONEY",
                 lensTags = "[\"MONEY\"]",
             )
-        )
+            1 -> VaultItemEntity(
+                id = id,
+                title = title ?: "Emirates Flight Boarding Pass",
+                summary = "Emirates Flight EK 203 from Dubai to New York JFK. Seat 14A, Gate B22. Boarding at 07:45 AM.",
+                sourceType = SourceType.MANUAL,
+                rawOcrText = "EMIRATES AIRLINES\nBOARDING PASS\nPASSENGER: EL SAYED / HATEM\nFLIGHT: EK 203\nFROM: DUBAI INTL (DXB)\nTO: NEW YORK (JFK)\nDATE: 05 NOV 2026\nBOARDING TIME: 07:45 AM\nGATE: B22   SEAT: 14A\nCLASS: BUSINESS\nETKT: 1762849102847",
+                parsedMetadata = """{"Document Type":"Boarding Pass","Airline":"Emirates","Flight Number":"EK 203","Passenger Name":"Hatem Elsayed","Seat":"14A","Gate":"B22","Departure":"Dubai (DXB)","Destination":"New York (JFK)","Date":"2026-11-05","Boarding Time":"07:45 AM","Ticket Number":"ETKT-1762849102847"}""",
+                primaryLensId = "TRAVEL",
+                lensTags = "[\"TRAVEL\"]",
+                expiryDate = now + 14 * 24 * 3600 * 1000L,
+            )
+            else -> VaultItemEntity(
+                id = id,
+                title = title ?: "Metropolitan Clinic Prescription",
+                summary = "Prescription for Amoxicillin 500mg from Dr. Marcus Vance. Take 1 capsule 3 times daily. Valid until Nov 2026.",
+                sourceType = SourceType.MANUAL,
+                rawOcrText = "METROPOLITAN HEALTH CLINIC\nDr. Marcus Vance, MD - Internal Medicine\n740 Park Avenue, Suite 400\nPhone: (212) 555-0198\n\nPATIENT: Hatem Elsayed\nDATE: 2026-10-15\nRx #: 839201\n\nRx: Amoxicillin 500mg Oral Capsules\nSig: Take 1 capsule three times daily for 10 days\nRefills: 2\nExp Date: 15-Nov-2026\n\nSignature: Dr. M. Vance, MD",
+                parsedMetadata = """{"Document Type":"Prescription","Clinic / Doctor":"Dr. Marcus Vance, MD","Patient Name":"Hatem Elsayed","Medication":"Amoxicillin 500mg","Dosage":"1 Capsule 3x daily with food","Refills":"2 Remaining","Date":"2026-10-15","Expiry Date":"2026-11-15","Rx Number":"RX-839201","Phone":"(212) 555-0198"}""",
+                primaryLensId = "HEALTH",
+                lensTags = "[\"HEALTH\"]",
+                expiryDate = now + 24 * 24 * 3600 * 1000L,
+            )
+        }
+
+        items.insert(item)
         return id
     }
 
@@ -395,6 +424,67 @@ class VaultRepository(private val database: SharedVaultDatabase) {
             )
         )
         return id
+    }
+
+    /** Updates extracted intelligence on an item (OCR text, parsed metadata JSON, evidence coordinates). */
+    suspend fun updateExtractedIntelligence(
+        id: String,
+        parsedMetadataJson: String,
+        rawOcrText: String?,
+        evidenceCoordinatesJson: String?,
+        primaryLensId: String?,
+        summary: String? = null,
+        title: String? = null,
+    ) {
+        val existing = items.getById(id) ?: return
+        val updated = existing.copy(
+            parsedMetadata = parsedMetadataJson.trim().ifEmpty { "{}" },
+            rawOcrText = rawOcrText ?: existing.rawOcrText,
+            customFields = evidenceCoordinatesJson ?: existing.customFields,
+            primaryLensId = primaryLensId ?: existing.primaryLensId,
+            summary = summary ?: existing.summary,
+            title = title ?: existing.title,
+            updatedAt = currentTimeMillis(),
+        )
+        items.update(updated)
+    }
+
+    /** Adds or updates a single key-value field in an item's parsed metadata. */
+    suspend fun setMetadataField(id: String, key: String, value: String) {
+        val existing = items.getById(id) ?: return
+        val currentJson = existing.parsedMetadata.trim().ifEmpty { "{}" }
+        val updatedJson = try {
+            val element = Json.parseToJsonElement(currentJson)
+            if (element is JsonObject) {
+                val map = element.toMutableMap()
+                map[key] = JsonPrimitive(value)
+                JsonObject(map).toString()
+            } else {
+                "{\"$key\":\"$value\"}"
+            }
+        } catch (e: Exception) {
+            "{\"$key\":\"$value\"}"
+        }
+        items.update(existing.copy(parsedMetadata = updatedJson, updatedAt = currentTimeMillis()))
+    }
+
+    /** Removes a single key-value field from an item's parsed metadata. */
+    suspend fun removeMetadataField(id: String, key: String) {
+        val existing = items.getById(id) ?: return
+        val currentJson = existing.parsedMetadata.trim().ifEmpty { "{}" }
+        val updatedJson = try {
+            val element = Json.parseToJsonElement(currentJson)
+            if (element is JsonObject) {
+                val map = element.toMutableMap()
+                map.remove(key)
+                JsonObject(map).toString()
+            } else {
+                "{}"
+            }
+        } catch (e: Exception) {
+            "{}"
+        }
+        items.update(existing.copy(parsedMetadata = updatedJson, updatedAt = currentTimeMillis()))
     }
 
     // endregion

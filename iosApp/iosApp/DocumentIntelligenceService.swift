@@ -109,59 +109,88 @@ final class DocumentIntelligenceService: @unchecked Sendable {
     }
 
     private func processRecognizedBlocks(_ blocks: [TextBlock], imageSize: CGSize) -> DocumentAnalysisResult {
-        let fullText = blocks.map(\.text).joined(separator: "\n")
+        let sortedBlocks = blocks.sorted { $0.normalizedRect.origin.y < $1.normalizedRect.origin.y }
+        let fullText = sortedBlocks.map(\.text).joined(separator: "\n")
         let lower = fullText.lowercased()
 
         // 1. Detect Lens and Document Type
         let (lens, docType, lensConfidence) = classifyDocument(text: lower)
 
         // 2. Extract Merchant / Issuer
-        let (merchant, merchantRect) = extractMerchant(from: blocks)
+        let (merchant, merchantRect) = extractMerchant(from: sortedBlocks)
 
-        // 3. Extract Amounts
-        let (amountString, totalRect) = extractTotalAmount(from: blocks)
+        // 3. Extract Amounts (Total, Subtotal, Tax)
+        let (amountString, totalRect) = extractTotalAmount(from: sortedBlocks)
+        let (subtotalString, taxString, subtotalRect, taxRect) = extractTaxAndSubtotal(from: sortedBlocks)
 
-        // 4. Extract Dates
-        let (dateString, expiryDate, dateRect, expiryRect) = extractDates(from: blocks)
+        // 4. Extract Dates (Document date & Expiry date)
+        let (dateString, expiryDate, dateRect, expiryRect) = extractDates(from: sortedBlocks)
 
-        // 5. Build structured metadata
+        // 5. Extract Reference / ID Numbers
+        let refInfo = extractReferenceNumber(from: sortedBlocks)
+
+        // 6. Extract Payment Method
+        let paymentMethod = extractPaymentMethod(from: sortedBlocks)
+
+        // 7. Extract Contact Info (Phone, Email, Website)
+        let (phone, email, website) = extractContactInfo(from: sortedBlocks)
+
+        // 8. Extract Domain-Specific Details (Travel, Health)
+        let (flight, seat, gate) = extractTravelDetails(from: sortedBlocks)
+
+        // 9. Build structured metadata
         var metadata: [String: String] = [:]
         metadata["Document Type"] = docType
         if let merchant { metadata["Merchant / Issuer"] = merchant }
         if let amountString { metadata["Total Amount"] = amountString }
+        if let subtotalString { metadata["Subtotal"] = subtotalString }
+        if let taxString { metadata["Tax / VAT"] = taxString }
         if let dateString { metadata["Date"] = dateString }
         if let expiryDate {
             let df = DateFormatter()
             df.dateStyle = .medium
             metadata["Expiry Date"] = df.string(from: expiryDate)
         }
+        if let ref = refInfo { metadata[ref.label] = ref.value }
+        if let paymentMethod { metadata["Payment Method"] = paymentMethod }
+        if let phone { metadata["Phone"] = phone }
+        if let email { metadata["Email"] = email }
+        if let website { metadata["Website"] = website }
+        if let flight { metadata["Flight Number"] = flight }
+        if let seat { metadata["Seat"] = seat }
+        if let gate { metadata["Gate"] = gate }
 
-        // 6. Build evidence coordinate map
+        // 10. Build evidence coordinate map
         var evidenceCoordinates: [String: [CGFloat]] = [:]
         if let merchantRect { evidenceCoordinates["Merchant"] = [merchantRect.origin.x, merchantRect.origin.y, merchantRect.size.width, merchantRect.size.height] }
         if let totalRect { evidenceCoordinates["Total"] = [totalRect.origin.x, totalRect.origin.y, totalRect.size.width, totalRect.size.height] }
+        if let taxRect { evidenceCoordinates["Tax"] = [taxRect.origin.x, taxRect.origin.y, taxRect.size.width, taxRect.size.height] }
         if let dateRect { evidenceCoordinates["Date"] = [dateRect.origin.x, dateRect.origin.y, dateRect.size.width, dateRect.size.height] }
         if let expiryRect { evidenceCoordinates["Expiry"] = [expiryRect.origin.x, expiryRect.origin.y, expiryRect.size.width, expiryRect.size.height] }
-        if let first = blocks.first {
+        if let ref = refInfo { evidenceCoordinates["Ref #"] = [ref.rect.origin.x, ref.rect.origin.y, ref.rect.size.width, ref.rect.size.height] }
+        if let first = sortedBlocks.first {
             evidenceCoordinates["Title"] = [first.normalizedRect.origin.x, first.normalizedRect.origin.y, first.normalizedRect.size.width, first.normalizedRect.size.height]
         }
 
-        // 7. Generate Intelligent Title
+        // 11. Generate Intelligent Title
         let title: String
         if let merchant {
             title = "\(merchant) \(docType)"
-        } else if let firstLine = blocks.first?.text, firstLine.count <= 35, !firstLine.lowercased().contains("welcome") {
+        } else if let flight {
+            title = "\(docType) \(flight)"
+        } else if let firstLine = sortedBlocks.first?.text, firstLine.count <= 35, !firstLine.lowercased().contains("welcome") {
             title = "\(firstLine) \(docType)"
         } else {
             title = "\(docType) (\(lens.capitalized))"
         }
 
-        // 8. Generate Summary
+        // 12. Generate Summary
         var summaryParts: [String] = []
         summaryParts.append("\(docType) classified under \(lens).")
         if let merchant { summaryParts.append("Issued by \(merchant).") }
         if let amountString { summaryParts.append("Total: \(amountString).") }
         if let dateString { summaryParts.append("Dated \(dateString).") }
+        if let ref = refInfo { summaryParts.append("\(ref.label): \(ref.value).") }
         let summary = summaryParts.joined(separator: " ")
 
         return DocumentAnalysisResult(
@@ -303,6 +332,129 @@ final class DocumentIntelligenceService: @unchecked Sendable {
         }
 
         return (foundDate, expiryDate, foundDateRect, expiryRect)
+    }
+
+    private func extractTaxAndSubtotal(from blocks: [TextBlock]) -> (subtotal: String?, tax: String?, subtotalRect: CGRect?, taxRect: CGRect?) {
+        var subtotal: String?
+        var subtotalRect: CGRect?
+        var tax: String?
+        var taxRect: CGRect?
+
+        let amountPattern = #"(?:[$€£¥₹]|SAR|AED|EGP|USD|EUR|GBP)?\s*([0-9]{1,3}(?:[,\.][0-9]{3})*(?:[,\.][0-9]{2}))\s*(?:[$€£¥₹]|SAR|AED|EGP|USD|EUR|GBP)?"#
+        guard let regex = try? NSRegularExpression(pattern: amountPattern, options: [.caseInsensitive]) else {
+            return (nil, nil, nil, nil)
+        }
+
+        for b in blocks {
+            let lower = b.text.lowercased()
+            let ns = b.text as NSString
+            if (lower.contains("subtotal") || lower.contains("sub-total") || lower.contains("net amount")) && subtotal == nil {
+                if let match = regex.firstMatch(in: b.text, range: NSRange(location: 0, length: ns.length)) {
+                    subtotal = ns.substring(with: match.range).trimmingCharacters(in: .whitespaces)
+                    subtotalRect = b.normalizedRect
+                }
+            } else if (lower.contains("tax") || lower.contains("vat") || lower.contains("gst") || lower.contains("ضريبة")) && tax == nil {
+                if let match = regex.firstMatch(in: b.text, range: NSRange(location: 0, length: ns.length)) {
+                    tax = ns.substring(with: match.range).trimmingCharacters(in: .whitespaces)
+                    taxRect = b.normalizedRect
+                }
+            }
+        }
+        return (subtotal, tax, subtotalRect, taxRect)
+    }
+
+    private func extractReferenceNumber(from blocks: [TextBlock]) -> (label: String, value: String, rect: CGRect)? {
+        let pattern = #"(?i)\b(invoice|receipt|order|policy|account|ticket|rx|booking|confirmation|ref|acc|etkt)[\s\.:#№_-]+([A-Z0-9-]{4,22})\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+
+        for b in blocks {
+            let ns = b.text as NSString
+            if let match = regex.firstMatch(in: b.text, range: NSRange(location: 0, length: ns.length)), match.numberOfRanges >= 3 {
+                let prefix = ns.substring(with: match.range(at: 1)).capitalized
+                let val = ns.substring(with: match.range(at: 2))
+                let label = "\(prefix) Number"
+                return (label, val, b.normalizedRect)
+            }
+        }
+        return nil
+    }
+
+    private func extractPaymentMethod(from blocks: [TextBlock]) -> String? {
+        for b in blocks {
+            let lower = b.text.lowercased()
+            if lower.contains("apple pay") { return "Apple Pay" }
+            if lower.contains("visa") {
+                if let range = b.text.range(of: #"(?i)visa\s*(?:[*\.xX]{2,4}\s*)?(\d{4})?"#, options: .regularExpression) {
+                    return String(b.text[range])
+                }
+                return "Visa"
+            }
+            if lower.contains("mastercard") || lower.contains("master card") { return "MasterCard" }
+            if lower.contains("amex") || lower.contains("american express") { return "American Express" }
+            if lower.contains("cash") && (lower.contains("paid") || lower.contains("tender") || lower.contains("change")) { return "Cash" }
+            if lower.contains("debit") { return "Debit Card" }
+        }
+        return nil
+    }
+
+    private func extractContactInfo(from blocks: [TextBlock]) -> (phone: String?, email: String?, website: String?) {
+        var phone: String?
+        var email: String?
+        var website: String?
+
+        let emailPattern = #"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"#
+        let phonePattern = #"(?:\+?\d{1,3}[\s-]?)?\(?\d{2,4}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}"#
+        let urlPattern = #"\b(?:https?:\/\/|www\.)[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?:\/[^\s]*)?\b"#
+
+        let emailRegex = try? NSRegularExpression(pattern: emailPattern)
+        let phoneRegex = try? NSRegularExpression(pattern: phonePattern)
+        let urlRegex = try? NSRegularExpression(pattern: urlPattern, options: [.caseInsensitive])
+
+        for b in blocks {
+            let ns = b.text as NSString
+            let len = ns.length
+            if email == nil, let m = emailRegex?.firstMatch(in: b.text, range: NSRange(location: 0, length: len)) {
+                email = ns.substring(with: m.range)
+            }
+            if website == nil, let m = urlRegex?.firstMatch(in: b.text, range: NSRange(location: 0, length: len)) {
+                website = ns.substring(with: m.range)
+            }
+            if phone == nil && (b.text.lowercased().contains("tel") || b.text.lowercased().contains("phone") || b.text.lowercased().contains("call") || b.text.contains("+")) {
+                if let m = phoneRegex?.firstMatch(in: b.text, range: NSRange(location: 0, length: len)) {
+                    phone = ns.substring(with: m.range).trimmingCharacters(in: .whitespaces)
+                }
+            }
+        }
+        return (phone, email, website)
+    }
+
+    private func extractTravelDetails(from blocks: [TextBlock]) -> (flight: String?, seat: String?, gate: String?) {
+        var flight: String?
+        var seat: String?
+        var gate: String?
+
+        let flightPattern = #"(?i)\b(?:flight|flt)[\s#:]*([A-Z0-9]{2,3}\s*\d{2,4})\b"#
+        let seatPattern = #"(?i)\b(?:seat)[\s#:]*([0-9]{1,2}[A-K])\b"#
+        let gatePattern = #"(?i)\b(?:gate)[\s#:]*([A-Z0-9]{1,4})\b"#
+
+        let flightRegex = try? NSRegularExpression(pattern: flightPattern)
+        let seatRegex = try? NSRegularExpression(pattern: seatPattern)
+        let gateRegex = try? NSRegularExpression(pattern: gatePattern)
+
+        for b in blocks {
+            let ns = b.text as NSString
+            let len = ns.length
+            if flight == nil, let m = flightRegex?.firstMatch(in: b.text, range: NSRange(location: 0, length: len)), m.numberOfRanges >= 2 {
+                flight = ns.substring(with: m.range(at: 1))
+            }
+            if seat == nil, let m = seatRegex?.firstMatch(in: b.text, range: NSRange(location: 0, length: len)), m.numberOfRanges >= 2 {
+                seat = ns.substring(with: m.range(at: 1))
+            }
+            if gate == nil, let m = gateRegex?.firstMatch(in: b.text, range: NSRange(location: 0, length: len)), m.numberOfRanges >= 2 {
+                gate = ns.substring(with: m.range(at: 1))
+            }
+        }
+        return (flight, seat, gate)
     }
 
     private func parseDateString(_ s: String) -> Date? {

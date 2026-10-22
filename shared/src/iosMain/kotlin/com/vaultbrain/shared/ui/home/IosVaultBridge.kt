@@ -128,6 +128,47 @@ object IosVaultBridge {
         }
     }
 
+    /** Updates extracted intelligence on an existing item. */
+    fun updateExtractedIntelligence(
+        id: String,
+        parsedMetadataJson: String,
+        rawOcrText: String?,
+        evidenceCoordinatesJson: String?,
+        primaryLensId: String?,
+        summary: String?,
+        title: String?,
+        onDone: () -> Unit
+    ) {
+        scope.launch {
+            repository.updateExtractedIntelligence(
+                id = id,
+                parsedMetadataJson = parsedMetadataJson,
+                rawOcrText = rawOcrText,
+                evidenceCoordinatesJson = evidenceCoordinatesJson,
+                primaryLensId = primaryLensId,
+                summary = summary,
+                title = title
+            )
+            onDone()
+        }
+    }
+
+    /** Sets a single metadata key-value pair on an item. */
+    fun setMetadataField(id: String, key: String, value: String, onDone: () -> Unit) {
+        scope.launch {
+            repository.setMetadataField(id, key, value)
+            onDone()
+        }
+    }
+
+    /** Removes a single metadata key from an item. */
+    fun removeMetadataField(id: String, key: String, onDone: () -> Unit) {
+        scope.launch {
+            repository.removeMetadataField(id, key)
+            onDone()
+        }
+    }
+
     /** Attaches capture coordinates to an item. */
     fun setItemLocation(id: String, latitude: Double, longitude: Double, locationName: String, onDone: () -> Unit) {
         scope.launch {

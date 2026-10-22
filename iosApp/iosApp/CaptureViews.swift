@@ -23,12 +23,25 @@ struct CaptureSheet: View {
     private let bridge = IosVaultBridge.shared
     @Environment(\.dismiss) private var dismiss
 
-    @State private var showDocumentScanner = false
-    @State private var showCamera = false
-    @State private var showGallery = false
+    enum ActiveCaptureModal: Identifiable {
+        case documentScanner
+        case camera
+        case gallery
+        case review(UIImage, String)
+
+        var id: String {
+            switch self {
+            case .documentScanner: return "scanner"
+            case .camera: return "camera"
+            case .gallery: return "gallery"
+            case .review: return "review"
+            }
+        }
+    }
+
+    @State private var activeModal: ActiveCaptureModal? = nil
     @State private var importFailed = false
     @State private var includeLocation = true
-    @State private var pendingReview: PendingCaptureReview? = nil
 
     var body: some View {
         NavigationStack {
@@ -37,7 +50,7 @@ struct CaptureSheet: View {
                 if VNDocumentCameraViewController.isSupported {
                     Button {
                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                        showDocumentScanner = true
+                        activeModal = .documentScanner
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "doc.viewfinder")
@@ -78,7 +91,7 @@ struct CaptureSheet: View {
 
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    showCamera = true
+                    activeModal = .camera
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "camera")
@@ -107,7 +120,7 @@ struct CaptureSheet: View {
 
                 Button {
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    showGallery = true
+                    activeModal = .gallery
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "photo.on.rectangle")
@@ -162,43 +175,52 @@ struct CaptureSheet: View {
                     Button("Cancel") { dismiss() }
                 }
             }
-            #if canImport(VisionKit)
-            .sheet(isPresented: $showDocumentScanner) {
-                DocumentScannerPicker { images in
-                    if let first = images.first {
-                        pendingReview = PendingCaptureReview(image: first, source: "CAMERA")
+            .sheet(item: $activeModal) { modal in
+                switch modal {
+                #if canImport(VisionKit)
+                case .documentScanner:
+                    DocumentScannerPicker { images in
+                        activeModal = nil
+                        if let first = images.first {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                activeModal = .review(first, "CAMERA")
+                            }
+                        }
+                    } onCancel: {
+                        activeModal = nil
                     }
-                } onCancel: {
-                    showDocumentScanner = false
-                }
-            }
-            #endif
-            .sheet(isPresented: $showCamera) {
-                CameraPicker { image in
-                    pendingReview = PendingCaptureReview(image: image, source: "CAMERA")
-                } onCancel: {
-                    showCamera = false
-                }
-            }
-            .sheet(isPresented: $showGallery) {
-                GalleryPicker { images in
-                    if let first = images.first {
-                        pendingReview = PendingCaptureReview(image: first, source: "GALLERY")
+                #endif
+                case .camera:
+                    CameraPicker { image in
+                        activeModal = nil
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            activeModal = .review(image, "CAMERA")
+                        }
+                    } onCancel: {
+                        activeModal = nil
                     }
-                }
-            }
-            .sheet(item: $pendingReview) { reviewItem in
-                CaptureReviewView(
-                    image: reviewItem.image,
-                    sourceName: reviewItem.source,
-                    onSaveCompleted: {
-                        pendingReview = nil
-                        dismiss()
-                    },
-                    onCancel: {
-                        pendingReview = nil
+                case .gallery:
+                    GalleryPicker { images in
+                        activeModal = nil
+                        if let first = images.first {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                activeModal = .review(first, "GALLERY")
+                            }
+                        }
                     }
-                )
+                case .review(let image, let source):
+                    CaptureReviewView(
+                        image: image,
+                        sourceName: source,
+                        onSaveCompleted: {
+                            activeModal = nil
+                            dismiss()
+                        },
+                        onCancel: {
+                            activeModal = nil
+                        }
+                    )
+                }
             }
         }
         .presentationDetents([.medium])

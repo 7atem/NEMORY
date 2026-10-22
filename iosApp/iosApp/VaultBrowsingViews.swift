@@ -25,6 +25,12 @@ struct VaultItemDetailView: View {
     @State private var showingFullScreenImage = false
     @State private var copiedOcr = false
     @State private var isOcrExpanded = false
+    @State private var isAnalyzingItem = false
+    @State private var showingAddFieldSheet = false
+    @State private var newFieldKey = ""
+    @State private var newFieldValue = ""
+    @State private var copiedSummary = false
+    @State private var ocrSearchQuery = ""
 
     var body: some View {
         Group {
@@ -32,7 +38,7 @@ struct VaultItemDetailView: View {
                 List {
                     if let capturedImage {
                         Section {
-                            VStack(spacing: 10) {
+                            VStack(spacing: 12) {
                                 ZStack(alignment: .topTrailing) {
                                     Image(uiImage: capturedImage)
                                         .resizable()
@@ -74,6 +80,85 @@ struct VaultItemDetailView: View {
                                             .padding(10)
                                     }
                                     .buttonStyle(.plain)
+                                }
+
+                                // Quick Actions Hub
+                                HStack(spacing: 8) {
+                                    Button {
+                                        runVisionAnalysisOnCurrentItem()
+                                    } label: {
+                                        VStack(spacing: 4) {
+                                            if isAnalyzingItem {
+                                                ProgressView()
+                                                    .scaleEffect(0.8)
+                                                    .frame(height: 16)
+                                            } else {
+                                                Image(systemName: "sparkles")
+                                                    .font(.system(size: 15, weight: .semibold))
+                                                    .foregroundStyle(Color.accentColor)
+                                            }
+                                            Text(isAnalyzingItem ? "Analyzing..." : "Vision AI")
+                                                .font(.caption2.weight(.medium))
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                                    }
+                                    .buttonStyle(.plain)
+                                    .disabled(isAnalyzingItem)
+
+                                    ShareLink(item: shareSummaryText) {
+                                        VStack(spacing: 4) {
+                                            Image(systemName: "square.and.arrow.up")
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundStyle(Color.accentColor)
+                                            Text("Share")
+                                                .font(.caption2.weight(.medium))
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    Button {
+                                        UIPasteboard.general.string = shareSummaryText
+                                        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                        withAnimation { copiedSummary = true }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                            withAnimation { copiedSummary = false }
+                                        }
+                                    } label: {
+                                        VStack(spacing: 4) {
+                                            Image(systemName: copiedSummary ? "checkmark" : "doc.on.doc")
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundStyle(copiedSummary ? .green : Color.accentColor)
+                                            Text(copiedSummary ? "Copied" : "Copy")
+                                                .font(.caption2.weight(.medium))
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    if detail.expiryDateMillis > 0 {
+                                        Button {
+                                            openInCalendar(date: Date(timeIntervalSince1970: TimeInterval(detail.expiryDateMillis)/1000.0), title: detail.title)
+                                        } label: {
+                                            VStack(spacing: 4) {
+                                                Image(systemName: "calendar.badge.plus")
+                                                    .font(.system(size: 15, weight: .semibold))
+                                                    .foregroundStyle(Color.accentColor)
+                                                Text("Calendar")
+                                                    .font(.caption2.weight(.medium))
+                                            }
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 8)
+                                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
                                 }
 
                                 if !availableEvidenceKeys.isEmpty {
@@ -129,36 +214,170 @@ struct VaultItemDetailView: View {
                         }
                     }
 
-                    if !parsedMetadata.isEmpty || detail.aiClassificationName != nil {
-                        Section("Extracted Intelligence") {
-                            if let classification = detail.aiClassificationName, !classification.isEmpty {
-                                LabeledContent {
-                                    Text(classification)
-                                        .font(.subheadline.weight(.semibold))
-                                } label: {
-                                    Label("Classification", systemImage: "sparkles")
+                    // Run AI Analysis Banner if no metadata exists yet
+                    if capturedImage != nil && parsedMetadata.isEmpty {
+                        Section {
+                            Button {
+                                runVisionAnalysisOnCurrentItem()
+                            } label: {
+                                HStack(spacing: 12) {
+                                    if isAnalyzingItem {
+                                        ProgressView()
+                                            .tint(.white)
+                                    } else {
+                                        Image(systemName: "sparkles")
+                                            .font(.title3)
+                                    }
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(isAnalyzingItem ? "Analyzing on-device..." : "Extract Document Details")
+                                            .font(.headline)
+                                        Text("Extract totals, dates, merchants & text with Vision AI")
+                                            .font(.caption)
+                                            .opacity(0.85)
+                                    }
+                                    Spacer()
+                                    if !isAnalyzingItem {
+                                        Image(systemName: "arrow.right.circle.fill")
+                                            .font(.title3)
+                                    }
+                                }
+                                .padding(.vertical, 6)
+                                .foregroundStyle(.white)
+                            }
+                            .listRowBackground(Color.accentColor)
+                            .disabled(isAnalyzingItem)
+                        }
+                    }
+
+                    // Extracted Intelligence Section
+                    Section("Extracted Intelligence") {
+                        // Total Amount Hero Display
+                        if let total = metadataValue(for: "Total Amount") {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("TOTAL CHARGE")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(.secondary)
+                                HStack(alignment: .firstTextBaseline) {
+                                    Text(total)
+                                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                                        .foregroundStyle(Color.accentColor)
+                                    Spacer()
+                                    if let subtotal = metadataValue(for: "Subtotal") {
+                                        Text("Subtotal: \(subtotal)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
                             }
-                            if let primaryLens = detail.primaryLensId, !primaryLens.isEmpty {
-                                LabeledContent {
-                                    Text(primaryLens.capitalized)
+                            .padding(.vertical, 2)
+                        }
+
+                        // Expiry Status Banner
+                        if let expiry = metadataValue(for: "Expiry Date") {
+                            HStack {
+                                Label("Expiry Status", systemImage: "clock.badge.exclamationmark")
+                                Spacer()
+                                Text(expiryStatusText(for: expiry))
+                                    .font(.caption.weight(.semibold))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(expiryBadgeColor(for: expiry).opacity(0.18), in: Capsule())
+                                    .foregroundStyle(expiryBadgeColor(for: expiry))
+                            }
+                        }
+
+                        // Classification & Primary Lens
+                        if let classification = detail.aiClassificationName, !classification.isEmpty {
+                            LabeledContent {
+                                Text(classification)
+                                    .font(.subheadline.weight(.semibold))
+                            } label: {
+                                Label("Classification", systemImage: "sparkles")
+                            }
+                        }
+                        if let primaryLens = detail.primaryLensId, !primaryLens.isEmpty {
+                            LabeledContent {
+                                Text(primaryLens.capitalized)
+                                    .font(.subheadline.weight(.medium))
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 2)
+                                    .background(Color.accentColor.opacity(0.15), in: Capsule())
+                            } label: {
+                                Label("Primary Lens", systemImage: "circle.grid.2x2")
+                            }
+                        }
+
+                        // Actionable Contact Rows
+                        if let phone = metadataValue(for: "Phone") {
+                            LabeledContent {
+                                Button {
+                                    if let url = URL(string: "tel://\(phone.filter { $0.isNumber || $0 == "+" })") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                } label: {
+                                    Label(phone, systemImage: "phone.fill")
                                         .font(.subheadline.weight(.medium))
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 2)
-                                        .background(Color.accentColor.opacity(0.15), in: Capsule())
+                                }
+                            } label: {
+                                Label("Phone", systemImage: "phone")
+                            }
+                        }
+
+                        if let email = metadataValue(for: "Email") {
+                            LabeledContent {
+                                Button {
+                                    if let url = URL(string: "mailto:\(email)") {
+                                        UIApplication.shared.open(url)
+                                    }
                                 } label: {
-                                    Label("Primary Lens", systemImage: "circle.grid.2x2")
+                                    Label(email, systemImage: "envelope.fill")
+                                        .font(.subheadline.weight(.medium))
+                                }
+                            } label: {
+                                Label("Email", systemImage: "envelope")
+                            }
+                        }
+
+                        if let website = metadataValue(for: "Website") {
+                            LabeledContent {
+                                if let url = URL(string: website.hasPrefix("http") ? website : "https://\(website)") {
+                                    Link(destination: url) {
+                                        Label(website, systemImage: "safari.fill")
+                                            .font(.subheadline.weight(.medium))
+                                    }
+                                } else {
+                                    Text(website)
+                                }
+                            } label: {
+                                Label("Website", systemImage: "globe")
+                            }
+                        }
+
+                        // Metadata Key-Value Rows (excluding the hero-displayed items)
+                        ForEach(parsedMetadata.filter { !["Total Amount", "Phone", "Email", "Website"].contains($0.key) }, id: \.key) { item in
+                            LabeledContent {
+                                Text(item.value)
+                                    .font(.subheadline)
+                                    .multilineTextAlignment(.trailing)
+                            } label: {
+                                Label(item.key, systemImage: iconForMetadataKey(item.key))
+                            }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    bridge.removeMetadataField(id: itemId, key: item.key) { reload() }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
                                 }
                             }
-                            ForEach(parsedMetadata, id: \.key) { item in
-                                LabeledContent {
-                                    Text(item.value)
-                                        .font(.subheadline)
-                                        .multilineTextAlignment(.trailing)
-                                } label: {
-                                    Label(item.key, systemImage: iconForMetadataKey(item.key))
-                                }
-                            }
+                        }
+
+                        Button {
+                            newFieldKey = ""
+                            newFieldValue = ""
+                            showingAddFieldSheet = true
+                        } label: {
+                            Label("Add Custom Detail", systemImage: "plus.circle")
+                                .font(.subheadline.weight(.medium))
                         }
                     }
 
@@ -183,6 +402,7 @@ struct VaultItemDetailView: View {
                         LabeledContent("Created", value: formattedDate(detail.createdAtMillis))
                         LabeledContent("Updated", value: formattedDate(detail.updatedAtMillis))
                     }
+
                     Section {
                         Toggle("Expiry date", isOn: $expiryEnabled)
                         if expiryEnabled {
@@ -200,6 +420,7 @@ struct VaultItemDetailView: View {
                     } header: {
                         Text("Dates")
                     }
+
                     Section {
                         TextEditor(text: $notesDraft)
                             .frame(minHeight: 80)
@@ -212,6 +433,7 @@ struct VaultItemDetailView: View {
                     } header: {
                         Text("Notes")
                     }
+
                     if let ocr = detail.rawOcrText, !ocr.isEmpty {
                         Section {
                             VStack(alignment: .leading, spacing: 10) {
@@ -235,6 +457,33 @@ struct VaultItemDetailView: View {
                                     .tint(copiedOcr ? .green : .accentColor)
                                 }
 
+                                // In-Document Text Search Field
+                                HStack {
+                                    Image(systemName: "magnifyingglass")
+                                        .foregroundStyle(.secondary)
+                                        .font(.caption)
+                                    TextField("Search in document text...", text: $ocrSearchQuery)
+                                        .font(.caption)
+                                    if !ocrSearchQuery.isEmpty {
+                                        Button {
+                                            ocrSearchQuery = ""
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .foregroundStyle(.secondary)
+                                                .font(.caption)
+                                        }
+                                    }
+                                }
+                                .padding(6)
+                                .background(Color(.tertiarySystemBackground), in: RoundedRectangle(cornerRadius: 8))
+
+                                if !ocrSearchQuery.isEmpty {
+                                    let matchCount = countMatches(of: ocrSearchQuery, in: ocr)
+                                    Text(matchCount > 0 ? "Found \(matchCount) occurrence(s)" : "No matches found")
+                                        .font(.caption2.weight(.medium))
+                                        .foregroundStyle(matchCount > 0 ? Color.accentColor : Color.secondary)
+                                }
+
                                 Text(ocr)
                                     .font(.system(.footnote, design: .monospaced))
                                     .lineLimit(isOcrExpanded ? nil : 8)
@@ -256,6 +505,42 @@ struct VaultItemDetailView: View {
             } else {
                 ContentUnavailableView("Item not found", systemImage: "questionmark.folder")
             }
+        }
+        .fullScreenCover(isPresented: $showingFullScreenImage) {
+            if let capturedImage {
+                FullScreenImageViewer(image: capturedImage)
+            }
+        }
+        .sheet(isPresented: $showingAddFieldSheet) {
+            NavigationStack {
+                Form {
+                    Section("Field Detail") {
+                        TextField("Name (e.g. Policy #, Warranty, Serial)", text: $newFieldKey)
+                        TextField("Value (e.g. POL-94820)", text: $newFieldValue)
+                    }
+                }
+                .navigationTitle("Add Detail")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { showingAddFieldSheet = false }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Save") {
+                            let k = newFieldKey.trimmingCharacters(in: .whitespaces)
+                            let v = newFieldValue.trimmingCharacters(in: .whitespaces)
+                            if !k.isEmpty && !v.isEmpty {
+                                bridge.setMetadataField(id: itemId, key: k, value: v) {
+                                    showingAddFieldSheet = false
+                                    reload()
+                                }
+                            }
+                        }
+                        .disabled(newFieldKey.trimmingCharacters(in: .whitespaces).isEmpty || newFieldValue.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                }
+            }
+            .presentationDetents([.medium])
         }
         .fullScreenCover(isPresented: $showingFullScreenImage) {
             if let capturedImage {
@@ -439,8 +724,133 @@ struct VaultItemDetailView: View {
         case "date": return "calendar"
         case "expiry": return "clock"
         case "title": return "doc.text"
+        case "tax": return "percent"
+        case "ref #", "ref": return "number"
         default: return "sparkle"
         }
+    }
+
+    private func metadataValue(for key: String) -> String? {
+        parsedMetadata.first { $0.key.lowercased() == key.lowercased() }?.value
+    }
+
+    private func runVisionAnalysisOnCurrentItem() {
+        guard let capturedImage, !isAnalyzingItem else { return }
+        isAnalyzingItem = true
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+        Task {
+            let result = await DocumentIntelligenceService.shared.analyze(image: capturedImage)
+            let metadataJson = result.metadataJson
+            let coordsJson = result.coordinatesJson
+            let rawOcr = result.rawText
+            let inferredTitle = result.inferredTitle
+            let inferredSummary = result.inferredSummary
+
+            await MainActor.run {
+                bridge.updateExtractedIntelligence(
+                    id: itemId,
+                    parsedMetadataJson: metadataJson,
+                    rawOcrText: rawOcr,
+                    evidenceCoordinatesJson: coordsJson,
+                    primaryLensId: result.inferredLens,
+                    summary: inferredSummary,
+                    title: (detail?.title.hasPrefix("Capture") == true || detail?.title.hasPrefix("Vault item") == true) ? inferredTitle : nil
+                ) {
+                    isAnalyzingItem = false
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    reload()
+                }
+            }
+        }
+    }
+
+    private var shareSummaryText: String {
+        guard let detail else { return "" }
+        var lines: [String] = []
+        lines.append("📄 \(detail.title)")
+        if let total = metadataValue(for: "Total Amount") {
+            lines.append("💰 Total: \(total)")
+        }
+        if let date = metadataValue(for: "Date") {
+            lines.append("📅 Date: \(date)")
+        }
+        if let expiry = metadataValue(for: "Expiry Date") {
+            lines.append("⏰ Expiry: \(expiry)")
+        }
+        if let ref = parsedMetadata.first(where: { $0.key.contains("Number") || $0.key.contains("ID") || $0.key.contains("Ref") }) {
+            lines.append("🔢 \(ref.key): \(ref.value)")
+        }
+        if let summary = detail.summary, !summary.isEmpty {
+            lines.append("\nSummary: \(summary)")
+        }
+        if let notes = detail.userNotes, !notes.isEmpty {
+            lines.append("\nNotes: \(notes)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    private func openInCalendar(date: Date, title: String) {
+        let interval = date.timeIntervalSinceReferenceDate
+        if let url = URL(string: "calshow:\(interval)") {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func expiryStatusText(for dateStr: String) -> String {
+        let formats = ["dd-MM-yyyy", "yyyy-MM-dd", "MM-dd-yyyy", "MMM d, yyyy", "MMMM d, yyyy", "d MMM yyyy"]
+        let df = DateFormatter()
+        var date: Date?
+        for f in formats {
+            df.dateFormat = f
+            if let d = df.date(from: dateStr) {
+                date = d
+                break
+            }
+        }
+        guard let date else { return "Set (\(dateStr))" }
+        let days = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        if days < 0 {
+            return "Expired"
+        } else if days == 0 {
+            return "Expires today"
+        } else if days <= 7 {
+            return "Expires in \(days)d (Urgent)"
+        } else {
+            return "Expires in \(days) days"
+        }
+    }
+
+    private func expiryBadgeColor(for dateStr: String) -> Color {
+        let formats = ["dd-MM-yyyy", "yyyy-MM-dd", "MM-dd-yyyy", "MMM d, yyyy", "MMMM d, yyyy", "d MMM yyyy"]
+        let df = DateFormatter()
+        var date: Date?
+        for f in formats {
+            df.dateFormat = f
+            if let d = df.date(from: dateStr) {
+                date = d
+                break
+            }
+        }
+        guard let date else { return .secondary }
+        let days = Calendar.current.dateComponents([.day], from: Date(), to: date).day ?? 0
+        if days < 0 { return .red }
+        if days <= 7 { return .red }
+        if days <= 30 { return .orange }
+        return .green
+    }
+
+    private func countMatches(of query: String, in text: String) -> Int {
+        guard !query.isEmpty else { return 0 }
+        let lowerText = text.lowercased()
+        let lowerQuery = query.lowercased()
+        var count = 0
+        var searchRange = lowerText.startIndex..<lowerText.endIndex
+        while let range = lowerText.range(of: lowerQuery, range: searchRange) {
+            count += 1
+            searchRange = range.upperBound..<lowerText.endIndex
+        }
+        return count
     }
 }
 
