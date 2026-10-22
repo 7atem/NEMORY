@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
-import EventKit
-import WatchConnectivity
+@preconcurrency import EventKit
+@preconcurrency import WatchConnectivity
 import UserNotifications
 
 // MARK: - Apple Reminders & Alarms Connector
@@ -15,7 +15,7 @@ final class RemindersConnector: NSObject, ObservableObject {
     @Published var authorizationStatus: String = "Checking..."
     @Published var syncedCount = 0
 
-    struct ImportedReminder: Identifiable {
+    struct ImportedReminder: Identifiable, Sendable {
         let id: String
         let title: String
         let dueDate: Date?
@@ -49,20 +49,24 @@ final class RemindersConnector: NSObject, ObservableObject {
     }
 
     func requestAccess() async -> Bool {
-        do {
-            let granted: Bool
+        await withCheckedContinuation { continuation in
             if #available(iOS 17.0, *) {
-                granted = try await eventStore.requestFullAccessToReminders()
+                eventStore.requestFullAccessToReminders { [weak self] granted, error in
+                    Task { @MainActor in
+                        self?.isAuthorized = granted
+                        self?.authorizationStatus = granted ? "Connected" : (error != nil ? "Error" : "Access Denied")
+                        continuation.resume(returning: granted)
+                    }
+                }
             } else {
-                granted = try await eventStore.requestAccess(to: .reminder)
+                eventStore.requestAccess(to: .reminder) { [weak self] granted, error in
+                    Task { @MainActor in
+                        self?.isAuthorized = granted
+                        self?.authorizationStatus = granted ? "Connected" : (error != nil ? "Error" : "Access Denied")
+                        continuation.resume(returning: granted)
+                    }
+                }
             }
-            isAuthorized = granted
-            authorizationStatus = granted ? "Connected" : "Access Denied"
-            return granted
-        } catch {
-            isAuthorized = false
-            authorizationStatus = "Error: \(error.localizedDescription)"
-            return false
         }
     }
 
@@ -190,9 +194,11 @@ final class WatchBridge: NSObject, WCSessionDelegate, ObservableObject, @uncheck
     // MARK: WCSessionDelegate
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
-        DispatchQueue.main.async {
-            self.isPaired = session.isPaired
-            self.isWatchAppInstalled = session.isWatchAppInstalled
+        let paired = session.isPaired
+        let installed = session.isWatchAppInstalled
+        DispatchQueue.main.async { [weak self] in
+            self?.isPaired = paired
+            self?.isWatchAppInstalled = installed
         }
     }
 
@@ -205,7 +211,7 @@ final class WatchBridge: NSObject, WCSessionDelegate, ObservableObject, @uncheck
 
 // MARK: - Smart Email / Invoice Ingestion Parser
 
-struct EmailIngestionResult {
+struct EmailIngestionResult: Sendable {
     let sender: String?
     let subject: String?
     let detectedAmount: String?
