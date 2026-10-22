@@ -5,6 +5,7 @@ import WatchConnectivity
 
 struct ConnectorsHubView: View {
     @StateObject private var reminders = RemindersConnector.shared
+    @StateObject private var calendar = CalendarConnector.shared
     @StateObject private var watch = WatchBridge.shared
     private let bridge = IosVaultBridge.shared
 
@@ -17,6 +18,7 @@ struct ConnectorsHubView: View {
     @State private var showingNotesPasteSheet = false
     @State private var notesText = ""
     @State private var noteTitle = ""
+    @State private var didCreateEventDoc = false
 
     var body: some View {
         NavigationStack {
@@ -35,11 +37,119 @@ struct ConnectorsHubView: View {
                             Text("Connected Ecosystem")
                                 .font(.title2.weight(.bold))
                         }
-                        Text("Nemory bridges on-device with your Apple ecosystem — sync reminders, ingest emails, glance on Apple Watch, and import notes.")
+                        Text("Nemory bridges on-device with your Apple ecosystem — sync calendar events, reminders, ingest emails, glance on Apple Watch, and import notes.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 6)
+                }
+
+                // MARK: - Apple Calendar & Life Events
+                Section {
+                    HStack {
+                        Label("Apple Calendar", systemImage: "calendar")
+                            .font(.headline)
+                        Spacer()
+                        Text(calendar.authorizationStatus)
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(
+                                calendar.isAuthorized ? Color.green.opacity(0.18) : Color.blue.opacity(0.18),
+                                in: Capsule()
+                            )
+                            .foregroundStyle(calendar.isAuthorized ? Color.green : Color.blue)
+                    }
+
+                    if !calendar.isAuthorized {
+                        Button {
+                            Task {
+                                _ = await calendar.requestAccess()
+                            }
+                        } label: {
+                            Label("Connect Apple Calendar", systemImage: "link")
+                                .font(.subheadline.weight(.medium))
+                        }
+                    } else {
+                        Button {
+                            Task {
+                                _ = await calendar.fetchUpcomingEvents()
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            }
+                        } label: {
+                            HStack {
+                                Label("Fetch Upcoming Events", systemImage: "arrow.triangle.2.circlepath")
+                                Spacer()
+                                if calendar.isLoading {
+                                    ProgressView().scaleEffect(0.8)
+                                }
+                            }
+                            .font(.subheadline.weight(.medium))
+                        }
+                    }
+
+                    if !calendar.upcomingEvents.isEmpty {
+                        ForEach(calendar.upcomingEvents.prefix(4)) { event in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Text(event.title)
+                                        .font(.subheadline.weight(.semibold))
+                                    Spacer()
+                                    Text(event.matchedCategory)
+                                        .font(.system(size: 10, weight: .bold))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.blue.opacity(0.12), in: Capsule())
+                                        .foregroundStyle(Color.blue)
+                                }
+
+                                HStack(spacing: 8) {
+                                    Label(event.startDate.formatted(date: .abbreviated, time: .shortened), systemImage: "clock")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+
+                                    if let loc = event.location, !loc.isEmpty {
+                                        Label(loc, systemImage: "mappin")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+
+                                HStack {
+                                    Button {
+                                        createDocForCalendarEvent(event)
+                                    } label: {
+                                        Label("Link to Vault", systemImage: "doc.badge.plus")
+                                            .font(.caption2.weight(.medium))
+                                    }
+                                    .buttonStyle(.borderless)
+
+                                    Spacer()
+
+                                    Button {
+                                        Task {
+                                            _ = await reminders.createReminder(
+                                                title: "Reminder: \(event.title)",
+                                                dueDate: event.startDate.addingTimeInterval(-86400),
+                                                notes: "Scheduled for \(event.startDate.formatted(date: .abbreviated, time: .shortened))"
+                                            )
+                                        }
+                                    } label: {
+                                        Label("Set Alert", systemImage: "bell.badge")
+                                            .font(.caption2.weight(.medium))
+                                    }
+                                    .buttonStyle(.borderless)
+                                }
+                                .padding(.top, 4)
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                } header: {
+                    Text("Apple Calendar & Life Events")
+                } footer: {
+                    Text("Detects upcoming flights, hotel bookings, doctor visits, and maintenance meetings to correlate with vault documents.")
                 }
 
                 // MARK: - Apple Reminders & Alarms
@@ -279,27 +389,135 @@ struct ConnectorsHubView: View {
 
     private func saveParsedEmailToVault(_ email: EmailIngestionResult) {
         let title = email.subject ?? (email.sender != nil ? "Invoice from \(email.sender!)" : "Email Confirmation")
-        let metadata = [
-            "Document Type": "Email Confirmation",
-            "Sender": email.sender ?? "Unknown",
-            "Confirmation Number": email.confirmationNumber ?? "",
-            "Total Amount": email.detectedAmount ?? "",
-            "Date": email.detectedDate ?? ""
+        let metadataPairs: [(String, String)] = [
+            ("Document Type", "Email Confirmation"),
+            ("Sender", email.sender ?? "Unknown"),
+            ("Confirmation #", email.confirmationNumber ?? "N/A"),
+            ("Total Amount", email.detectedAmount ?? "N/A"),
+            ("Date", email.detectedDate ?? "Recent")
         ]
-        let data = (try? JSONSerialization.data(withJSONObject: metadata, options: [])) ?? Data()
-        let metadataJson = String(data: data, encoding: .utf8) ?? "{}"
+        var metaDict: [String: String] = [:]
+        for (k, v) in metadataPairs { metaDict[k] = v }
+        let metaData = (try? JSONSerialization.data(withJSONObject: metaDict, options: [])) ?? Data()
+        let metaJson = String(data: metaData, encoding: .utf8) ?? "{}"
 
-        bridge.addSampleItem {
-            showingEmailIngestSheet = false
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        let cardImage = DocumentCardRenderer.renderCard(
+            title: title,
+            category: email.inferredLens,
+            metadata: metadataPairs,
+            accentColor: email.inferredLens == "TRAVEL" ? .systemBlue : .systemGreen
+        )
+
+        guard let jpeg = cardImage.jpegData(compressionQuality: 0.85) else { return }
+        let tempPath = NSTemporaryDirectory() + "email-\(UUID().uuidString).jpg"
+        FileManager.default.createFile(atPath: tempPath, contents: jpeg)
+
+        bridge.importCapturedDocument(
+            tempPath: tempPath,
+            sourceName: "MANUAL",
+            title: title,
+            summary: "Extracted from forwarded email: \(email.bodyText.prefix(120))",
+            rawOcrText: email.bodyText,
+            parsedMetadataJson: metaJson,
+            lensTags: [email.inferredLens],
+            primaryLensId: email.inferredLens,
+            expiryDateMillis: 0,
+            evidenceCoordinatesJson: "{}"
+        ) { _ in
+            try? FileManager.default.removeItem(atPath: tempPath)
+            DispatchQueue.main.async {
+                showingEmailIngestSheet = false
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
         }
     }
 
     private func saveNoteToVault() {
-        let t = noteTitle.trimmingCharacters(in: .whitespaces)
-        bridge.addSampleItem {
-            showingNotesPasteSheet = false
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        let title = noteTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty else { return }
+
+        let metadataPairs: [(String, String)] = [
+            ("Document Type", "Apple Note / Clip"),
+            ("Date", Date().formatted(date: .abbreviated, time: .shortened)),
+            ("Character Count", "\(notesText.count)")
+        ]
+        var metaDict: [String: String] = [:]
+        for (k, v) in metadataPairs { metaDict[k] = v }
+        let metaData = (try? JSONSerialization.data(withJSONObject: metaDict, options: [])) ?? Data()
+        let metaJson = String(data: metaData, encoding: .utf8) ?? "{}"
+
+        let cardImage = DocumentCardRenderer.renderCard(
+            title: title,
+            category: "NOTE",
+            metadata: metadataPairs,
+            accentColor: .systemPurple
+        )
+
+        guard let jpeg = cardImage.jpegData(compressionQuality: 0.85) else { return }
+        let tempPath = NSTemporaryDirectory() + "note-\(UUID().uuidString).jpg"
+        FileManager.default.createFile(atPath: tempPath, contents: jpeg)
+
+        bridge.importCapturedDocument(
+            tempPath: tempPath,
+            sourceName: "MANUAL",
+            title: title,
+            summary: String(notesText.prefix(140)),
+            rawOcrText: notesText,
+            parsedMetadataJson: metaJson,
+            lensTags: ["GENERAL"],
+            primaryLensId: "GENERAL",
+            expiryDateMillis: 0,
+            evidenceCoordinatesJson: "{}"
+        ) { _ in
+            try? FileManager.default.removeItem(atPath: tempPath)
+            DispatchQueue.main.async {
+                showingNotesPasteSheet = false
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
+        }
+    }
+
+    private func createDocForCalendarEvent(_ event: CalendarConnector.UpcomingLifeEvent) {
+        let metadataPairs: [(String, String)] = [
+            ("Document Type", "Calendar Life Event"),
+            ("Scheduled Date", event.startDate.formatted(date: .abbreviated, time: .shortened)),
+            ("Location", event.location ?? "On Schedule"),
+            ("Category", event.matchedCategory)
+        ]
+        var metaDict: [String: String] = [:]
+        for (k, v) in metadataPairs { metaDict[k] = v }
+        let metaData = (try? JSONSerialization.data(withJSONObject: metaDict, options: [])) ?? Data()
+        let metaJson = String(data: metaData, encoding: .utf8) ?? "{}"
+
+        let cardImage = DocumentCardRenderer.renderCard(
+            title: event.title,
+            category: event.matchedCategory,
+            metadata: metadataPairs,
+            accentColor: event.suggestedLens == "TRAVEL" ? .systemBlue : (event.suggestedLens == "HEALTH" ? .systemRed : .systemTeal)
+        )
+
+        guard let jpeg = cardImage.jpegData(compressionQuality: 0.85) else { return }
+        let tempPath = NSTemporaryDirectory() + "calevent-\(UUID().uuidString).jpg"
+        FileManager.default.createFile(atPath: tempPath, contents: jpeg)
+
+        let expiry = Int64(event.startDate.timeIntervalSince1970 * 1000)
+
+        bridge.importCapturedDocument(
+            tempPath: tempPath,
+            sourceName: "MANUAL",
+            title: event.title,
+            summary: "Event linked from Apple Calendar: \(event.title) on \(event.startDate.formatted(date: .abbreviated, time: .shortened))",
+            rawOcrText: "Event: \(event.title)\nLocation: \(event.location ?? "")\nDate: \(event.startDate.description)",
+            parsedMetadataJson: metaJson,
+            lensTags: [event.suggestedLens],
+            primaryLensId: event.suggestedLens,
+            expiryDateMillis: expiry,
+            evidenceCoordinatesJson: "{}"
+        ) { _ in
+            try? FileManager.default.removeItem(atPath: tempPath)
+            DispatchQueue.main.async {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
         }
     }
 }

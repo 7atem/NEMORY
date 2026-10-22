@@ -17,11 +17,11 @@ struct BrainView: View {
     @FocusState private var inputFocused: Bool
 
     private let suggestions = [
-        "How many items?",
-        "Latest captures",
-        "Expiring soon",
-        "Collections overview",
-        "Recent receipts"
+        "What are my upcoming flights & documents?",
+        "Expiring documents & renewals",
+        "Life admin reminders & calendar",
+        "Recent receipts & spend",
+        "Collections overview"
     ]
 
     var body: some View {

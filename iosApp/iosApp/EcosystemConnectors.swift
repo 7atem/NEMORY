@@ -330,3 +330,404 @@ enum NotesAndMessagesBridge {
         return str
     }
 }
+
+// MARK: - Apple Calendar Connector
+
+@MainActor
+final class CalendarConnector: NSObject, ObservableObject {
+    static let shared = CalendarConnector()
+
+    private let eventStore = EKEventStore()
+    @Published var isAuthorized = false
+    @Published var authorizationStatus: String = "Checking..."
+    @Published var upcomingEvents: [UpcomingLifeEvent] = []
+    @Published var isLoading = false
+
+    struct UpcomingLifeEvent: Identifiable, Sendable {
+        let id: String
+        let title: String
+        let startDate: Date
+        let endDate: Date
+        let location: String?
+        let matchedCategory: String
+        let suggestedLens: String
+    }
+
+    override init() {
+        super.init()
+        checkAuthorization()
+        loadInitialEvents()
+    }
+
+    func checkAuthorization() {
+        let status = EKEventStore.authorizationStatus(for: .event)
+        switch status {
+        case .authorized, .fullAccess:
+            isAuthorized = true
+            authorizationStatus = "Connected"
+        case .denied, .restricted:
+            isAuthorized = false
+            authorizationStatus = "Access Denied"
+        case .notDetermined:
+            isAuthorized = false
+            authorizationStatus = "Not Connected"
+        case .writeOnly:
+            isAuthorized = true
+            authorizationStatus = "Write Only"
+        @unknown default:
+            isAuthorized = false
+            authorizationStatus = "Unknown"
+        }
+    }
+
+    func requestAccess() async -> Bool {
+        await withCheckedContinuation { continuation in
+            if #available(iOS 17.0, *) {
+                eventStore.requestFullAccessToEvents { [weak self] granted, error in
+                    Task { @MainActor in
+                        self?.isAuthorized = granted
+                        self?.authorizationStatus = granted ? "Connected" : (error != nil ? "Error" : "Access Denied")
+                        if granted {
+                            _ = await self?.fetchUpcomingEvents()
+                        }
+                        continuation.resume(returning: granted)
+                    }
+                }
+            } else {
+                eventStore.requestAccess(to: .event) { [weak self] granted, error in
+                    Task { @MainActor in
+                        self?.isAuthorized = granted
+                        self?.authorizationStatus = granted ? "Connected" : (error != nil ? "Error" : "Access Denied")
+                        if granted {
+                            _ = await self?.fetchUpcomingEvents()
+                        }
+                        continuation.resume(returning: granted)
+                    }
+                }
+            }
+        }
+    }
+
+    func fetchUpcomingEvents() async -> [UpcomingLifeEvent] {
+        if !isAuthorized {
+            let granted = await requestAccess()
+            guard granted else { return demoEvents() }
+        }
+
+        isLoading = true
+        defer { isLoading = false }
+
+        let start = Date()
+        let end = Calendar.current.date(byAdding: .day, value: 30, to: start) ?? start.addingTimeInterval(30 * 86400)
+        let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
+        let rawEvents = eventStore.events(matching: predicate)
+
+        if rawEvents.isEmpty {
+            let fallback = demoEvents()
+            self.upcomingEvents = fallback
+            return fallback
+        }
+
+        let mapped = rawEvents.map { e -> UpcomingLifeEvent in
+            let title = e.title ?? "Event"
+            let (category, lens) = categorizeEventTitle(title)
+            return UpcomingLifeEvent(
+                id: e.eventIdentifier,
+                title: title,
+                startDate: e.startDate,
+                endDate: e.endDate,
+                location: e.location,
+                matchedCategory: category,
+                suggestedLens: lens
+            )
+        }
+
+        let sorted = mapped.sorted { $0.startDate < $1.startDate }
+        self.upcomingEvents = sorted
+        return sorted
+    }
+
+    private func loadInitialEvents() {
+        if isAuthorized {
+            Task {
+                _ = await fetchUpcomingEvents()
+            }
+        } else {
+            self.upcomingEvents = demoEvents()
+        }
+    }
+
+    private func categorizeEventTitle(_ title: String) -> (String, String) {
+        let lower = title.lowercased()
+        if lower.contains("flight") || lower.contains("airline") || lower.contains("airport") || lower.contains("trip") {
+            return ("Travel & Flights", "TRAVEL")
+        } else if lower.contains("hotel") || lower.contains("stay") || lower.contains("airbnb") || lower.contains("booking") {
+            return ("Lodging & Stay", "TRAVEL")
+        } else if lower.contains("doctor") || lower.contains("dentist") || lower.contains("clinic") || lower.contains("prescription") {
+            return ("Health & Medical", "HEALTH")
+        } else if lower.contains("car") || lower.contains("vehicle") || lower.contains("service") || lower.contains("oil") {
+            return ("Automotive", "MONEY")
+        } else if lower.contains("renew") || lower.contains("passport") || lower.contains("visa") || lower.contains("license") {
+            return ("Identity & Bureaucracy", "BUREAUCRACY")
+        } else if lower.contains("tax") || lower.contains("bill") || lower.contains("payment") || lower.contains("insurance") {
+            return ("Finance & Insurance", "MONEY")
+        } else {
+            return ("Life Admin Event", "GENERAL")
+        }
+    }
+
+    private func demoEvents() -> [UpcomingLifeEvent] {
+        let now = Date()
+        return [
+            UpcomingLifeEvent(
+                id: "demo-event-1",
+                title: "Emirates Flight EK 203 to JFK",
+                startDate: now.addingTimeInterval(3 * 86400),
+                endDate: now.addingTimeInterval(3 * 86400 + 46800),
+                location: "Dubai Intl (DXB) Terminal 3",
+                matchedCategory: "Travel & Flights",
+                suggestedLens: "TRAVEL"
+            ),
+            UpcomingLifeEvent(
+                id: "demo-event-2",
+                title: "Vehicle Registration & Insurance Renewal",
+                startDate: now.addingTimeInterval(12 * 86400),
+                endDate: now.addingTimeInterval(12 * 86400 + 3600),
+                location: "Department of Motor Vehicles",
+                matchedCategory: "Automotive & Insurance",
+                suggestedLens: "MONEY"
+            ),
+            UpcomingLifeEvent(
+                id: "demo-event-3",
+                title: "Dr. Marcus Vance — Annual Medical Checkup",
+                startDate: now.addingTimeInterval(18 * 86400),
+                endDate: now.addingTimeInterval(18 * 86400 + 3600),
+                location: "Metropolitan Health Clinic",
+                matchedCategory: "Health & Medical",
+                suggestedLens: "HEALTH"
+            )
+        ]
+    }
+}
+
+// MARK: - Smart Clipboard Sentry
+
+@MainActor
+final class ClipboardWatcher: ObservableObject {
+    static let shared = ClipboardWatcher()
+
+    @Published var activeSnippet: ClipboardSnippet?
+    @Published var lastIgnoredText: String = ""
+
+    struct ClipboardSnippet: Identifiable, Sendable {
+        let id: String
+        let rawText: String
+        let category: String
+        let displayTitle: String
+        let actionHint: String
+        let lens: String
+    }
+
+    func checkClipboard() {
+        guard let clip = UIPasteboard.general.string?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !clip.isEmpty,
+              clip.count >= 4,
+              clip != lastIgnoredText else {
+            return
+        }
+
+        let lower = clip.lowercased()
+
+        // 1. Booking code / PNR / Ticket Number
+        if let match = clip.range(of: #"(?:booking|confirmation|ref|pnr|order|ticket|etkt)\s*[:#]?\s*([A-Z0-9-]{5,14})"#, options: [.regularExpression, .caseInsensitive]) {
+            let code = String(clip[match])
+            activeSnippet = ClipboardSnippet(
+                id: UUID().uuidString,
+                rawText: clip,
+                category: "Reference Code",
+                displayTitle: "\(code.uppercased())",
+                actionHint: "Tap to save confirmation to Travel or Money lens",
+                lens: lower.contains("flight") || lower.contains("hotel") ? "TRAVEL" : "MONEY"
+            )
+        }
+        // 2. Pricing / Total Amount
+        else if let match = clip.range(of: #"\b(?:usd|eur|gbp|aed|sar|\$|€|£)\s*[0-9]+(?:[.,][0-9]{2})?\b"#, options: [.regularExpression, .caseInsensitive]) {
+            let amount = String(clip[match])
+            activeSnippet = ClipboardSnippet(
+                id: UUID().uuidString,
+                rawText: clip,
+                category: "Expense / Bill",
+                displayTitle: "Invoice: \(amount)",
+                actionHint: "Tap to record receipt in Money lens",
+                lens: "MONEY"
+            )
+        }
+        // 3. Web URL / Invoice Link
+        else if clip.range(of: #"\b(?:https?://[^\s]+)"#, options: [.regularExpression]) != nil {
+            let urlHost = URL(string: clip)?.host ?? "Web Link"
+            activeSnippet = ClipboardSnippet(
+                id: UUID().uuidString,
+                rawText: clip,
+                category: "Document Link",
+                displayTitle: "\(urlHost)",
+                actionHint: "Tap to bookmark in Nemory Vault",
+                lens: "GENERAL"
+            )
+        }
+        // 4. Copied Multi-Line Note
+        else if clip.count > 25 {
+            let firstLine = clip.components(separatedBy: .newlines).first?.trimmingCharacters(in: .whitespaces) ?? "Copied Note"
+            activeSnippet = ClipboardSnippet(
+                id: UUID().uuidString,
+                rawText: clip,
+                category: "Clipboard Note",
+                displayTitle: String(firstLine.prefix(30)),
+                actionHint: "Tap to save into encrypted vault",
+                lens: "GENERAL"
+            )
+        }
+    }
+
+    func dismiss() {
+        if let s = activeSnippet {
+            lastIgnoredText = s.rawText
+        }
+        activeSnippet = nil
+    }
+}
+
+// MARK: - Document Card Thumbnail Generator
+
+enum DocumentCardRenderer {
+    /// Dynamically draws a visual card thumbnail representing any text, email, or clipboard document.
+    @MainActor
+    static func renderCard(title: String, category: String, metadata: [(String, String)], accentColor: UIColor) -> UIImage {
+        let size = CGSize(width: 800, height: 1000)
+        let renderer = UIGraphicsImageRenderer(size: size)
+
+        return renderer.image { ctx in
+            let bounds = CGRect(origin: .zero, size: size)
+
+            // 1. Dark Gradient Background
+            let colors = [
+                UIColor(red: 0.08, green: 0.10, blue: 0.14, alpha: 1.0).cgColor,
+                UIColor(red: 0.04, green: 0.05, blue: 0.08, alpha: 1.0).cgColor
+            ] as CFArray
+            let colorSpace = CGColorSpaceCreateDeviceRGB()
+            if let gradient = CGGradient(colorsSpace: colorSpace, colors: colors, locations: [0.0, 1.0]) {
+                ctx.cgContext.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: 0, y: size.height), options: [])
+            }
+
+            // 2. Top Color Banner / Accent Stripe
+            let bannerRect = CGRect(x: 40, y: 40, width: size.width - 80, height: 8)
+            let bannerPath = UIBezierPath(roundedRect: bannerRect, cornerRadius: 4)
+            accentColor.setFill()
+            bannerPath.fill()
+
+            // 3. Category Chip
+            let chipRect = CGRect(x: 40, y: 64, width: 220, height: 36)
+            let chipPath = UIBezierPath(roundedRect: chipRect, cornerRadius: 18)
+            accentColor.withAlphaComponent(0.2).setFill()
+            chipPath.fill()
+
+            let chipFont = UIFont.systemFont(ofSize: 14, weight: .bold)
+            let chipAttrs: [NSAttributedString.Key: Any] = [
+                .font: chipFont,
+                .foregroundColor: accentColor
+            ]
+            let chipText = category.uppercased()
+            let chipSize = chipText.size(withAttributes: chipAttrs)
+            chipText.draw(at: CGPoint(x: 40 + (220 - chipSize.width) / 2, y: 64 + (36 - chipSize.height) / 2), withAttributes: chipAttrs)
+
+            // 4. Document Title
+            let titleFont = UIFont.systemFont(ofSize: 32, weight: .heavy)
+            let titleAttrs: [NSAttributedString.Key: Any] = [
+                .font: titleFont,
+                .foregroundColor: UIColor.white
+            ]
+            let titleRect = CGRect(x: 40, y: 120, width: size.width - 80, height: 90)
+            (title as NSString).draw(in: titleRect, withAttributes: titleAttrs)
+
+            // 5. Divider
+            ctx.cgContext.setStrokeColor(UIColor.white.withAlphaComponent(0.12).cgColor)
+            ctx.cgContext.setLineWidth(1.5)
+            ctx.cgContext.move(to: CGPoint(x: 40, y: 225))
+            ctx.cgContext.addLine(to: CGPoint(x: size.width - 40, y: 225))
+            ctx.cgContext.strokePath()
+
+            // 6. Metadata Rows
+            var currentY: CGFloat = 250
+            let keyFont = UIFont.systemFont(ofSize: 15, weight: .semibold)
+            let valFont = UIFont.systemFont(ofSize: 20, weight: .bold)
+
+            for (key, val) in metadata.prefix(6) {
+                // Card for each key-value
+                let rowRect = CGRect(x: 40, y: currentY, width: size.width - 80, height: 75)
+                let rowPath = UIBezierPath(roundedRect: rowRect, cornerRadius: 12)
+                UIColor.white.withAlphaComponent(0.04).setFill()
+                rowPath.fill()
+
+                let keyAttrs: [NSAttributedString.Key: Any] = [
+                    .font: keyFont,
+                    .foregroundColor: UIColor.lightGray
+                ]
+                (key.uppercased() as NSString).draw(at: CGPoint(x: 58, y: currentY + 12), withAttributes: keyAttrs)
+
+                let valAttrs: [NSAttributedString.Key: Any] = [
+                    .font: valFont,
+                    .foregroundColor: UIColor.white
+                ]
+                (val as NSString).draw(at: CGPoint(x: 58, y: currentY + 36), withAttributes: valAttrs)
+
+                currentY += 90
+            }
+
+            // 7. Security / Privacy Footnote
+            let footerText = "🔒 NEMORY SECURE VAULT • ON-DEVICE ENCRYPTED"
+            let footerAttrs: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: 13, weight: .semibold),
+                .foregroundColor: UIColor.systemGreen
+            ]
+            let footerSize = (footerText as NSString).size(withAttributes: footerAttrs)
+            (footerText as NSString).draw(at: CGPoint(x: (size.width - footerSize.width) / 2, y: size.height - 60), withAttributes: footerAttrs)
+        }
+    }
+}
+
+// MARK: - Today Life Pulse Engine
+
+@MainActor
+final class LifePulseEngine: ObservableObject {
+    static let shared = LifePulseEngine()
+
+    @Published var upcomingEventsCount: Int = 0
+    @Published var nextEvent: CalendarConnector.UpcomingLifeEvent?
+    @Published var pendingRemindersCount: Int = 0
+    @Published var expiringSoonCount: Int = 0
+    @Published var proactiveInsight: String = "Vault is healthy & synchronized"
+
+    func refresh(calendarEvents: [CalendarConnector.UpcomingLifeEvent], reminders: [RemindersConnector.ImportedReminder], expiringCount: Int) {
+        self.upcomingEventsCount = calendarEvents.count
+        self.nextEvent = calendarEvents.first
+        self.pendingRemindersCount = reminders.filter { !$0.isCompleted }.count
+        self.expiringSoonCount = expiringCount
+
+        if let next = calendarEvents.first {
+            let days = Calendar.current.dateComponents([.day], from: Date(), to: next.startDate).day ?? 0
+            if days <= 1 {
+                self.proactiveInsight = "Upcoming tomorrow: \(next.title)"
+            } else if days <= 7 {
+                self.proactiveInsight = "In \(days) days: \(next.title) (\(next.matchedCategory))"
+            } else {
+                self.proactiveInsight = "Next scheduled: \(next.title)"
+            }
+        } else if expiringCount > 0 {
+            self.proactiveInsight = "\(expiringCount) document\(expiringCount == 1 ? "" : "s") expiring soon in your vault"
+        } else if pendingRemindersCount > 0 {
+            self.proactiveInsight = "\(pendingRemindersCount) life admin reminder\(pendingRemindersCount == 1 ? "" : "s") pending"
+        } else {
+            self.proactiveInsight = "All documents up to date & protected on-device"
+        }
+    }
+}
+

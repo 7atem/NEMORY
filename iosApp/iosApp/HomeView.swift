@@ -10,6 +10,12 @@ import UIKit
 struct HomeView: View {
     private let bridge = IosVaultBridge.shared
 
+    @StateObject private var clipboard = ClipboardWatcher.shared
+    @StateObject private var calendar = CalendarConnector.shared
+    @StateObject private var reminders = RemindersConnector.shared
+    @StateObject private var watch = WatchBridge.shared
+    @StateObject private var pulse = LifePulseEngine.shared
+
     @State private var items: [VaultItemSummary] = []
     @State private var collections: [CollectionSummary] = []
     @State private var briefing: BriefingSnapshot?
@@ -95,6 +101,143 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 20)
                     .accessibilityIdentifier("homeAskBrainBar")
+
+                    // Smart Clipboard Sentry Banner
+                    if let snippet = clipboard.activeSnippet {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.orange.opacity(0.18))
+                                    .frame(width: 38, height: 38)
+                                Image(systemName: "doc.on.clipboard.fill")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundStyle(.orange)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text(snippet.category.uppercased())
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundStyle(.orange)
+                                    Text("COPIED ON IPHONE")
+                                        .font(.system(size: 9, weight: .semibold))
+                                        .foregroundStyle(.secondary)
+                                }
+                                Text(snippet.displayTitle)
+                                    .font(.subheadline.weight(.semibold))
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            Button {
+                                saveClipboardSnippet(snippet)
+                            } label: {
+                                Text("Save")
+                                    .font(.caption.weight(.bold))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.accentColor, in: Capsule())
+                                    .foregroundStyle(.white)
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                clipboard.dismiss()
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(.secondary)
+                                    .padding(6)
+                                    .background(.ultraThinMaterial, in: Circle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(12)
+                        .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 16))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(Color.orange.opacity(0.25), lineWidth: 0.8)
+                        )
+                        .padding(.horizontal, 20)
+                    }
+
+                    // Today's Life Pulse Card
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(Color.green)
+                                    .frame(width: 8, height: 8)
+                                Text("TODAY'S LIFE PULSE")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .tracking(1.0)
+                                    .foregroundStyle(Color.green)
+                            }
+                            Spacer()
+                            NavigationLink {
+                                ConnectorsHubView()
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text("Ecosystem")
+                                        .font(.caption.weight(.semibold))
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 10, weight: .bold))
+                                }
+                                .foregroundStyle(Color.accentColor)
+                            }
+                            .buttonStyle(.plain)
+                        }
+
+                        Text(pulse.proactiveInsight)
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.primary)
+
+                        // Enriched Context Chips
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                if let next = calendar.upcomingEvents.first {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: "calendar")
+                                            .font(.caption2)
+                                        Text(next.title.prefix(20))
+                                            .font(.caption2.weight(.medium))
+                                            .lineLimit(1)
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.blue.opacity(0.12), in: Capsule())
+                                    .foregroundStyle(Color.blue)
+                                }
+
+                                HStack(spacing: 5) {
+                                    Image(systemName: "checklist")
+                                        .font(.caption2)
+                                    Text("\(reminders.syncedCount > 0 ? "\(reminders.syncedCount) Synced" : "Reminders Ready")")
+                                        .font(.caption2.weight(.medium))
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.purple.opacity(0.12), in: Capsule())
+                                .foregroundStyle(Color.purple)
+
+                                HStack(spacing: 5) {
+                                    Image(systemName: "applewatch")
+                                        .font(.caption2)
+                                    Text(watch.isPaired ? "Watch Paired" : "Watch Ready")
+                                        .font(.caption2.weight(.medium))
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.teal.opacity(0.12), in: Capsule())
+                                .foregroundStyle(Color.teal)
+                            }
+                        }
+                    }
+                    .padding(14)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                    )
+                    .padding(.horizontal, 20)
 
                     // Primary Hub Grid
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)], spacing: 14) {
@@ -327,12 +470,61 @@ struct HomeView: View {
                 CaptureSheet()
             }
             .onAppear {
+                clipboard.checkClipboard()
                 bridge.startObservingItems { loaded in
                     items = loaded
+                    pulse.refresh(
+                        calendarEvents: calendar.upcomingEvents,
+                        reminders: [],
+                        expiringCount: loaded.filter { $0.hasAlert }.count
+                    )
                 }
                 bridge.startObservingCollections { loaded in
                     collections = loaded
                 }
+            }
+        }
+    }
+
+    private func saveClipboardSnippet(_ snippet: ClipboardWatcher.ClipboardSnippet) {
+        let title = "Clipboard: \(snippet.displayTitle)"
+        let metadataPairs: [(String, String)] = [
+            ("Document Type", snippet.category),
+            ("Date", Date().formatted(date: .abbreviated, time: .shortened)),
+            ("Source", "iPhone Clipboard")
+        ]
+        var metaDict: [String: String] = [:]
+        for (k, v) in metadataPairs { metaDict[k] = v }
+        let metaData = (try? JSONSerialization.data(withJSONObject: metaDict, options: [])) ?? Data()
+        let metaJson = String(data: metaData, encoding: .utf8) ?? "{}"
+
+        let cardImage = DocumentCardRenderer.renderCard(
+            title: title,
+            category: snippet.lens,
+            metadata: metadataPairs,
+            accentColor: snippet.lens == "TRAVEL" ? .systemBlue : .systemOrange
+        )
+
+        guard let jpeg = cardImage.jpegData(compressionQuality: 0.85) else { return }
+        let tempPath = NSTemporaryDirectory() + "clip-\(UUID().uuidString).jpg"
+        FileManager.default.createFile(atPath: tempPath, contents: jpeg)
+
+        bridge.importCapturedDocument(
+            tempPath: tempPath,
+            sourceName: "MANUAL",
+            title: title,
+            summary: String(snippet.rawText.prefix(140)),
+            rawOcrText: snippet.rawText,
+            parsedMetadataJson: metaJson,
+            lensTags: [snippet.lens],
+            primaryLensId: snippet.lens,
+            expiryDateMillis: 0,
+            evidenceCoordinatesJson: "{}"
+        ) { _ in
+            try? FileManager.default.removeItem(atPath: tempPath)
+            DispatchQueue.main.async {
+                clipboard.dismiss()
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
             }
         }
     }
