@@ -142,6 +142,28 @@ struct VaultItemDetailView: View {
                                     }
                                     .buttonStyle(.plain)
 
+                                    Button {
+                                        Task {
+                                            let title = detail.title
+                                            let date = detail.expiryDateMillis > 0
+                                                ? Date(timeIntervalSince1970: TimeInterval(detail.expiryDateMillis) / 1000.0)
+                                                : Date().addingTimeInterval(7 * 24 * 3600)
+                                            _ = await RemindersConnector.shared.createReminder(title: title, dueDate: date, notes: shareSummaryText)
+                                        }
+                                    } label: {
+                                        VStack(spacing: 4) {
+                                            Image(systemName: "checklist")
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundStyle(Color.accentColor)
+                                            Text("Reminder")
+                                                .font(.caption2.weight(.medium))
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                                    }
+                                    .buttonStyle(.plain)
+
                                     if detail.expiryDateMillis > 0 {
                                         Button {
                                             openInCalendar(date: Date(timeIntervalSince1970: TimeInterval(detail.expiryDateMillis)/1000.0), title: detail.title)

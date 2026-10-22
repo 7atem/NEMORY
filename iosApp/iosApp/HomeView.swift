@@ -152,6 +152,55 @@ struct HomeView: View {
                     }
                     .padding(.horizontal, 20)
 
+                    // Live Ecosystem Connectors Card
+                    NavigationLink {
+                        ConnectorsHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(
+                                        colors: [Color.teal, Color.blue],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ))
+                                    .frame(width: 40, height: 40)
+                                Image(systemName: "antenna.radiowaves.left.and.right")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Ecosystem Connectors")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("LIVE")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.green.opacity(0.2), in: Capsule())
+                                        .foregroundStyle(Color.green)
+                                }
+                                Text("Reminders, Alarms, Email, Apple Watch & Notes")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(14)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                        )
+                        .shadow(color: Color.black.opacity(0.02), radius: 4, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+
                     // Hardware Privacy & Security Status Badge
                     HStack(spacing: 12) {
                         Image(systemName: "lock.shield.fill")

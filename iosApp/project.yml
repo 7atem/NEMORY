@@ -26,6 +26,8 @@ targets:
         NSCameraUsageDescription: "Nemory uses the camera to capture documents and photos into your vault."
         NSPhotoLibraryUsageDescription: "Nemory lets you pick photos from your library to store in your vault."
         NSLocationWhenInUseUsageDescription: "Nemory can attach your current location to captures so you remember where they happened."
+        NSRemindersUsageDescription: "Nemory connects with Apple Reminders to sync deadlines, bill reminders, and expiry alerts."
+        NSCalendarsUsageDescription: "Nemory connects with Apple Calendar to link document events, flights, and expiry dates."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nemory.ios.sample

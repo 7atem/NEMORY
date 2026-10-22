@@ -37,5 +37,17 @@
     <array>
         <string>UIInterfaceOrientationPortrait</string>
     </array>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Nemory uses Face ID to demo the shared authentication layer.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>Nemory uses the camera to capture documents and photos into your vault.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Nemory lets you pick photos from your library to store in your vault.</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Nemory can attach your current location to captures so you remember where they happened.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>Nemory connects with Apple Reminders to sync deadlines, bill reminders, and expiry alerts.</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Nemory connects with Apple Calendar to link document events, flights, and expiry dates.</string>
 </dict>
 </plist>
