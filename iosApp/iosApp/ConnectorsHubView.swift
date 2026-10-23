@@ -107,10 +107,72 @@ struct ConnectorsHubView: View {
                             Spacer()
                         }
                     }
+
+                    NavigationLink {
+                        HealthHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(colors: [Color.red, Color.pink], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "heart.text.square.fill")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Health & Medical Hub")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("HEALTH")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.red.opacity(0.18), in: Capsule())
+                                        .foregroundStyle(Color.red)
+                                }
+                                Text("Apple Health vitals, prescription countdowns & dosage alerts")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                    }
+
+                    NavigationLink {
+                        DeliveriesTrackerHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(colors: [Color.orange, Color(red: 0.95, green: 0.5, blue: 0.15)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "box.truck.fill")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Amazon & Package Deliveries")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("ARRIVALS")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.orange.opacity(0.18), in: Capsule())
+                                        .foregroundStyle(Color.orange)
+                                }
+                                Text("Live tracking, order arrivals scan & delivery reminders")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                    }
                 } header: {
                     Text("Smart Life Hubs")
                 } footer: {
-                    Text("Deep intelligent aggregation across travel itineraries and financial analytics.")
+                    Text("Deep intelligent aggregation across travel itineraries, spending, health vitals, and order deliveries.")
                 }
 
                 // MARK: - Day-One Instant Enrichment Hub

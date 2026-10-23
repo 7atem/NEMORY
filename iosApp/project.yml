@@ -29,6 +29,8 @@ targets:
         NSRemindersUsageDescription: "Nemory connects with Apple Reminders to sync deadlines, bill reminders, and expiry alerts."
         NSCalendarsUsageDescription: "Nemory connects with Apple Calendar to link document events, flights, and expiry dates."
         NSContactsUsageDescription: "Nemory discovers life-admin contacts like doctors and insurers to link with your documents."
+        NSHealthShareUsageDescription: "Nemory syncs your health vitals and medical metrics into your secure life vault."
+        NSHealthUpdateUsageDescription: "Nemory can log health data and medication schedules with your permission."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nemory.ios.sample

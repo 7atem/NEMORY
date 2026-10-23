@@ -1,8 +1,22 @@
 import SwiftUI
 import shared
 import UIKit
+import MapKit
 
 // MARK: - Models
+
+struct TripPlaceItem: Identifiable, Sendable {
+    let id: String
+    let name: String
+    let category: String
+    let address: String
+    let latitude: Double
+    let longitude: Double
+    let etaMinutes: Int
+    let icon: String
+    let pinColorHex: String
+    let photoLabel: String
+}
 
 struct TripBinder: Identifiable, Sendable {
     let id: String
@@ -18,6 +32,7 @@ struct TripBinder: Identifiable, Sendable {
     let lodgingItems: [TripDocItem]
     let identityItems: [TripDocItem]
     let expenseItems: [TripDocItem]
+    let places: [TripPlaceItem]
 }
 
 struct TripDocItem: Identifiable, Sendable {
@@ -136,6 +151,68 @@ final class TripClusteringEngine: ObservableObject {
                     refCode: "NYC-TX-492",
                     icon: "car.fill"
                 )
+            ],
+            places: [
+                TripPlaceItem(
+                    id: "place-hotel",
+                    name: "The Manhattan Grand Hotel",
+                    category: "Hotel",
+                    address: "140 Park Ave, New York, NY 10017",
+                    latitude: 40.7516,
+                    longitude: -73.9772,
+                    etaMinutes: 5,
+                    icon: "bed.double.fill",
+                    pinColorHex: "blue",
+                    photoLabel: "Grand Luxury Suite & Skyline Views"
+                ),
+                TripPlaceItem(
+                    id: "place-jfk",
+                    name: "JFK International Terminal 4",
+                    category: "Airport",
+                    address: "Queens, NY 11430",
+                    latitude: 40.6413,
+                    longitude: -73.7781,
+                    etaMinutes: 42,
+                    icon: "airplane",
+                    pinColorHex: "indigo",
+                    photoLabel: "Emirates Airlines Check-in & Lounge"
+                ),
+                TripPlaceItem(
+                    id: "place-park",
+                    name: "Central Park & Bethesda Terrace",
+                    category: "Attraction",
+                    address: "Central Park, New York, NY 10024",
+                    latitude: 40.7829,
+                    longitude: -73.9654,
+                    etaMinutes: 14,
+                    icon: "tree.fill",
+                    pinColorHex: "green",
+                    photoLabel: "Iconic Lake & Walking Promenade"
+                ),
+                TripPlaceItem(
+                    id: "place-met",
+                    name: "The Metropolitan Museum of Art",
+                    category: "Culture",
+                    address: "1000 5th Ave, New York, NY 10028",
+                    latitude: 40.7794,
+                    longitude: -73.9632,
+                    etaMinutes: 18,
+                    icon: "building.columns.fill",
+                    pinColorHex: "purple",
+                    photoLabel: "World-Class Art & Rooftop Terrace"
+                ),
+                TripPlaceItem(
+                    id: "place-times",
+                    name: "Times Square & Broadway",
+                    category: "Entertainment",
+                    address: "Manhattan, NY 10036",
+                    latitude: 40.7580,
+                    longitude: -73.9855,
+                    etaMinutes: 9,
+                    icon: "theatermasks.fill",
+                    pinColorHex: "orange",
+                    photoLabel: "Broadway Theater District & Lights"
+                )
             ]
         )
 
@@ -150,6 +227,7 @@ struct TravelTripHubView: View {
     @StateObject private var engine = TripClusteringEngine.shared
     @State private var showingGatePassModal = false
     @State private var selectedFlightItem: TripDocItem?
+    @State private var selectedPlace: TripPlaceItem?
 
     var body: some View {
         ScrollView {
@@ -164,13 +242,16 @@ struct TravelTripHubView: View {
                     // Section 2: Lodging & Accommodation
                     lodgingSection(trip: trip)
 
-                    // Section 3: Identity & Visas
+                    // Section 3: Apple & Google Maps Places Enrichment
+                    placesAndMapsSection(trip: trip)
+
+                    // Section 4: Identity & Visas
                     identitySection(trip: trip)
 
-                    // Section 4: Trip Expenses Summary
+                    // Section 5: Trip Expenses Summary
                     expensesSection(trip: trip)
 
-                    // Section 5: Offline Travel Checklist
+                    // Section 6: Offline Travel Checklist
                     checklistSection
                 }
             }
@@ -181,6 +262,11 @@ struct TravelTripHubView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $selectedFlightItem) { item in
             GatePassModalView(flightItem: item)
+        }
+        .onAppear {
+            if selectedPlace == nil, let first = engine.activeTrip?.places.first {
+                selectedPlace = first
+            }
         }
     }
 
@@ -361,6 +447,209 @@ struct TravelTripHubView: View {
                         .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
                 )
             }
+        }
+    }
+
+    private func placesAndMapsSection(trip: TripBinder) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Maps & Places Enrichment", systemImage: "map.circle.fill")
+                    .font(.headline)
+                    .foregroundStyle(Color.teal)
+                Spacer()
+                Text("\(trip.places.count) Locations")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+
+            // Interactive Map View with Destination Pins
+            Map(coordinateRegion: .constant(MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 40.7516, longitude: -73.9772),
+                span: MKCoordinateSpan(latitudeDelta: 0.18, longitudeDelta: 0.18)
+            )), annotationItems: trip.places) { place in
+                MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude)) {
+                    Button {
+                        selectedPlace = place
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        VStack(spacing: 2) {
+                            ZStack {
+                                Circle()
+                                    .fill(colorForHex(place.pinColorHex))
+                                    .frame(
+                                        width: (selectedPlace?.id == place.id) ? 36 : 28,
+                                        height: (selectedPlace?.id == place.id) ? 36 : 28
+                                    )
+                                    .shadow(color: colorForHex(place.pinColorHex).opacity(0.4), radius: 4)
+                                Image(systemName: place.icon)
+                                    .font(.system(size: (selectedPlace?.id == place.id) ? 16 : 12, weight: .bold))
+                                    .foregroundStyle(.white)
+                            }
+                            Text(place.name.prefix(16))
+                                .font(.system(size: 8, weight: .bold))
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(.ultraThinMaterial, in: Capsule())
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .frame(height: 200)
+            .clipShape(RoundedRectangle(cornerRadius: 18))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .stroke(Color.teal.opacity(0.2), lineWidth: 1)
+            )
+
+            // Active Place Focus Card
+            if let activePlace = selectedPlace ?? trip.places.first {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .top, spacing: 12) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(LinearGradient(
+                                    colors: [colorForHex(activePlace.pinColorHex), colorForHex(activePlace.pinColorHex).opacity(0.7)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ))
+                                .frame(width: 48, height: 48)
+                            Image(systemName: activePlace.icon)
+                                .font(.system(size: 22, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack(spacing: 6) {
+                                Text(activePlace.name)
+                                    .font(.subheadline.weight(.bold))
+                                    .lineLimit(1)
+                                Text(activePlace.category.uppercased())
+                                    .font(.system(size: 8, weight: .bold))
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 2)
+                                    .background(colorForHex(activePlace.pinColorHex).opacity(0.18), in: Capsule())
+                                    .foregroundStyle(colorForHex(activePlace.pinColorHex))
+                            }
+                            Text(activePlace.address)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                            Text("ETA: ~\(activePlace.etaMinutes) mins from Midtown • \(activePlace.photoLabel)")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(Color.teal)
+                                .lineLimit(1)
+                        }
+                    }
+
+                    // Navigation Action Buttons (Apple Maps & Google Maps)
+                    HStack(spacing: 10) {
+                        Button {
+                            openInAppleMaps(activePlace)
+                        } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: "map.fill")
+                                    .font(.caption2)
+                                Text("Apple Maps")
+                                    .font(.caption2.weight(.bold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.blue, in: RoundedRectangle(cornerRadius: 10))
+                            .foregroundStyle(.white)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            openInGoogleMaps(activePlace)
+                        } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: "arrow.triangle.turn.up.right.diamond.fill")
+                                    .font(.caption2)
+                                Text("Google Maps")
+                                    .font(.caption2.weight(.bold))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                            .foregroundStyle(.primary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(14)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.primary.opacity(0.08), lineWidth: 0.5)
+                )
+            }
+
+            // Horizontal Place Selector Chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(trip.places) { p in
+                        Button {
+                            selectedPlace = p
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: p.icon)
+                                    .font(.system(size: 11))
+                                Text(p.name)
+                                    .font(.caption2.weight(.semibold))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(
+                                (selectedPlace?.id == p.id)
+                                    ? Color.teal.opacity(0.2)
+                                    : Color(.secondarySystemBackground),
+                                in: Capsule()
+                            )
+                            .overlay(
+                                Capsule()
+                                    .stroke(
+                                        (selectedPlace?.id == p.id) ? Color.teal : Color.clear,
+                                        lineWidth: 1.2
+                                    )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    private func colorForHex(_ name: String) -> Color {
+        switch name {
+        case "blue": return .blue
+        case "indigo": return .indigo
+        case "green": return .green
+        case "purple": return .purple
+        case "orange": return .orange
+        case "red": return .red
+        default: return .teal
+        }
+    }
+
+    private func openInAppleMaps(_ place: TripPlaceItem) {
+        let coordinate = CLLocationCoordinate2D(latitude: place.latitude, longitude: place.longitude)
+        let placemark = MKPlacemark(coordinate: coordinate)
+        let mapItem = MKMapItem(placemark: placemark)
+        mapItem.name = place.name
+        mapItem.openInMaps(launchOptions: [
+            MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
+        ])
+    }
+
+    private func openInGoogleMaps(_ place: TripPlaceItem) {
+        if let appUrl = URL(string: "comgooglemaps://?q=\(place.latitude),\(place.longitude)&center=\(place.latitude),\(place.longitude)"),
+           UIApplication.shared.canOpenURL(appUrl) {
+            UIApplication.shared.open(appUrl)
+        } else if let webUrl = URL(string: "https://www.google.com/maps/search/?api=1&query=\(place.latitude),\(place.longitude)") {
+            UIApplication.shared.open(webUrl)
         }
     }
 

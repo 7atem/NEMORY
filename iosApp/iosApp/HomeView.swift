@@ -491,6 +491,104 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 20)
 
+                    // Health & Medical Subscriptions Hub Card
+                    NavigationLink {
+                        HealthHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(
+                                        colors: [Color.red, Color.pink],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ))
+                                    .frame(width: 40, height: 40)
+                                Image(systemName: "heart.text.square.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Health & Medical Hub")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("HEALTH")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.red.opacity(0.18), in: Capsule())
+                                        .foregroundStyle(Color.red)
+                                }
+                                Text("Apple Health vitals, prescription countdowns & dosage alerts")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(14)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.red.opacity(0.22), lineWidth: 0.8)
+                        )
+                        .shadow(color: Color.red.opacity(0.04), radius: 6, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+
+                    // Amazon & Package Deliveries Hub Card
+                    NavigationLink {
+                        DeliveriesTrackerHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(
+                                        colors: [Color.orange, Color(red: 0.95, green: 0.5, blue: 0.15)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ))
+                                    .frame(width: 40, height: 40)
+                                Image(systemName: "box.truck.fill")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Amazon & Package Deliveries")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("ARRIVALS")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.orange.opacity(0.2), in: Capsule())
+                                        .foregroundStyle(Color.orange)
+                                }
+                                Text("Live tracking, order arrivals scan & delivery reminders")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(14)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.orange.opacity(0.25), lineWidth: 0.8)
+                        )
+                        .shadow(color: Color.orange.opacity(0.04), radius: 6, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+
                     // Hardware Privacy & Security Status Badge
                     HStack(spacing: 12) {
                         Image(systemName: "lock.shield.fill")
