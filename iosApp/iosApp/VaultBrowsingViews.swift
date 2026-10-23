@@ -788,8 +788,18 @@ struct VaultItemDetailView: View {
 
     private var isTravelDoc: Bool {
         guard let d = detail else { return false }
-        let text = (d.title + " " + d.summary + " " + (d.rawOcrText ?? "")).lowercased()
-        return d.primaryLensId == "TRAVEL" || d.lensTags.contains("TRAVEL") || text.contains("flight") || text.contains("boarding pass") || text.contains("airline") || text.contains("ticket") || text.contains("gate")
+        if d.primaryLensId == "TRAVEL" || d.lensTags.contains("TRAVEL") {
+            return true
+        }
+        let titleLower = d.title.lowercased()
+        if titleLower.contains("flight") || titleLower.contains("ticket") || titleLower.contains("airline") {
+            return true
+        }
+        let summaryLower = d.summary.lowercased()
+        if summaryLower.contains("flight") || summaryLower.contains("boarding") || summaryLower.contains("gate") {
+            return true
+        }
+        return false
     }
 
     private func makeFlightItem(for item: VaultItemDetail) -> TripDocItem {
