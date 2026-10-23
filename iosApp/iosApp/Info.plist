@@ -49,5 +49,7 @@
     <string>Nemory connects with Apple Reminders to sync deadlines, bill reminders, and expiry alerts.</string>
     <key>NSCalendarsUsageDescription</key>
     <string>Nemory connects with Apple Calendar to link document events, flights, and expiry dates.</string>
+    <key>NSContactsUsageDescription</key>
+    <string>Nemory discovers life-admin contacts like doctors and insurers to link with your documents.</string>
 </dict>
 </plist>

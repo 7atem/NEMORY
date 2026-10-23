@@ -146,6 +146,36 @@ struct CaptureSheet: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("captureGallery")
 
+                NavigationLink {
+                    DayOneHubView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles.rectangle.stack")
+                            .font(.title3)
+                            .foregroundStyle(Color.purple)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Enrichment Hub & Starter Packs")
+                                .font(.headline)
+                            Text("Batch Files, Camera Roll scan & pre-configured packs")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.purple.opacity(0.18), lineWidth: 0.5)
+                    )
+                }
+                .buttonStyle(.plain)
+
                 if importFailed {
                     HStack(spacing: 8) {
                         Image(systemName: "exclamationmark.triangle.fill")

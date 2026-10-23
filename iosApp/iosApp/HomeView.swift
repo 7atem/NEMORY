@@ -344,6 +344,55 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 20)
 
+                    // Day-One Life Enrichment Hub
+                    NavigationLink {
+                        DayOneHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(
+                                        colors: [Color.purple, Color.indigo],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ))
+                                    .frame(width: 40, height: 40)
+                                Image(systemName: "sparkles.rectangle.stack.fill")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Day-One Ingestion Hub")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("INSTANT")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.purple.opacity(0.2), in: Capsule())
+                                        .foregroundStyle(Color.purple)
+                                }
+                                Text("Starter Packs, Photos Discovery & Batch Files Import")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(14)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.purple.opacity(0.25), lineWidth: 0.8)
+                        )
+                        .shadow(color: Color.purple.opacity(0.04), radius: 6, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+
                     // Hardware Privacy & Security Status Badge
                     HStack(spacing: 12) {
                         Image(systemName: "lock.shield.fill")

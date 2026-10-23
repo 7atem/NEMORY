@@ -44,6 +44,44 @@ struct ConnectorsHubView: View {
                     .padding(.vertical, 6)
                 }
 
+                // MARK: - Day-One Instant Enrichment Hub
+                Section {
+                    NavigationLink {
+                        DayOneHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(colors: [Color.purple, Color.indigo], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "sparkles.rectangle.stack.fill")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Day-One Ingestion Hub")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("ENRICH")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.purple.opacity(0.18), in: Capsule())
+                                        .foregroundStyle(Color.purple)
+                                }
+                                Text("Starter Packs, Camera Roll scan, Batch Files")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                    }
+                } header: {
+                    Text("Cold Start & Instant Vault Ingestion")
+                } footer: {
+                    Text("Populates your vault with pre-configured life packs or scans camera roll screenshots for receipts and passes.")
+                }
+
                 // MARK: - Apple Calendar & Life Events
                 Section {
                     HStack {
