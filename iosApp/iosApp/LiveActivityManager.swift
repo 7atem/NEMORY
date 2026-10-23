@@ -137,11 +137,10 @@ final class LiveActivityManager: ObservableObject {
 
     func stopFlightLiveActivity() {
         self.isFlightActivityActive = false
-        Task {
-            if let activity = flightActivity {
-                await activity.end(nil, dismissalPolicy: .immediate)
-            }
-            self.flightActivity = nil
+        let activity = self.flightActivity
+        self.flightActivity = nil
+        Task { @MainActor in
+            await activity?.end(nil, dismissalPolicy: .immediate)
         }
     }
 
@@ -176,11 +175,10 @@ final class LiveActivityManager: ObservableObject {
 
     func stopDeliveryLiveActivity() {
         self.isDeliveryActivityActive = false
-        Task {
-            if let activity = deliveryActivity {
-                await activity.end(nil, dismissalPolicy: .immediate)
-            }
-            self.deliveryActivity = nil
+        let activity = self.deliveryActivity
+        self.deliveryActivity = nil
+        Task { @MainActor in
+            await activity?.end(nil, dismissalPolicy: .immediate)
         }
     }
 }
