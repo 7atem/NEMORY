@@ -153,7 +153,7 @@ final class PhotoLibraryScanner: ObservableObject {
         }
     }
 
-    private func performFastOcr(on image: UIImage) -> String {
+    func performFastOcr(on image: UIImage) -> String {
         guard let cgImage = image.cgImage else { return "" }
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
@@ -680,7 +680,7 @@ final class LifeStarterPacksEngine: ObservableObject {
             title: "Home & Tenant Pack",
             subtitle: "Residential lease, utility bill tracker, and home insurance",
             icon: "house.circle.fill",
-            gradient: [Color.orange, Color.amberAccent],
+            gradient: [Color.orange, Color.yellow],
             items: [
                 StarterPackItem(
                     id: "item-lease",
