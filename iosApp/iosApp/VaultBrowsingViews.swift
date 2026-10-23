@@ -795,7 +795,7 @@ struct VaultItemDetailView: View {
         if titleLower.contains("flight") || titleLower.contains("ticket") || titleLower.contains("airline") {
             return true
         }
-        let summaryLower = d.summary.lowercased()
+        let summaryLower = (d.summary ?? "").lowercased()
         if summaryLower.contains("flight") || summaryLower.contains("boarding") || summaryLower.contains("gate") {
             return true
         }
