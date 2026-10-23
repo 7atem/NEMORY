@@ -689,6 +689,10 @@ struct HomeView: View {
                     )
                     .padding(.horizontal, 20)
 
+                    // Siri Shortcuts & Action Button Hub Card
+                    SiriShortcutsHubCard()
+                        .padding(.horizontal, 20)
+
                     // Hardware Privacy & Security Status Badge
                     HStack(spacing: 12) {
                         Image(systemName: "lock.shield.fill")

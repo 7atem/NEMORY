@@ -213,6 +213,17 @@ struct ConnectorsHubView: View {
                     Text("Populates your vault with pre-configured life packs or scans camera roll screenshots for receipts and passes.")
                 }
 
+                // MARK: - Siri Shortcuts & Hands-Free Action Button
+                Section {
+                    SiriShortcutsHubCard()
+                        .listRowInsets(EdgeInsets(top: 6, leading: 6, bottom: 6, trailing: 6))
+                        .listRowBackground(Color.clear)
+                } header: {
+                    Text("Siri & Action Button")
+                } footer: {
+                    Text("Trigger actions hands-free with Siri or assign your iPhone Action Button to open your gate pass or log medications.")
+                }
+
                 // MARK: - Apple Calendar & Life Events
                 Section {
                     HStack {
