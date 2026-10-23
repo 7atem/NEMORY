@@ -44,6 +44,75 @@ struct ConnectorsHubView: View {
                     .padding(.vertical, 6)
                 }
 
+                // MARK: - Smart Life Hubs (Trip Binders & Financial Analytics)
+                Section {
+                    NavigationLink {
+                        TravelTripHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(colors: [Color.blue, Color.cyan], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "airplane.departure")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Trip Binders & Gate Pass")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("TRAVEL")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.blue.opacity(0.18), in: Capsule())
+                                        .foregroundStyle(Color.blue)
+                                }
+                                Text("Auto-clustered trips, boarding passes, departure checklists")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                    }
+
+                    NavigationLink {
+                        FinancialAnalyticsHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(colors: [Color.green, Color.mint], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "chart.pie.fill")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Financial Analytics & Spend")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("FINANCE")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.green.opacity(0.18), in: Capsule())
+                                        .foregroundStyle(Color.green)
+                                }
+                                Text("Monthly spending, warranty countdowns, tax deduction CSV")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                    }
+                } header: {
+                    Text("Smart Life Hubs")
+                } footer: {
+                    Text("Deep intelligent aggregation across travel itineraries and financial analytics.")
+                }
+
                 // MARK: - Day-One Instant Enrichment Hub
                 Section {
                     NavigationLink {

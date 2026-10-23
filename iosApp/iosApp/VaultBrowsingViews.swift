@@ -31,6 +31,7 @@ struct VaultItemDetailView: View {
     @State private var newFieldValue = ""
     @State private var copiedSummary = false
     @State private var ocrSearchQuery = ""
+    @State private var showingGatePassSheet = false
 
     var body: some View {
         Group {
@@ -181,6 +182,35 @@ struct VaultItemDetailView: View {
                                         }
                                         .buttonStyle(.plain)
                                     }
+                                }
+
+                                if isTravelDoc {
+                                    Button {
+                                        showingGatePassSheet = true
+                                    } label: {
+                                        HStack(spacing: 8) {
+                                            Image(systemName: "airplane.departure")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundStyle(.white)
+                                            Text("Boarding Gate Pass")
+                                                .font(.caption.weight(.bold))
+                                                .foregroundStyle(.white)
+                                            Spacer()
+                                            Text("Show Barcode")
+                                                .font(.caption2.weight(.medium))
+                                                .foregroundStyle(.white.opacity(0.85))
+                                            Image(systemName: "chevron.right")
+                                                .font(.caption2.weight(.bold))
+                                                .foregroundStyle(.white.opacity(0.8))
+                                        }
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 9)
+                                        .background(
+                                            LinearGradient(colors: [Color.blue, Color.cyan], startPoint: .leading, endPoint: .trailing),
+                                            in: RoundedRectangle(cornerRadius: 10)
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
 
                                 if !availableEvidenceKeys.isEmpty {
@@ -564,9 +594,9 @@ struct VaultItemDetailView: View {
             }
             .presentationDetents([.medium])
         }
-        .fullScreenCover(isPresented: $showingFullScreenImage) {
-            if let capturedImage {
-                FullScreenImageViewer(image: capturedImage)
+        .sheet(isPresented: $showingGatePassSheet) {
+            if let detail {
+                GatePassModalView(flightItem: makeFlightItem(for: detail))
             }
         }
         .navigationTitle(detail?.title ?? "Item")
@@ -754,6 +784,31 @@ struct VaultItemDetailView: View {
 
     private func metadataValue(for key: String) -> String? {
         parsedMetadata.first { $0.key.lowercased() == key.lowercased() }?.value
+    }
+
+    private var isTravelDoc: Bool {
+        guard let d = detail else { return false }
+        let text = (d.title + " " + d.summary + " " + (d.rawOcrText ?? "")).lowercased()
+        return d.primaryLensId == "TRAVEL" || d.lensTags.contains("TRAVEL") || text.contains("flight") || text.contains("boarding pass") || text.contains("airline") || text.contains("ticket") || text.contains("gate")
+    }
+
+    private func makeFlightItem(for item: VaultItemDetail) -> TripDocItem {
+        let seat = metadataValue(for: "Seat") ?? metadataValue(for: "Seat Number") ?? "14A"
+        let flight = metadataValue(for: "Flight") ?? metadataValue(for: "Flight Number") ?? "EK 203"
+        let ref = metadataValue(for: "Barcode") ?? metadataValue(for: "Booking Reference") ?? "EK-203-JFK"
+
+        return TripDocItem(
+            id: item.id,
+            title: item.title,
+            subtitle: "\(flight) • Seat \(seat)",
+            category: "Boarding Pass",
+            date: item.expiryDateMillis > 0
+                ? Date(timeIntervalSince1970: TimeInterval(item.expiryDateMillis) / 1000.0).formatted(date: .abbreviated, time: .shortened)
+                : "Active",
+            amount: metadataValue(for: "Total Amount"),
+            refCode: ref,
+            icon: "airplane.departure"
+        )
     }
 
     private func runVisionAnalysisOnCurrentItem() {

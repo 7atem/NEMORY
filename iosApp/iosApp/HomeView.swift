@@ -393,6 +393,104 @@ struct HomeView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, 20)
 
+                    // Trip Binders & Travel Hub Card
+                    NavigationLink {
+                        TravelTripHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(
+                                        colors: [Color.blue, Color.cyan],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ))
+                                    .frame(width: 40, height: 40)
+                                Image(systemName: "airplane.circle.fill")
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Trip Binders & Gate Pass")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("TRAVEL")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.blue.opacity(0.2), in: Capsule())
+                                        .foregroundStyle(Color.blue)
+                                }
+                                Text("New York Trip (in 3 days) • 4 documents & $1,280 spent")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(14)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.blue.opacity(0.25), lineWidth: 0.8)
+                        )
+                        .shadow(color: Color.blue.opacity(0.04), radius: 6, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+
+                    // Financial Analytics & Expense Hub Card
+                    NavigationLink {
+                        FinancialAnalyticsHubView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(LinearGradient(
+                                        colors: [Color.green, Color.teal],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ))
+                                    .frame(width: 40, height: 40)
+                                Image(systemName: "chart.pie.fill")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundStyle(.white)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack(spacing: 6) {
+                                    Text("Finance & Spend Hub")
+                                        .font(.subheadline.weight(.semibold))
+                                    Text("ANALYTICS")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.green.opacity(0.2), in: Capsule())
+                                        .foregroundStyle(Color.green)
+                                }
+                                Text("Monthly spend breakdown, warranties & 1-tap tax export")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(14)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18)
+                                .stroke(Color.green.opacity(0.25), lineWidth: 0.8)
+                        )
+                        .shadow(color: Color.green.opacity(0.04), radius: 6, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+
                     // Hardware Privacy & Security Status Badge
                     HStack(spacing: 12) {
                         Image(systemName: "lock.shield.fill")
