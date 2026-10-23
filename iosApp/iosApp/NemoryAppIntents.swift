@@ -6,9 +6,9 @@ import UIKit
 // MARK: - 1. Show Flight Gate Pass Intent
 
 struct ShowGatePassIntent: AppIntent {
-    static var title: LocalizedStringResource = "Show Flight Gate Pass"
-    static var description = IntentDescription("Opens your active flight boarding pass with boosted brightness.")
-    static var openAppWhenRun: Bool = true
+    static var title: LocalizedStringResource { "Show Flight Gate Pass" }
+    static var description: IntentDescription { IntentDescription("Opens your active flight boarding pass with boosted brightness.") }
+    static var openAppWhenRun: Bool { true }
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -26,9 +26,9 @@ struct ShowGatePassIntent: AppIntent {
 // MARK: - 2. Log Medication Dose Intent
 
 struct LogMedicationDoseIntent: AppIntent {
-    static var title: LocalizedStringResource = "Log Medication Dose"
-    static var description = IntentDescription("Logs your daily prescription or supplement dose in Nemory.")
-    static var openAppWhenRun: Bool = false
+    static var title: LocalizedStringResource { "Log Medication Dose" }
+    static var description: IntentDescription { IntentDescription("Logs your daily prescription or supplement dose in Nemory.") }
+    static var openAppWhenRun: Bool { false }
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -41,9 +41,9 @@ struct LogMedicationDoseIntent: AppIntent {
 // MARK: - 3. Track Amazon Package Delivery Intent
 
 struct TrackDeliveryIntent: AppIntent {
-    static var title: LocalizedStringResource = "Track Package Delivery"
-    static var description = IntentDescription("Checks the arrival estimate for your incoming Amazon or carrier order.")
-    static var openAppWhenRun: Bool = false
+    static var title: LocalizedStringResource { "Track Package Delivery" }
+    static var description: IntentDescription { IntentDescription("Checks the arrival estimate for your incoming Amazon or carrier order.") }
+    static var openAppWhenRun: Bool { false }
 
     @MainActor
     func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -59,9 +59,9 @@ struct TrackDeliveryIntent: AppIntent {
 // MARK: - 4. Search Nemory Vault Intent
 
 struct SearchVaultIntent: AppIntent {
-    static var title: LocalizedStringResource = "Search Nemory Vault"
-    static var description = IntentDescription("Searches your secure on-device documents and intelligence.")
-    static var openAppWhenRun: Bool = true
+    static var title: LocalizedStringResource { "Search Nemory Vault" }
+    static var description: IntentDescription { IntentDescription("Searches your secure on-device documents and intelligence.") }
+    static var openAppWhenRun: Bool { true }
 
     @Parameter(title: "Query", description: "Keyword or document name to search")
     var query: String
@@ -120,7 +120,7 @@ struct NemoryShortcutsProvider: AppShortcutsProvider {
         )
     }
 
-    static var shortcutTileColor: ShortcutTileColor = .purple
+    static var shortcutTileColor: ShortcutTileColor { .purple }
 }
 
 // MARK: - Siri Shortcuts Card View for In-App Dashboard
