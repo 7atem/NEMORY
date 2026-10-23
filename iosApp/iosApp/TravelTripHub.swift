@@ -225,6 +225,7 @@ final class TripClusteringEngine: ObservableObject {
 
 struct TravelTripHubView: View {
     @StateObject private var engine = TripClusteringEngine.shared
+    @StateObject private var liveActivities = LiveActivityManager.shared
     @State private var showingGatePassModal = false
     @State private var selectedFlightItem: TripDocItem?
     @State private var selectedPlace: TripPlaceItem?
@@ -330,6 +331,38 @@ struct TravelTripHubView: View {
                         .foregroundStyle(.white)
                 }
             }
+
+            Divider()
+                .overlay(Color.white.opacity(0.2))
+
+            Button {
+                if liveActivities.isFlightActivityActive {
+                    liveActivities.stopFlightLiveActivity()
+                } else {
+                    liveActivities.startFlightLiveActivity(
+                        flightNumber: trip.flightItems.first?.title ?? "EK 203",
+                        origin: "DXB",
+                        destination: "JFK",
+                        gate: "B22",
+                        seat: "14A"
+                    )
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: liveActivities.isFlightActivityActive ? "stop.fill" : "platter.2.filled.iphone")
+                        .font(.caption.weight(.bold))
+                    Text(liveActivities.isFlightActivityActive ? "End Dynamic Island Live Activity" : "Stream to Dynamic Island & Lock Screen")
+                        .font(.caption.weight(.bold))
+                    Spacer()
+                    Image(systemName: liveActivities.isFlightActivityActive ? "checkmark.circle.fill" : "arrow.right.circle.fill")
+                        .font(.caption)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(liveActivities.isFlightActivityActive ? 0.35 : 0.2), in: RoundedRectangle(cornerRadius: 12))
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
         }
         .padding(18)
         .background(

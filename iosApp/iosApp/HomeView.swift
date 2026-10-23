@@ -15,6 +15,7 @@ struct HomeView: View {
     @StateObject private var reminders = RemindersConnector.shared
     @StateObject private var watch = WatchBridge.shared
     @StateObject private var pulse = LifePulseEngine.shared
+    @StateObject private var liveActivities = LiveActivityManager.shared
 
     @State private var items: [VaultItemSummary] = []
     @State private var collections: [CollectionSummary] = []
@@ -68,6 +69,19 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
+
+                    // Dynamic Island & Live Activities Display
+                    if liveActivities.isFlightActivityActive, let state = liveActivities.activeFlightState {
+                        DynamicIslandFlightView(state: state)
+                            .padding(.horizontal, 20)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    if liveActivities.isDeliveryActivityActive, let state = liveActivities.activeDeliveryState {
+                        DynamicIslandDeliveryView(state: state)
+                            .padding(.horizontal, 20)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
 
                     // Quick Ask Brain Bar
                     NavigationLink {
@@ -587,6 +601,92 @@ struct HomeView: View {
                         .shadow(color: Color.orange.opacity(0.04), radius: 6, y: 2)
                     }
                     .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+
+                    // Dynamic Island & Live Activities Control Card
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            HStack(spacing: 6) {
+                                Image(systemName: "platter.2.filled.iphone")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(Color.cyan)
+                                Text("DYNAMIC ISLAND & LIVE ACTIVITIES")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .tracking(0.8)
+                                    .foregroundStyle(Color.cyan)
+                            }
+                            Spacer()
+                            Text(liveActivities.isFlightActivityActive || liveActivities.isDeliveryActivityActive ? "ACTIVE" : "STANDBY")
+                                .font(.system(size: 8, weight: .bold))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    (liveActivities.isFlightActivityActive || liveActivities.isDeliveryActivityActive)
+                                        ? Color.green.opacity(0.18)
+                                        : Color(.secondarySystemBackground),
+                                    in: Capsule()
+                                )
+                                .foregroundStyle((liveActivities.isFlightActivityActive || liveActivities.isDeliveryActivityActive) ? Color.green : Color.secondary)
+                        }
+
+                        Text("Stream your boarding pass gate updates and Amazon package delivery countdown directly to Dynamic Island and Lock Screen.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: 8) {
+                            Button {
+                                if liveActivities.isFlightActivityActive {
+                                    liveActivities.stopFlightLiveActivity()
+                                } else {
+                                    liveActivities.startFlightLiveActivity()
+                                }
+                            } label: {
+                                HStack(spacing: 5) {
+                                    Image(systemName: liveActivities.isFlightActivityActive ? "stop.fill" : "airplane.departure")
+                                        .font(.caption2.weight(.bold))
+                                    Text(liveActivities.isFlightActivityActive ? "Stop Flight Pass" : "Flight Gate Pass")
+                                        .font(.caption2.weight(.bold))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(
+                                    liveActivities.isFlightActivityActive ? Color.blue : Color.blue.opacity(0.12),
+                                    in: RoundedRectangle(cornerRadius: 10)
+                                )
+                                .foregroundStyle(liveActivities.isFlightActivityActive ? Color.white : Color.blue)
+                            }
+                            .buttonStyle(.plain)
+
+                            Button {
+                                if liveActivities.isDeliveryActivityActive {
+                                    liveActivities.stopDeliveryLiveActivity()
+                                } else {
+                                    liveActivities.startDeliveryLiveActivity()
+                                }
+                            } label: {
+                                HStack(spacing: 5) {
+                                    Image(systemName: liveActivities.isDeliveryActivityActive ? "stop.fill" : "box.truck.fill")
+                                        .font(.caption2.weight(.bold))
+                                    Text(liveActivities.isDeliveryActivityActive ? "Stop Delivery" : "Amazon Delivery")
+                                        .font(.caption2.weight(.bold))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(
+                                    liveActivities.isDeliveryActivityActive ? Color.orange : Color.orange.opacity(0.12),
+                                    in: RoundedRectangle(cornerRadius: 10)
+                                )
+                                .foregroundStyle(liveActivities.isDeliveryActivityActive ? Color.white : Color.orange)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(14)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(Color.cyan.opacity(0.2), lineWidth: 0.8)
+                    )
                     .padding(.horizontal, 20)
 
                     // Hardware Privacy & Security Status Badge

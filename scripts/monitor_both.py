@@ -9,8 +9,8 @@ def get_token():
 token = get_token()
 headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json', 'User-Agent': 'Nemory-Monitor'}
 
-ios_run_id = '39948819202'
-android_run_id = '39948819193'
+ios_run_id = '39952569481'
+android_run_id = '39952569591'
 
 for iteration in range(100):
     all_done = True

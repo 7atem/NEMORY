@@ -31,6 +31,7 @@ targets:
         NSContactsUsageDescription: "Nemory discovers life-admin contacts like doctors and insurers to link with your documents."
         NSHealthShareUsageDescription: "Nemory syncs your health vitals and medical metrics into your secure life vault."
         NSHealthUpdateUsageDescription: "Nemory can log health data and medication schedules with your permission."
+        NSSupportsLiveActivities: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.nemory.ios.sample

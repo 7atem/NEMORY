@@ -164,6 +164,7 @@ final class DeliveriesTrackerEngine: ObservableObject {
 
 struct DeliveriesTrackerHubView: View {
     @StateObject private var engine = DeliveriesTrackerEngine.shared
+    @StateObject private var liveActivities = LiveActivityManager.shared
     @State private var showingScanEmailSheet = false
 
     var body: some View {
@@ -284,6 +285,36 @@ struct DeliveriesTrackerHubView: View {
                 }
                 .buttonStyle(.plain)
             }
+
+            Divider()
+                .overlay(Color.white.opacity(0.2))
+
+            Button {
+                if liveActivities.isDeliveryActivityActive {
+                    liveActivities.stopDeliveryLiveActivity()
+                } else {
+                    liveActivities.startDeliveryLiveActivity(
+                        merchant: item.merchant,
+                        itemTitle: item.title,
+                        orderNumber: item.orderNumber
+                    )
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: liveActivities.isDeliveryActivityActive ? "stop.fill" : "platter.2.filled.iphone")
+                        .font(.caption.weight(.bold))
+                    Text(liveActivities.isDeliveryActivityActive ? "End Dynamic Island Live Activity" : "Stream Delivery to Dynamic Island & Lock Screen")
+                        .font(.caption.weight(.bold))
+                    Spacer()
+                    Image(systemName: liveActivities.isDeliveryActivityActive ? "checkmark.circle.fill" : "arrow.right.circle.fill")
+                        .font(.caption)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(liveActivities.isDeliveryActivityActive ? 0.35 : 0.2), in: RoundedRectangle(cornerRadius: 12))
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
         }
         .padding(18)
         .background(
