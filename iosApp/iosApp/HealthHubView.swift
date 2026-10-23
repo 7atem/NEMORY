@@ -595,7 +595,7 @@ struct HealthHubView: View {
                             .font(.system(size: 9, weight: .bold))
                             .foregroundStyle(.secondary)
                         Text("XEA-904810294")
-                            .font(.subheadline.weight(.semibold, design: .monospaced))
+                            .font(.system(.subheadline, design: .monospaced).weight(.semibold))
                     }
                 }
             }

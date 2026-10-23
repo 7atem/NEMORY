@@ -9,10 +9,10 @@ def get_token():
 token = get_token()
 headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json', 'User-Agent': 'Nemory-Monitor'}
 
-ios_run_id = '39944703735'
-android_run_id = '39944703784'
+ios_run_id = '39948819202'
+android_run_id = '39948819193'
 
-for iteration in range(60):
+for iteration in range(100):
     all_done = True
     print(f"\n--- Check #{iteration + 1} at {time.strftime('%X')} ---", flush=True)
     for run_id, label in [(ios_run_id, "iOS"), (android_run_id, "Android")]:

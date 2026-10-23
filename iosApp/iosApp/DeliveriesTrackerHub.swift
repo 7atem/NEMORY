@@ -266,7 +266,7 @@ struct DeliveriesTrackerHubView: View {
                         .font(.system(size: 8, weight: .bold))
                         .foregroundStyle(.white.opacity(0.7))
                     Text("\(item.carrier): \(item.trackingNumber)")
-                        .font(.caption.weight(.semibold, design: .monospaced))
+                        .font(.system(.caption, design: .monospaced).weight(.semibold))
                         .foregroundStyle(.white)
                 }
 
