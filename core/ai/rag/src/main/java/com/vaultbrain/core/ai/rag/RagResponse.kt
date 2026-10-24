@@ -16,9 +16,21 @@ data class RagResponse(
     val proposals: List<LocalAgent.ActionProposal> = emptyList(),
     val confidence: Float = 0f,
     val evidence: RagEvidence? = null,
+    val sourcedFacts: List<SourcedFact> = emptyList(),
+    val deterministicCalculations: List<String> = emptyList(),
+    val modelSuggestions: List<String> = emptyList(),
     val responseOrigin: AiResponseOrigin? = null,
     val cloudConsent: CloudConsentDisclosure? = null,
     val cloudFailure: RagCloudFailure? = null
+)
+
+/** A factual assertion verified in code against a specific retrieved record. */
+data class SourcedFact(
+    val sourceIndex: Int,
+    val sourceId: String,
+    val factText: String,
+    val dates: List<String> = emptyList(),
+    val amounts: List<String> = emptyList()
 )
 
 enum class RagCloudFailure {

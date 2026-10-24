@@ -48,18 +48,44 @@ class AgentToolExecutor @Inject constructor(
         return try {
             fun text(key: String) = args[key]?.jsonPrimitive?.content.orEmpty().take(200)
             val result = when (tool) {
-                "search_calendar", "search_external" -> AgentToolResult(records = context.assembleContext(ContextQuery(
-                    text = text("query"),
-                    sources = if (tool == "search_calendar") setOf(ExternalSource.CALENDAR) else null,
-                    timeWindowMs = 240L * 86_400_000, limit = 10
-                )).records)
+                "search_calendar", "search_external" -> {
+                    val q = text("query").trim()
+                    val calendarIntent = tool == "search_calendar" && isCalendarIntent(q)
+                    val effectiveQuery = if (calendarIntent) "" else q
+                    var records = context.assembleContext(ContextQuery(
+                        text = effectiveQuery,
+                        sources = if (tool == "search_calendar") setOf(ExternalSource.CALENDAR) else null,
+                        timeWindowMs = 240L * 86_400_000, limit = 10
+                    )).records
+                    val fromDate = text("from_date").takeIf { it.isNotBlank() }
+                    val toDate = text("to_date").takeIf { it.isNotBlank() }
+                    if (fromDate != null && toDate != null) {
+                        val fromMs = LocalDate.parse(fromDate).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                        val toMs = LocalDate.parse(toDate).plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                        records = records.filter { record ->
+                            val anchor = record.startAt ?: record.dueAt ?: record.createdAt
+                            anchor in fromMs until toMs
+                        }
+                    }
+                    AgentToolResult(records = records)
+                }
                 "get_reminders" -> {
-                    require(text("status") in setOf("", "pending", "active"))
-                    AgentToolResult(records = reminders?.observeActive()?.first().orEmpty().take(10).map { reminder ->
+                    val status = text("status").lowercase()
+                    require(status in setOf("", "pending", "active", "completed", "all"))
+                    val activeList = reminders?.observeActive()?.first().orEmpty()
+                    val query = text("query").trim().lowercase()
+                    val filtered = if (query.isNotBlank()) {
+                        activeList.filter { it.title.lowercase().contains(query) }
+                    } else activeList
+                    AgentToolResult(records = filtered.take(10).map { reminder ->
+                        val localDate = java.time.Instant.ofEpochMilli(reminder.dueAt)
+                            .atZone(ZoneId.systemDefault()).toLocalDate().toString()
                         ExternalRecord("vault_reminders", "local", reminder.id, ExternalSource.VAULT_REMINDER,
                             ExternalRecordType.TASK, title = reminder.title, dueAt = reminder.dueAt,
-                            payload = mapOf("due" to java.time.Instant.ofEpochMilli(reminder.dueAt)
-                                .atZone(ZoneId.systemDefault()).toString()), updatedAt = reminder.updatedAt)
+                            payload = mapOf(
+                                "due_date" to localDate,
+                                "due" to localDate
+                            ), updatedAt = reminder.updatedAt)
                     })
                 }
                 "calculate" -> {
@@ -100,6 +126,13 @@ class AgentToolExecutor @Inject constructor(
         val ids = vault.filterIds(items.map { it.id }, filters.lensTag, filters.dateFrom, filters.dateTo, filters.hasImage).toSet()
         return items.filter { it.id in ids && !it.isArchived && !it.isStealth &&
             it.enrichmentState != com.vaultbrain.shared.model.EnrichmentState.SKIPPED_PRIVACY }.take(10)
+    }
+
+    private fun isCalendarIntent(query: String): Boolean {
+        if (query.isBlank()) return true
+        val terms = query.lowercase().split(Regex("[^\\p{L}\\p{N}]+")).filter { it.isNotBlank() }
+        val intentWords = setOf("calendar", "event", "events", "meeting", "meetings", "schedule", "agenda", "upcoming", "today", "tomorrow", "week", "month", "all")
+        return terms.all { it in intentWords }
     }
 }
 

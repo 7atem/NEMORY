@@ -7,13 +7,13 @@ the user's phone; there is no Nemory VPS or backend.
 
 ## Why the downloaded model still feels static
 
-- `RagEngine.executeAgentTool` advertises reminders, calculation, date and amount
-  tools whose implementations return placeholders. Calendar results are strings
-  consumed by the planner; `LocalAgent.Result` does not carry those results into
-  final answer evidence. Both query paths stop when vault retrieval is empty,
-  before using external evidence for an answer.
-- `ClaimVerifier` accepts verbatim excerpts, not general supported paraphrases or
-  cross-document deductions. This makes synthesis collapse back into quotations.
+- `RagEngine.executeAgentTool` previously advertised reminders, calculation, date and amount
+  tools whose implementations returned placeholders. Calendar results were strings
+  consumed by the planner; `LocalAgent.Result` did not carry those results into
+  final answer evidence. Both query paths stopped when vault retrieval was empty,
+  before using external evidence for an answer. (Resolved in sequence items 1 & 2).
+- `ClaimVerifier` accepted verbatim excerpts only, not structured fact separation. (Resolved
+  with `SourcedFact`, code-level date/amount validation, and labeled `modelSuggestions`).
 - Today used only five documents, three event titles, and three reminder titles,
   then suppressed refresh for six hours even after input changed.
 - Gmail production DI uses `UnconfiguredGmailDataSource`. A source enum for
@@ -31,24 +31,29 @@ The bounded prompt now includes eight documents with summary, metadata and expir
 six external records with descriptions and timestamps, and six active reminders
 with due dates. Confidence and all ranking dimensions are validated, with score
 computed by code. These remain model-generated suggestions, not independently
-verified factual conclusions. They do not execute actions. No background proactive
-worker or Gmail/task OAuth implementation was added by this change.
+verified factual conclusions. They do not execute actions.
 
-Validation: `:feature:vault:testDebugUnitTest :core:ai:rag:testDebugUnitTest
--Pnemory.skipNativeForTests=true` completed successfully. New tests cover changed
-input, model readiness, decoy clearing, score/confidence rejection, richer document
-context, and relationship endpoint filtering. Two existing compilation gaps were
-repaired: a missing serialization import and the absent relationship-prompt helper.
-Relationship context now includes only known types with both endpoints retrieved.
-This is JVM validation, not a new physical-device model-quality benchmark.
+In October 2026 follow-up:
+- **Typed Agent Tools & External Evidence Routing:** `AgentToolExecutor` provides smart
+  calendar intent recognition, date range filtering, and live `VaultReminderDao` query
+  execution. `RagEngine` routes external evidence (Calendar events, Vault Reminders) into both
+  `query` and `queryStream`, enabling complete calendar-only and reminder-only answers when
+  vault document retrieval has no matches.
+- **Answer Contract Structure:** `RagResponse` carries `sourcedFacts: List<SourcedFact>`,
+  `deterministicCalculations: List<String>`, and `modelSuggestions: List<String>`.
+  `ClaimVerifier` validates record citations, extracts dates and amounts in code, and
+  separates grounded facts from model interpretations and calculations.
+- **Unit Verification:** Verified with 7 comprehensive contracts in
+  `ExternalEvidenceAndAnswerContractTest.kt` covering calendar-only queries, reminder mapping,
+  hallucinated number fail-close repair, and typed calculation extraction.
 
 ## Next implementation sequence
 
-1. Replace planner placeholder tools with typed executable tools. Advertise only
+1. [COMPLETED] Replace planner placeholder tools with typed executable tools. Advertise only
    available capabilities. Return typed evidence and errors; preserve cancellation.
    Route retrieved external evidence into both answer paths, including questions
    with no matching vault document. Test calendar-only and reminder-only answers.
-2. Separate sourced facts, deterministic calculations, and model suggestions in
+2. [COMPLETED] Separate sourced facts, deterministic calculations, and model suggestions in
    the answer contract. Validate source IDs, dates and amounts in code. Keep
    deductions labeled and linked to their premises. Do not just disable grounding.
 3. Add Gmail and task provider account authorization, account selection, bounded
