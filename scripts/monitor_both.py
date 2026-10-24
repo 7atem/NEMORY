@@ -9,13 +9,42 @@ def get_token():
 token = get_token()
 headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json', 'User-Agent': 'Nemory-Monitor'}
 
-ios_run_id = '39961456272'
-android_run_id = '39961456312'
+# Find runs for latest commit
+commit_proc = subprocess.run(['git', 'rev-parse', 'HEAD'], capture_output=True, text=True)
+head_sha = commit_proc.stdout.strip()
+print(f"Monitoring runs for commit {head_sha[:7]}...", flush=True)
 
-for iteration in range(100):
+ios_run_id = None
+android_run_id = None
+
+for retry in range(15):
+    try:
+        req = urllib.request.Request('https://api.github.com/repos/7atem/NEMORY/actions/runs?per_page=10', headers=headers)
+        with urllib.request.urlopen(req, timeout=30) as r:
+            runs_data = json.load(r)
+        for r in runs_data.get('workflow_runs', []):
+            if r.get('head_sha') == head_sha:
+                name = r.get('name', '').lower()
+                if 'ios' in name and ios_run_id is None:
+                    ios_run_id = str(r['id'])
+                elif ('android' in name or 'ci' in name) and android_run_id is None:
+                    android_run_id = str(r['id'])
+        if ios_run_id and android_run_id:
+            break
+    except Exception as e:
+        print(f"Lookup error: {e}", flush=True)
+    time.sleep(3)
+
+print(f"Discovered runs: iOS={ios_run_id}, Android={android_run_id}", flush=True)
+
+runs_to_track = []
+if ios_run_id: runs_to_track.append((ios_run_id, "iOS"))
+if android_run_id: runs_to_track.append((android_run_id, "Android"))
+
+for iteration in range(120):
     all_done = True
     print(f"\n--- Check #{iteration + 1} at {time.strftime('%X')} ---", flush=True)
-    for run_id, label in [(ios_run_id, "iOS"), (android_run_id, "Android")]:
+    for run_id, label in runs_to_track:
         try:
             req = urllib.request.Request(f'https://api.github.com/repos/7atem/NEMORY/actions/runs/{run_id}', headers=headers)
             with urllib.request.urlopen(req, timeout=30) as r:
@@ -26,14 +55,14 @@ for iteration in range(100):
 
             if status != 'completed':
                 all_done = False
-                # fetch current step
                 j_req = urllib.request.Request(f'https://api.github.com/repos/7atem/NEMORY/actions/runs/{run_id}/jobs', headers=headers)
                 with urllib.request.urlopen(j_req, timeout=30) as jr:
                     j_data = json.load(jr)
                 for job in j_data.get('jobs', []):
                     current_step = next((s['name'] for s in job['steps'] if s['status'] == 'in_progress'), None)
-                    last_step = [s['name'] for s in job['steps'] if s['status'] == 'completed'][-1:] or ['None']
-                    print(f"   Job {job['name']}: {job['status']} | Active: {current_step} | Completed: {last_step[0]}", flush=True)
+                    completed_steps = [s['name'] for s in job['steps'] if s['status'] == 'completed']
+                    last_step = completed_steps[-1] if completed_steps else 'None'
+                    print(f"   Job {job['name']}: {job['status']} | Active: {current_step} | Completed: {last_step}", flush=True)
         except Exception as e:
             print(f"Error checking {label}: {e}", flush=True)
             all_done = False
@@ -44,17 +73,13 @@ for iteration in range(100):
 
     time.sleep(25)
 
-# Check artifacts for iOS
-print("\nFetching iOS artifacts...", flush=True)
-try:
-    req = urllib.request.Request(f'https://api.github.com/repos/7atem/NEMORY/actions/runs/{ios_run_id}/artifacts', headers=headers)
-    with urllib.request.urlopen(req, timeout=30) as r:
-        art_data = json.load(r)
-    print(f"Total artifacts: {art_data['total_count']}", flush=True)
-    for a in art_data['artifacts']:
-        size_mb = a['size_in_bytes'] / (1024 * 1024)
-        print(f"-> {a['name']} ({size_mb:.2f} MB)")
-        print(f"   Download URL: {a['archive_download_url']}")
-        print(f"   Artifact ID: {a['id']}")
-except Exception as e:
-    print(f"Error fetching artifacts: {e}", flush=True)
+if ios_run_id:
+    print("\nFetching iOS artifacts...", flush=True)
+    try:
+        req = urllib.request.Request(f'https://api.github.com/repos/7atem/NEMORY/actions/runs/{ios_run_id}/artifacts', headers=headers)
+        with urllib.request.urlopen(req, timeout=30) as r:
+            art_data = json.load(r)
+        for a in art_data.get('artifacts', []):
+            print(f"Artifact: {a['name']} ({a['size_in_bytes'] / (1024*1024):.2f} MB) - ID {a['id']}", flush=True)
+    except Exception as e:
+        print(f"Artifact lookup error: {e}", flush=True)
