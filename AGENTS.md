@@ -257,6 +257,7 @@ ordering does not require an LLM.
 
 ## Conventions
 
+- **Free & Keyless APIs Only:** All live network features (weather, air quality, currency, public holidays, drug recalls, asset rates) MUST strictly use 100% free, open, public, keyless APIs (Open-Meteo, Frankfurter, Nager.Date, OpenFDA, CoinGecko public tier, system platform URL intents). Never introduce paid APIs, billing credit card requirements, or subscription-gated external web services.
 - All user-facing strings bilingual: `values/strings.xml` (EN) + `values-ar/strings.xml` (AR).
 - Minimal, surgical edits; match the surrounding style.
 - Build: `./gradlew :app:assembleDebug` (on Windows use `gradlew.bat`).
