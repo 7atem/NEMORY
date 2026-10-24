@@ -53,8 +53,10 @@ fun TravelLensScreen(
 
     val sampleTrip = remember { DefaultTripProvider.getSampleTrip() }
     var weather by remember { mutableStateOf<DestinationWeather?>(null) }
+    var holidays by remember { mutableStateOf<List<PublicHoliday>>(emptyList()) }
     LaunchedEffect(Unit) {
         weather = LiveWeatherClient.fetchWeather(40.7128, -74.0060)
+        holidays = LiveHolidayClient.fetchUpcomingHolidays("US")
     }
     var selectedGatePassDoc by remember { mutableStateOf<TripDocItem?>(null) }
 
@@ -104,6 +106,12 @@ fun TravelLensScreen(
         weather?.let { w ->
             item {
                 LiveDestinationWeatherCard(weather = w)
+            }
+        }
+
+        if (holidays.isNotEmpty()) {
+            item {
+                LiveHolidaysCard(holidays = holidays)
             }
         }
 
@@ -816,6 +824,111 @@ private fun LiveDestinationWeatherCard(weather: DestinationWeather) {
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFEA580C)
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LiveHolidaysCard(holidays: List<PublicHoliday>) {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Event,
+                        contentDescription = null,
+                        tint = Color(0xFF6366F1),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.travel_holidays_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFF6366F1).copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = stringResource(R.string.travel_holidays_badge),
+                        color = Color(0xFF4F46E5),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            holidays.take(3).forEach { holiday ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = holiday.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            if (holiday.isLongWeekend) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = Color(0xFF10B981).copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.travel_holidays_long_weekend),
+                                        color = Color(0xFF059669),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Text(
+                            text = "${holiday.dayOfWeek} • ${holiday.date}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+
+                    FilledTonalButton(
+                        onClick = {
+                            SkyscannerDeepLinker.launchEverywhere(context = context, origin = "DXB")
+                        },
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(Icons.Default.Flight, contentDescription = null, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = stringResource(R.string.travel_holidays_getaway_btn),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }

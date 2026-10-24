@@ -41,4 +41,10 @@
     <string name="health_medical_blood_type">فصيلة الدم: %1$s</string>
     <string name="health_medical_allergies">الحساسية: %1$s</string>
     <string name="health_medical_insurance">التأمين: %1$s</string>
+    <string name="health_air_quality_title">رادار جودة الهواء والأشعة المباشر</string>
+    <string name="health_fda_safety_title">مراقب سلامة الأدوية من FDA</string>
+    <string name="health_fda_live_badge">فحص حي</string>
+    <string name="health_fda_verified_clean">تم التحقق من سلامة %1$d وصفات طبية</string>
+    <string name="health_fda_batch_clean_subtitle">لا توجد أي سحوبات أو تحذيرات من FDA على الأدوية المحفوظة</string>
+    <string name="health_fda_privacy_note">واجهة OpenFDA الرسمية • فحص محلي على الجهاز • دون إرسال بيانات شخصية</string>
 </resources>

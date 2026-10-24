@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.vaultbrain.core.common.ui.SharedItemCard
 import com.vaultbrain.shared.model.VaultItem
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -55,9 +56,11 @@ fun MoneyLensScreen(
     val categories = remember { SpendingAnalyticsProvider.getCategories() }
     val warranties = remember { SpendingAnalyticsProvider.getWarranties() }
     var rates by remember { mutableStateOf<List<CurrencyRateItem>>(emptyList()) }
+    var cryptoAssets by remember { mutableStateOf<List<CryptoAssetRate>>(emptyList()) }
     var cancelTarget by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(Unit) {
         rates = LiveCurrencyClient.fetchRates()
+        cryptoAssets = LiveAssetRatesClient.fetchAssetRates()
     }
 
     cancelTarget?.let { subName ->
@@ -114,6 +117,12 @@ fun MoneyLensScreen(
         if (rates.isNotEmpty()) {
             item {
                 LiveCurrencyRatesCard(rates = rates)
+            }
+        }
+
+        if (cryptoAssets.isNotEmpty()) {
+            item {
+                LiveAssetRatesCard(assets = cryptoAssets)
             }
         }
 
@@ -705,6 +714,91 @@ private fun LiveCurrencyRatesCard(rates: List<CurrencyRateItem>) {
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF4F46E5)
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LiveAssetRatesCard(assets: List<CryptoAssetRate>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.Paid,
+                        contentDescription = null,
+                        tint = Color(0xFFF59E0B),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.money_crypto_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFFF59E0B).copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = stringResource(R.string.money_crypto_badge),
+                        color = Color(0xFFD97706),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            assets.forEach { asset ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "${asset.name} (${asset.symbol})",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = stringResource(R.string.money_crypto_price_aed, asset.priceAed),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = stringResource(R.string.money_crypto_price_usd, asset.priceUsd),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD97706)
+                        )
+                        Text(
+                            text = "${if (asset.change24h >= 0) "+" else ""}${String.format(Locale.US, "%.2f", asset.change24h)}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (asset.change24h >= 0) Color(0xFF10B981) else Color(0xFFEF4444)
+                        )
+                    }
                 }
             }
         }

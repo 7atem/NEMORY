@@ -52,4 +52,8 @@
     <string name="travel_skyscanner_compare">Compare DXB ➔ JFK on Skyscanner</string>
     <string name="travel_skyscanner_shield">24h Free Rebook Shield Active • Check for price dips</string>
     <string name="travel_skyscanner_everywhere">Explore Weekend Getaways to "Everywhere"</string>
+    <string name="travel_holidays_title">Public Holidays &amp; Long Weekends</string>
+    <string name="travel_holidays_badge">NAGER.DATE LIVE</string>
+    <string name="travel_holidays_long_weekend">LONG WEEKEND</string>
+    <string name="travel_holidays_getaway_btn">Getaway</string>
 </resources>

@@ -37,4 +37,10 @@
     <string name="health_medical_blood_type">Blood Type: %1$s</string>
     <string name="health_medical_allergies">Allergies: %1$s</string>
     <string name="health_medical_insurance">Insurance: %1$s</string>
+    <string name="health_air_quality_title">Live Air Quality &amp; UV Radar</string>
+    <string name="health_fda_safety_title">FDA Drug Safety Monitor</string>
+    <string name="health_fda_live_badge">LIVE AUDIT</string>
+    <string name="health_fda_verified_clean">%1$d Prescriptions Verified Safe</string>
+    <string name="health_fda_batch_clean_subtitle">Zero active FDA recalls on saved medications</string>
+    <string name="health_fda_privacy_note">OpenFDA Enforcement API • On-device query only • No PII sent</string>
 </resources>

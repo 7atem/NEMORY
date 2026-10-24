@@ -43,4 +43,8 @@
     <string name="money_cancel_dialog_title">Subscription Termination Notice</string>
     <string name="money_cancel_dialog_done">Done</string>
     <string name="money_cancel_dialog_send">Send via Email App</string>
+    <string name="money_crypto_title">Digital Asset Valuation Radar</string>
+    <string name="money_crypto_badge">COINGECKO LIVE</string>
+    <string name="money_crypto_price_usd">$%1$.2f</string>
+    <string name="money_crypto_price_aed">%1$.0f AED</string>
 </resources>

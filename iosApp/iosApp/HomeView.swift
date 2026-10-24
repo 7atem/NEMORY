@@ -738,6 +738,10 @@ struct HomeView: View {
                     )
                     .padding(.horizontal, 20)
 
+                    // Vault Health & Completeness Audit Card
+                    VaultHealthAuditCardView()
+                        .padding(.horizontal, 20)
+
                     // Siri Shortcuts & Action Button Hub Card
                     SiriShortcutsHubCard()
                         .padding(.horizontal, 20)
@@ -1045,6 +1049,107 @@ private struct SettingsDemoView: View {
 
 private extension Color {
     static let amberAccent = Color(red: 0.96, green: 0.62, blue: 0.04)
+}
+
+struct VaultHealthAuditCardView: View {
+    @StateObject private var auditor = VaultHealthAuditor.shared
+    @State private var isExpanded: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                HStack(spacing: 8) {
+                    Image(systemName: "shield.lefthalf.filled.badge.checkmark")
+                        .font(.title3)
+                        .foregroundStyle(Color.blue)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Vault Health & Completeness")
+                            .font(.subheadline.weight(.bold))
+                        Text("Life coverage audit • 5 Core Pillars")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Text("\(auditor.report.scorePercentage)%")
+                    .font(.title3.weight(.heavy))
+                    .foregroundStyle(Color.blue)
+            }
+
+            // Progress Bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.blue.opacity(0.15))
+                        .frame(height: 8)
+                    Capsule()
+                        .fill(LinearGradient(colors: [.blue, .teal], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: geo.size.width * CGFloat(auditor.report.scorePercentage) / 100.0, height: 8)
+                }
+            }
+            .frame(height: 8)
+
+            if let notice = auditor.report.criticalActionNotice {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    Text(notice)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Button {
+                withAnimation(.spring(response: 0.3)) {
+                    isExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    Text(isExpanded ? "Hide Pillar Breakdown" : "View 5 Pillars Breakdown")
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.caption)
+                }
+                .foregroundStyle(Color.blue)
+            }
+            .buttonStyle(.plain)
+
+            if isExpanded {
+                VStack(spacing: 8) {
+                    ForEach(auditor.report.pillars) { p in
+                        HStack(spacing: 8) {
+                            Image(systemName: p.icon)
+                                .font(.caption)
+                                .foregroundStyle(p.isComplete ? Color.green : Color.orange)
+                                .frame(width: 18)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(p.name)
+                                    .font(.caption.weight(.bold))
+                                Text(p.advice)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: p.isComplete ? "checkmark.circle.fill" : "circle.dashed")
+                                .font(.caption)
+                                .foregroundStyle(p.isComplete ? Color.green : Color.orange)
+                        }
+                        .padding(8)
+                        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+                .transition(.opacity)
+            }
+        }
+        .padding(14)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.blue.opacity(0.2), lineWidth: 0.8)
+        )
+    }
 }
 
 #Preview {

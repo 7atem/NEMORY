@@ -43,4 +43,8 @@
     <string name="money_cancel_dialog_title">إشعار إنهاء الاشتراك</string>
     <string name="money_cancel_dialog_done">تم</string>
     <string name="money_cancel_dialog_send">إرسال عبر تطبيق البريد</string>
+    <string name="money_crypto_title">رادار تقييم الأصول الرقمية المباشر</string>
+    <string name="money_crypto_badge">مباشر عبر COINGECKO</string>
+    <string name="money_crypto_price_usd">$%1$.2f</string>
+    <string name="money_crypto_price_aed">%1$.0f درهم</string>
 </resources>

@@ -184,6 +184,7 @@ final class SpendingAnalyticsEngine: ObservableObject {
 struct FinancialAnalyticsHubView: View {
     @StateObject private var engine = SpendingAnalyticsEngine.shared
     @StateObject private var currency = LiveCurrencyService.shared
+    @StateObject private var assetRates = LiveAssetRatesService.shared
     @State private var selectedTab: Int = 0
     @State private var selectedCancelTarget: String? = nil
     @State private var showingCancelModal: Bool = false
@@ -199,7 +200,7 @@ struct FinancialAnalyticsHubView: View {
                     Text("Breakdown").tag(0)
                     Text("Warranties").tag(1)
                     Text("Tax").tag(2)
-                    Text("Live FX").tag(3)
+                    Text("Markets").tag(3)
                     Text("Cancel").tag(4)
                 }
                 .pickerStyle(.segmented)
@@ -226,6 +227,7 @@ struct FinancialAnalyticsHubView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             await currency.fetchLatestRates()
+            await assetRates.fetchLatestRates()
         }
         .sheet(isPresented: $showingCancelModal) {
             cancellationNoticeSheet
@@ -509,28 +511,92 @@ struct FinancialAnalyticsHubView: View {
     }
 
     private var liveCurrencySection: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Label("Live FX Converter", systemImage: "coloncurrencysign.circle.fill")
-                    .font(.headline)
-                    .foregroundStyle(Color.indigo)
-                Spacer()
-                Text("FRANKFURTER LIVE")
-                    .font(.system(size: 9, weight: .bold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.indigo.opacity(0.15), in: Capsule())
-                    .foregroundStyle(Color.indigo)
+        VStack(alignment: .leading, spacing: 18) {
+            // Live FX Rates
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("Live FX Converter", systemImage: "coloncurrencysign.circle.fill")
+                        .font(.headline)
+                        .foregroundStyle(Color.indigo)
+                    Spacer()
+                    Text("ECB LIVE")
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.indigo.opacity(0.15), in: Capsule())
+                        .foregroundStyle(Color.indigo)
+                }
+
+                VStack(spacing: 8) {
+                    currencyRow(currencyCode: "EUR", name: "Euro (€)", rate: currency.rates["EUR"] ?? 0.92)
+                    currencyRow(currencyCode: "AED", name: "UAE Dirham (AED)", rate: currency.rates["AED"] ?? 3.6725)
+                    currencyRow(currencyCode: "GBP", name: "British Pound (£)", rate: currency.rates["GBP"] ?? 0.78)
+                    currencyRow(currencyCode: "SAR", name: "Saudi Riyal (SAR)", rate: currency.rates["SAR"] ?? 3.75)
+                    currencyRow(currencyCode: "JPY", name: "Japanese Yen (¥)", rate: currency.rates["JPY"] ?? 154.5)
+                }
             }
 
-            VStack(spacing: 8) {
-                currencyRow(currencyCode: "EUR", name: "Euro (€)", rate: currency.rates["EUR"] ?? 0.92)
-                currencyRow(currencyCode: "AED", name: "UAE Dirham (AED)", rate: currency.rates["AED"] ?? 3.6725)
-                currencyRow(currencyCode: "GBP", name: "British Pound (£)", rate: currency.rates["GBP"] ?? 0.78)
-                currencyRow(currencyCode: "SAR", name: "Saudi Riyal (SAR)", rate: currency.rates["SAR"] ?? 3.75)
-                currencyRow(currencyCode: "JPY", name: "Japanese Yen (¥)", rate: currency.rates["JPY"] ?? 154.5)
+            // Live Crypto & Digital Asset Valuation
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Label("Digital Asset Valuation Radar", systemImage: "bitcoinsign.circle.fill")
+                        .font(.headline)
+                        .foregroundStyle(Color.orange)
+                    Spacer()
+                    Text("COINGECKO LIVE")
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.orange.opacity(0.15), in: Capsule())
+                        .foregroundStyle(Color.orange)
+                }
+
+                VStack(spacing: 8) {
+                    ForEach(assetRates.assets) { asset in
+                        cryptoAssetRow(asset: asset)
+                    }
+                }
             }
         }
+    }
+
+    private func cryptoAssetRow(asset: CryptoAssetRate) -> some View {
+        HStack {
+            HStack(spacing: 10) {
+                Image(systemName: asset.iconName)
+                    .font(.title2)
+                    .foregroundStyle(Color.orange)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(asset.name)
+                        .font(.subheadline.weight(.heavy))
+                    Text(asset.symbol)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("$\(String(format: "%.2f", asset.priceUsd))")
+                    .font(.subheadline.weight(.bold))
+                HStack(spacing: 4) {
+                    Text("\(String(format: "%.0f", asset.priceAed)) AED")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Text("\(asset.change24h >= 0 ? "+" : "")\(String(format: "%.2f", asset.change24h))%")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(asset.change24h >= 0 ? Color.green : Color.red)
+                }
+            }
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.orange.opacity(0.2), lineWidth: 0.8)
+        )
     }
 
     private func currencyRow(currencyCode: String, name: String, rate: Double) -> some View {

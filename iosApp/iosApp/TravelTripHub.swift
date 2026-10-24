@@ -227,6 +227,7 @@ struct TravelTripHubView: View {
     @StateObject private var engine = TripClusteringEngine.shared
     @StateObject private var liveActivities = LiveActivityManager.shared
     @StateObject private var weather = LiveWeatherService.shared
+    @StateObject private var holidays = LiveHolidayService.shared
     @State private var showingGatePassModal = false
     @State private var selectedFlightItem: TripDocItem?
     @State private var selectedPlace: TripPlaceItem?
@@ -240,6 +241,9 @@ struct TravelTripHubView: View {
 
                     // Live Destination Weather
                     liveWeatherCard(trip: trip)
+
+                    // Public Holidays & Long Weekend Radar
+                    upcomingHolidaysCard
 
                     // Skyscanner Flight Fare Radar
                     skyscannerDealsSection(trip: trip)
@@ -278,10 +282,83 @@ struct TravelTripHubView: View {
         }
         .task {
             await weather.fetchWeather(latitude: 40.7128, longitude: -74.0060)
+            await holidays.fetchUpcomingHolidays()
         }
     }
 
     // MARK: - Subviews
+
+    private var upcomingHolidaysCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Public Holidays & Long Weekends", systemImage: "calendar.badge.clock")
+                    .font(.headline)
+                    .foregroundStyle(Color.indigo)
+                Spacer()
+                Text("NAGER.DATE LIVE")
+                    .font(.system(size: 9, weight: .bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.indigo.opacity(0.15), in: Capsule())
+                    .foregroundStyle(Color.indigo)
+            }
+
+            VStack(spacing: 8) {
+                ForEach(holidays.upcomingHolidays.prefix(3)) { holiday in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack(spacing: 6) {
+                                Text(holiday.name)
+                                    .font(.subheadline.weight(.semibold))
+                                if holiday.isLongWeekend {
+                                    Text("LONG WEEKEND")
+                                        .font(.system(size: 8, weight: .bold))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 2)
+                                        .background(Color.green.opacity(0.15), in: Capsule())
+                                        .foregroundStyle(Color.green)
+                                }
+                            }
+                            Text("\(holiday.dayOfWeek) • \(holiday.date)")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Button {
+                            let url = SkyscannerDeepLinker.makeEverywhereUrl(origin: "DXB")
+                            UIApplication.shared.open(url)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "airplane.circle.fill")
+                                    .font(.caption)
+                                Text("Getaway")
+                                    .font(.caption2.weight(.bold))
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(Color.indigo.opacity(0.12), in: Capsule())
+                            .foregroundStyle(Color.indigo)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(10)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.indigo.opacity(0.15), lineWidth: 0.8)
+                    )
+                }
+            }
+        }
+        .padding(16)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(Color.indigo.opacity(0.2), lineWidth: 0.8)
+        )
+    }
 
     private func liveWeatherCard(trip: TripBinder) -> some View {
         VStack(alignment: .leading, spacing: 10) {
