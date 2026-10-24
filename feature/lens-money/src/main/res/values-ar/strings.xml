@@ -22,4 +22,15 @@
     <string name="money_iban_validator">التحقق من الآيبان (IBAN)</string>
     <string name="money_trial_expiring_title">فترة تجريبية تنتهي قريباً!</string>
     <string name="money_trial_expiring_message">قم بإلغاء %1$s خلال %2$d أيام لتجنب الرسوم</string>
+    <string name="money_spend_trends_title">اتجاهات الإنفاق الشهري</string>
+    <string name="money_spend_current_month">الشهر الحالي: %1$s</string>
+    <string name="money_spend_prev_month">مقارنة بـ %1$s الشهر الماضي</string>
+    <string name="money_categories_title">الإنفاق حسب الفئة</string>
+    <string name="money_warranty_title">الضمانات ومهل الإرجاع</string>
+    <string name="money_warranty_days_left">متبقي %1$d يوماً</string>
+    <string name="money_warranty_expiring_soon">ينتهي قريباً</string>
+    <string name="money_warranty_active">نشط</string>
+    <string name="money_tax_title">المصروفات الخاضعة للخصم الضريبي</string>
+    <string name="money_tax_total_label">المؤهل ضريبياً: %1$s</string>
+    <string name="money_tax_export_btn">تصدير كشف الضرائب CSV</string>
 </resources>

@@ -1,43 +1,33 @@
 package com.vaultbrain.feature.lenstravel
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AttachMoney
-import androidx.compose.material.icons.filled.Flight
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.core.common.ui.SharedItemCard
+import com.vaultbrain.shared.model.VaultItem
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -61,12 +51,22 @@ fun TravelLensScreen(
             it.parsedMetadata["type"].equals("hotel", ignoreCase = true)
     }
 
+    val sampleTrip = remember { DefaultTripProvider.getSampleTrip() }
+    var selectedGatePassDoc by remember { mutableStateOf<TripDocItem?>(null) }
+
     val recentItems = items.filter { (now - it.createdAt) <= 7 * 24 * 60 * 60 * 1000L }
     val olderItems = items.filter { (now - it.createdAt) > 7 * 24 * 60 * 60 * 1000L }
 
+    selectedGatePassDoc?.let { doc ->
+        GatePassDialog(
+            flightItem = doc,
+            onDismiss = { selectedGatePassDoc = null }
+        )
+    }
+
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier.fillMaxSize()
     ) {
         item {
@@ -76,6 +76,7 @@ fun TravelLensScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+
         item {
             TravelStatCard(
                 totalCount = items.size,
@@ -84,13 +85,35 @@ fun TravelLensScreen(
                 flightCount = flightCount,
                 hotelCount = hotelCount
             )
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        // Active Trip Binder Hero Card
+        item {
+            TripHeroCard(
+                trip = sampleTrip,
+                onShowGatePass = {
+                    selectedGatePassDoc = sampleTrip.flightItems.firstOrNull()
+                }
+            )
+        }
 
+        // Destination Places & Google Maps
+        item {
+            PlacesAndMapsSection(places = sampleTrip.places)
+        }
+
+        // Offline Departure Checklist
+        item {
+            OfflineChecklistSection()
+        }
+
+        // Group Bill Splitter
+        item {
             BillSplitterCard(items = items)
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
+        // Quick Add Section
+        item {
             Text(
                 text = stringResource(R.string.travel_quick_add_title),
                 style = MaterialTheme.typography.labelLarge
@@ -106,15 +129,13 @@ fun TravelLensScreen(
                 TravelQuickAddChip(label = stringResource(R.string.travel_quick_add_passport), onClick = onQuickAdd)
                 TravelQuickAddChip(label = stringResource(R.string.travel_quick_add_boarding), onClick = onQuickAdd)
             }
+        }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
+        item {
             Text(
                 text = stringResource(R.string.travel_items_title),
                 style = MaterialTheme.typography.titleMedium
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
         if (items.isEmpty()) {
@@ -138,10 +159,28 @@ fun TravelLensScreen(
                     )
                 }
                 items(recentItems, key = { it.id }) { item ->
-                    TravelItemCard(item = item, onClick = { onItemClick(item) })
+                    TravelItemCard(
+                        item = item,
+                        onClick = { onItemClick(item) },
+                        onGatePassClick = {
+                            selectedGatePassDoc = TripDocItem(
+                                id = item.id,
+                                title = item.title,
+                                subtitle = item.summary ?: "",
+                                category = "Flight",
+                                refCode = item.customFields["pnr"] ?: "EK 203",
+                                originIata = item.customFields["origin"] ?: "DXB",
+                                destinationIata = item.customFields["destination"] ?: "JFK",
+                                seat = item.customFields["seat"] ?: "14A",
+                                gate = item.customFields["gate"] ?: "B22",
+                                terminal = item.customFields["terminal"] ?: "3",
+                                passengerName = item.customFields["passenger"] ?: "EL SAYED / HATEM"
+                            )
+                        }
+                    )
                 }
             }
-            
+
             if (olderItems.isNotEmpty()) {
                 stickyHeader {
                     Text(
@@ -154,10 +193,338 @@ fun TravelLensScreen(
                     )
                 }
                 items(olderItems, key = { it.id }) { item ->
-                    TravelItemCard(item = item, onClick = { onItemClick(item) })
+                    TravelItemCard(
+                        item = item,
+                        onClick = { onItemClick(item) },
+                        onGatePassClick = {
+                            selectedGatePassDoc = TripDocItem(
+                                id = item.id,
+                                title = item.title,
+                                subtitle = item.summary ?: "",
+                                category = "Flight",
+                                refCode = item.customFields["pnr"] ?: "EK 203",
+                                originIata = item.customFields["origin"] ?: "DXB",
+                                destinationIata = item.customFields["destination"] ?: "JFK",
+                                seat = item.customFields["seat"] ?: "14A",
+                                gate = item.customFields["gate"] ?: "B22",
+                                terminal = item.customFields["terminal"] ?: "3",
+                                passengerName = item.customFields["passenger"] ?: "EL SAYED / HATEM"
+                            )
+                        }
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun TripHeroCard(
+    trip: TripBinder,
+    onShowGatePass: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FlightTakeoff,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Column {
+                        Text(
+                            text = trip.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = trip.dateRangeText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Text(
+                        text = stringResource(R.string.travel_trip_binder_upcoming),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            // Route summary
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "DXB ➔ JFK",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Emirates EK 203 • Seat 14A",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Button(
+                    onClick = onShowGatePass,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.QrCode,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.travel_gate_pass_action),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlacesAndMapsSection(places: List<TripPlaceItem>) {
+    val context = LocalContext.current
+
+    fun openInGoogleMaps(place: TripPlaceItem) {
+        val geoUri = Uri.parse("geo:${place.latitude},${place.longitude}?q=${Uri.encode("${place.name}, ${place.address}")}")
+        val mapIntent = Intent(Intent.ACTION_VIEW, geoUri).apply {
+            setPackage("com.google.android.apps.maps")
+        }
+        try {
+            context.startActivity(mapIntent)
+        } catch (_: Exception) {
+            val webUri = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode("${place.name} ${place.address}")}")
+            context.startActivity(Intent(Intent.ACTION_VIEW, webUri))
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(R.string.travel_places_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp)
+        ) {
+            items(places, key = { it.id }) { place ->
+                Card(
+                    modifier = Modifier.width(220.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = place.category.uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                            Text(
+                                text = "~${place.etaMinutes} min",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Text(
+                            text = place.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Text(
+                            text = place.address,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Button(
+                            onClick = { openInGoogleMaps(place) },
+                            modifier = Modifier.fillMaxWidth(),
+                            contentPadding = PaddingValues(vertical = 4.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Directions,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.travel_places_navigate),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun OfflineChecklistSection() {
+    var passportChecked by remember { mutableStateOf(true) }
+    var boardingChecked by remember { mutableStateOf(true) }
+    var hotelChecked by remember { mutableStateOf(true) }
+    var insuranceChecked by remember { mutableStateOf(true) }
+    var roamingChecked by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Checklist,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(R.string.travel_checklist_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            ChecklistItemRow(
+                title = stringResource(R.string.travel_checklist_passport),
+                isChecked = passportChecked,
+                onToggle = { passportChecked = !passportChecked }
+            )
+            ChecklistItemRow(
+                title = stringResource(R.string.travel_checklist_boarding),
+                isChecked = boardingChecked,
+                onToggle = { boardingChecked = !boardingChecked }
+            )
+            ChecklistItemRow(
+                title = stringResource(R.string.travel_checklist_hotel),
+                isChecked = hotelChecked,
+                onToggle = { hotelChecked = !hotelChecked }
+            )
+            ChecklistItemRow(
+                title = stringResource(R.string.travel_checklist_insurance),
+                isChecked = insuranceChecked,
+                onToggle = { insuranceChecked = !insuranceChecked }
+            )
+            ChecklistItemRow(
+                title = stringResource(R.string.travel_checklist_roaming),
+                isChecked = roamingChecked,
+                onToggle = { roamingChecked = !roamingChecked }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChecklistItemRow(
+    title: String,
+    isChecked: Boolean,
+    onToggle: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onToggle)
+            .padding(vertical = 4.dp, horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = if (isChecked) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+            contentDescription = null,
+            tint = if (isChecked) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -207,11 +574,11 @@ private fun HeroStatBox(label: String, value: String, modifier: Modifier = Modif
 @Composable
 private fun BillSplitterCard(items: List<VaultItem>) {
     var travelers by remember { mutableIntStateOf(2) }
-    
-    val totalCost = items.sumOf { 
+
+    val totalCost = items.sumOf {
         it.targetPrice ?: it.parsedMetadata["total"]?.toDoubleOrNull() ?: it.parsedMetadata["amount"]?.toDoubleOrNull() ?: 0.0
     }
-    
+
     val costPerPerson = if (travelers > 0) totalCost / travelers else 0.0
 
     Card(
@@ -225,29 +592,29 @@ private fun BillSplitterCard(items: List<VaultItem>) {
                 Text(stringResource(R.string.travel_splitter_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
             }
             Spacer(Modifier.height(16.dp))
-            
+
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.travel_splitter_total_cost), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 Text("$${"%.2f".format(totalCost)}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             }
-            
+
             Spacer(Modifier.height(8.dp))
-            
+
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Text(stringResource(R.string.travel_splitter_travelers), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSecondaryContainer)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    androidx.compose.material3.IconButton(onClick = { if (travelers > 1) travelers-- }) {
+                    IconButton(onClick = { if (travelers > 1) travelers-- }) {
                         Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.travel_splitter_decrease), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                     Text("$travelers", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    androidx.compose.material3.IconButton(onClick = { travelers++ }) {
+                    IconButton(onClick = { travelers++ }) {
                         Icon(Icons.Default.Add, contentDescription = stringResource(R.string.travel_splitter_increase), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                 }
             }
-            
+
             Spacer(Modifier.height(8.dp))
-            
+
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
                 Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text(stringResource(R.string.travel_splitter_per_person), style = MaterialTheme.typography.titleSmall)
@@ -277,7 +644,11 @@ private fun TravelQuickAddChip(label: String, onClick: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TravelItemCard(item: VaultItem, onClick: () -> Unit) {
+private fun TravelItemCard(
+    item: VaultItem,
+    onClick: () -> Unit,
+    onGatePassClick: () -> Unit
+) {
     val parsed = item.rawOcrText?.let { PnrParser.parse(it) } ?: TravelParsedInfo()
     val travelInfo = parsed.copy(
         pnr = item.customFields["pnr"] ?: parsed.pnr,
@@ -285,6 +656,10 @@ private fun TravelItemCard(item: VaultItem, onClick: () -> Unit) {
         seat = item.customFields["seat"] ?: parsed.seat,
         gate = item.customFields["gate"] ?: parsed.gate
     )
+
+    val isFlight = travelInfo.flightNumber != null || travelInfo.pnr != null ||
+        item.title.contains("flight", ignoreCase = true) ||
+        item.effectiveClassification?.name.equals("TICKET", ignoreCase = true)
 
     SharedItemCard(
         item = item,
@@ -328,6 +703,20 @@ private fun TravelItemCard(item: VaultItem, onClick: () -> Unit) {
                     }
                 }
             }
+
+            if (isFlight) {
+                OutlinedButton(
+                    onClick = onGatePassClick,
+                    modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                    contentPadding = PaddingValues(vertical = 4.dp),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.QrCode, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(stringResource(R.string.travel_gate_pass_action), style = MaterialTheme.typography.labelSmall)
+                }
+            }
+
             item.locationName?.let { location ->
                 Text(
                     text = stringResource(R.string.travel_item_location, location),

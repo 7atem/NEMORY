@@ -1,46 +1,27 @@
 package com.vaultbrain.feature.lensmoney
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Receipt
-import androidx.compose.material.icons.filled.Repeat
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.vaultbrain.shared.model.VaultItem
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-
-import androidx.compose.foundation.ExperimentalFoundationApi
-
-import androidx.compose.foundation.background
 import com.vaultbrain.core.common.ui.SharedItemCard
+import com.vaultbrain.shared.model.VaultItem
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -55,15 +36,15 @@ fun MoneyLensScreen(
         it.title.contains("receipt", ignoreCase = true) ||
             it.parsedMetadata["type"].equals("receipt", ignoreCase = true)
     }
-    
-    val subscriptions = items.filter { 
-        it.recurringRule != null || 
-        it.parsedMetadata["type"].equals("subscription", ignoreCase = true) ||
-        it.title.contains("subscription", ignoreCase = true)
+
+    val subscriptions = items.filter {
+        it.recurringRule != null ||
+            it.parsedMetadata["type"].equals("subscription", ignoreCase = true) ||
+            it.title.contains("subscription", ignoreCase = true)
     }
-    
+
     val monthlyBurnRate = subscriptions.sumOf { it.parsedMetadata.parseAmount() ?: 0.0 }
-    
+
     val now = System.currentTimeMillis()
     val upcomingTrials = items.filter {
         val alertDate = it.secondaryAlertDate ?: return@filter false
@@ -71,12 +52,15 @@ fun MoneyLensScreen(
         daysUntil in 0..7
     }
 
+    val categories = remember { SpendingAnalyticsProvider.getCategories() }
+    val warranties = remember { SpendingAnalyticsProvider.getWarranties() }
+
     val recentItems = items.filter { (now - it.createdAt) <= 7 * 24 * 60 * 60 * 1000L }
     val olderItems = items.filter { (now - it.createdAt) > 7 * 24 * 60 * 60 * 1000L }
 
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier.fillMaxSize()
     ) {
         item {
@@ -86,114 +70,386 @@ fun MoneyLensScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+
+        if (upcomingTrials.isNotEmpty()) {
             item {
-                if (upcomingTrials.isNotEmpty()) {
-                    upcomingTrials.forEach { trialItem ->
-                        TrialAlertCard(
-                            title = trialItem.title,
-                            alertDate = trialItem.secondaryAlertDate!!,
-                            onClick = { onItemClick(trialItem) }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+                upcomingTrials.forEach { trialItem ->
+                    TrialAlertCard(
+                        title = trialItem.title,
+                        alertDate = trialItem.secondaryAlertDate!!,
+                        onClick = { onItemClick(trialItem) }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-
-                MoneyStatCard(
-                    monthlyBurnRate = monthlyBurnRate,
-                    subscriptionCount = subscriptions.size,
-                    receiptCount = receiptCount
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Button(
-                    onClick = onExportClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(Icons.Default.Download, contentDescription = null)
-                    Spacer(Modifier.size(8.dp))
-                    Text(stringResource(R.string.money_export_csv))
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.money_iban_validator),
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                IbanValidatorCard()
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.money_quick_add_title),
-                    style = MaterialTheme.typography.labelLarge
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    MoneyQuickAddChip(label = stringResource(R.string.money_quick_add_receipt), onClick = onQuickAdd)
-                    MoneyQuickAddChip(label = stringResource(R.string.money_quick_add_bill), onClick = onQuickAdd)
-                    MoneyQuickAddChip(label = stringResource(R.string.money_quick_add_warranty), onClick = onQuickAdd)
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = stringResource(R.string.money_items_title),
-                    style = MaterialTheme.typography.titleMedium
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
             }
+        }
 
-            if (items.isEmpty()) {
-                item {
+        // Monthly Spend Trends & Category Progress Breakdown
+        item {
+            MonthlySpendingCard(categories = categories)
+        }
+
+        // Warranties & Return Windows Section
+        item {
+            WarrantiesSection(warranties = warranties)
+        }
+
+        // Tax Deductible Expenses & CSV Export Hero
+        item {
+            TaxDeductibleCard(onExportClick = onExportClick)
+        }
+
+        item {
+            MoneyStatCard(
+                monthlyBurnRate = monthlyBurnRate,
+                subscriptionCount = subscriptions.size,
+                receiptCount = receiptCount
+            )
+        }
+
+        item {
+            Text(
+                text = stringResource(R.string.money_iban_validator),
+                style = MaterialTheme.typography.labelLarge
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            IbanValidatorCard()
+        }
+
+        item {
+            Text(
+                text = stringResource(R.string.money_quick_add_title),
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                MoneyQuickAddChip(label = stringResource(R.string.money_quick_add_receipt), onClick = onQuickAdd)
+                MoneyQuickAddChip(label = stringResource(R.string.money_quick_add_bill), onClick = onQuickAdd)
+                MoneyQuickAddChip(label = stringResource(R.string.money_quick_add_warranty), onClick = onQuickAdd)
+            }
+        }
+
+        item {
+            Text(
+                text = stringResource(R.string.money_items_title),
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
+        if (items.isEmpty()) {
+            item {
+                Text(
+                    text = stringResource(R.string.money_empty_message),
+                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            if (recentItems.isNotEmpty()) {
+                stickyHeader {
                     Text(
-                        text = stringResource(R.string.money_empty_message),
-                        modifier = Modifier.fillMaxWidth().padding(32.dp),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        text = stringResource(R.string.money_section_recent),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(vertical = 8.dp)
                     )
                 }
-            } else {
-                if (recentItems.isNotEmpty()) {
-                    stickyHeader {
-                        Text(
-                            text = stringResource(R.string.money_section_recent),
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(vertical = 8.dp)
+                items(recentItems, key = { it.id }) { item ->
+                    MoneyItemCard(item = item, onClick = { onItemClick(item) })
+                }
+            }
+
+            if (olderItems.isNotEmpty()) {
+                stickyHeader {
+                    Text(
+                        text = stringResource(R.string.money_section_older),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .padding(vertical = 8.dp)
+                    )
+                }
+                items(olderItems, key = { it.id }) { item ->
+                    MoneyItemCard(item = item, onClick = { onItemClick(item) })
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MonthlySpendingCard(categories: List<ExpenseCategoryItem>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.money_spend_trends_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = stringResource(R.string.money_spend_current_month, "$1,420.50"),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFF2E7D32).copy(alpha = 0.15f)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.TrendingUp,
+                            contentDescription = null,
+                            tint = Color(0xFF2E7D32),
+                            modifier = Modifier.size(16.dp)
                         )
-                    }
-                    items(recentItems, key = { it.id }) { item ->
-                        MoneyItemCard(item = item, onClick = { onItemClick(item) })
+                        Text(
+                            text = "+19.8%",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2E7D32)
+                        )
                     }
                 }
-                
-                if (olderItems.isNotEmpty()) {
-                    stickyHeader {
-                        Text(
-                            text = stringResource(R.string.money_section_older),
-                            style = MaterialTheme.typography.titleMedium,
+            }
+
+            Text(
+                text = stringResource(R.string.money_categories_title),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            // Category Breakdown Items
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                categories.forEach { cat ->
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = cat.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text(
+                                    text = "${(cat.percentage * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = cat.totalFormatted,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+
+                        LinearProgressIndicator(
+                            progress = { cat.percentage },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
-                                .padding(vertical = 8.dp)
+                                .height(6.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            color = Color(cat.colorHex),
+                            trackColor = MaterialTheme.colorScheme.surface
                         )
-                    }
-                    items(olderItems, key = { it.id }) { item ->
-                        MoneyItemCard(item = item, onClick = { onItemClick(item) })
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun WarrantiesSection(warranties: List<WarrantyCardItem>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.money_warranty_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp)
+        ) {
+            items(warranties, key = { it.id }) { item ->
+                Card(
+                    modifier = Modifier.width(220.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = if (item.isUrgent) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    text = if (item.isUrgent) {
+                                        stringResource(R.string.money_warranty_expiring_soon)
+                                    } else {
+                                        stringResource(R.string.money_warranty_active)
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (item.isUrgent) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                            Text(
+                                text = item.category,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Text(
+                            text = item.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+
+                        Text(
+                            text = item.issuer,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+
+                        LinearProgressIndicator(
+                            progress = { item.progress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(5.dp)
+                                .clip(RoundedCornerShape(3.dp)),
+                            color = if (item.isUrgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                            trackColor = MaterialTheme.colorScheme.surface
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = stringResource(R.string.money_warranty_days_left, item.daysRemaining),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = if (item.isUrgent) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = item.expirationFormatted,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TaxDeductibleCard(onExportClick: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ReceiptLong,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.money_tax_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.money_tax_total_label, "$1,085.45"),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+
+            Button(
+                onClick = onExportClick,
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FileDownload,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = stringResource(R.string.money_export_csv),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -230,27 +486,27 @@ private fun MoneyStatCard(
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
         ),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Monthly Subscriptions",
+                text = "Active Subscriptions Burn Rate",
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "$${"%.2f".format(monthlyBurnRate)} / month",
                 style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSecondaryContainer
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Tracking $subscriptionCount active subscriptions & $receiptCount receipts.",
+                text = "Tracked subscriptions: $subscriptionCount | Total receipts: $receiptCount",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
             )
         }
     }
@@ -258,11 +514,11 @@ private fun MoneyStatCard(
 
 @Composable
 private fun IbanValidatorCard() {
-    var iban by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    var iban by remember { mutableStateOf("") }
     val normalizedIban = iban.filterNot(Char::isWhitespace).uppercase()
     val isValid = isValidIban(normalizedIban)
-    
-    androidx.compose.material3.OutlinedTextField(
+
+    OutlinedTextField(
         value = iban,
         onValueChange = { iban = it.uppercase().take(34) },
         label = { Text("Validate IBAN") },
@@ -270,9 +526,9 @@ private fun IbanValidatorCard() {
         trailingIcon = {
             if (iban.isNotEmpty()) {
                 Icon(
-                    imageVector = if (isValid) androidx.compose.material.icons.Icons.Default.Add else androidx.compose.material.icons.Icons.Default.Receipt,
+                    imageVector = if (isValid) Icons.Default.Add else Icons.Default.Receipt,
                     contentDescription = null,
-                    tint = if (isValid) androidx.compose.ui.graphics.Color.Green else MaterialTheme.colorScheme.error
+                    tint = if (isValid) Color.Green else MaterialTheme.colorScheme.error
                 )
             }
         },
@@ -298,15 +554,11 @@ internal fun isValidIban(value: String): Boolean {
     return remainder == 1
 }
 
-private fun formatDate(timestamp: Long): String {
-    return SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(timestamp))
-}
-
 /**
  * Parses a numeric amount from receipt metadata keys commonly produced by the
  * heuristic extractor (e.g. "total", "amount", "value").
  */
-private fun Map<String, String>.parseAmount(): Double? {
+internal fun Map<String, String>.parseAmount(): Double? {
     val amountKeys = listOf("total", "amount", "value", "price", "sum")
     return amountKeys.firstNotNullOfOrNull { key ->
         this[key]?.replace(Regex("[^0-9.]"), "")?.toDoubleOrNull()
@@ -333,14 +585,23 @@ private fun MoneyQuickAddChip(label: String, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MoneyItemCard(item: VaultItem, onClick: () -> Unit) {
-    val isRecurring = item.recurringRule != null || 
-            item.parsedMetadata["type"].equals("subscription", ignoreCase = true)
+    val isRecurring = item.recurringRule != null ||
+        item.parsedMetadata["type"].equals("subscription", ignoreCase = true)
 
     SharedItemCard(
         item = item,
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         extraContent = {
+            val amount = item.targetPrice ?: item.parsedMetadata.parseAmount()
+            if (amount != null) {
+                Text(
+                    text = stringResource(R.string.money_item_price, amount),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
             if (isRecurring || !item.customFields["category"].isNullOrBlank() || !item.customFields["tax"].isNullOrBlank() || !item.parsedMetadata["tax"].isNullOrBlank()) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),

@@ -37,6 +37,7 @@ import com.vaultbrain.feature.vault.components.EmptyState
 import com.vaultbrain.feature.vault.components.PreviewData
 import com.vaultbrain.feature.vault.components.VaultItemCard
 import com.vaultbrain.feature.vault.home.AttentionItem
+import com.vaultbrain.feature.vault.home.DeliveriesTrackerCard
 import com.vaultbrain.feature.voice.OnDeviceVoiceCaptureDialog
 import com.vaultbrain.core.common.ui.getMaxContentWidth
 import com.vaultbrain.core.common.ui.getStaggeredEnter
@@ -568,6 +569,10 @@ internal fun HomeContent(
 
                 item {
                     briefingCard()
+                }
+
+                item {
+                    DeliveriesTrackerCard()
                 }
 
                 item {

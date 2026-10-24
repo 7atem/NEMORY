@@ -26,4 +26,24 @@
     <string name="travel_splitter_per_person">Per Person</string>
     <string name="travel_splitter_decrease">Decrease</string>
     <string name="travel_splitter_increase">Increase</string>
+    <string name="gate_pass_brightness_notice">BRIGHTNESS BOOSTED FOR SCANNING</string>
+    <string name="gate_pass_close">Close</string>
+    <string name="gate_pass_airline">EMIRATES</string>
+    <string name="gate_pass_passenger_label">PASSENGER</string>
+    <string name="gate_pass_gate_label">GATE</string>
+    <string name="gate_pass_seat_label">SEAT</string>
+    <string name="gate_pass_terminal_label">TERMINAL</string>
+    <string name="gate_pass_boarding_label">BOARDING</string>
+    <string name="gate_pass_group_label">GROUP</string>
+    <string name="travel_trip_binder_title">Active Trip Binder</string>
+    <string name="travel_trip_binder_upcoming">Upcoming Trip</string>
+    <string name="travel_places_title">Places &amp; Google Maps</string>
+    <string name="travel_places_navigate">Directions</string>
+    <string name="travel_checklist_title">Offline Departure Checklist</string>
+    <string name="travel_checklist_passport">Passport validity &gt; 6 months</string>
+    <string name="travel_checklist_boarding">Boarding pass &amp; barcode offline</string>
+    <string name="travel_checklist_hotel">Hotel confirmation saved</string>
+    <string name="travel_checklist_insurance">Travel medical policy active</string>
+    <string name="travel_checklist_roaming">Data roaming &amp; eSIM configured</string>
+    <string name="travel_gate_pass_action">Show Gate Pass</string>
 </resources>

@@ -24,4 +24,17 @@
     <string name="health_section_older">Older</string>
     <string name="health_vitals_trend">Vitals Trend</string>
     <string name="health_vitals_insufficient">Not enough data for Vitals Trend</string>
+    <string name="health_vitals_title">On-Device Vitals Snapshot</string>
+    <string name="health_vitals_steps">Steps</string>
+    <string name="health_vitals_heart_rate">Heart Rate</string>
+    <string name="health_vitals_calories">Active Calories</string>
+    <string name="health_vitals_sleep">Sleep Duration</string>
+    <string name="health_prescriptions_title">Prescriptions &amp; Dosage Tracker</string>
+    <string name="health_refill_days_left">Refill in %1$d days</string>
+    <string name="health_dose_taken_today">Dose Logged</string>
+    <string name="health_dose_pending">Log Dose</string>
+    <string name="health_medical_profile_title">Emergency Medical Profile</string>
+    <string name="health_medical_blood_type">Blood Type: %1$s</string>
+    <string name="health_medical_allergies">Allergies: %1$s</string>
+    <string name="health_medical_insurance">Insurance: %1$s</string>
 </resources>

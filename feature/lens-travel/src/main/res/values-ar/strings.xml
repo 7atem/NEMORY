@@ -26,4 +26,24 @@
     <string name="travel_splitter_per_person">لكل شخص</string>
     <string name="travel_splitter_decrease">إنقاص</string>
     <string name="travel_splitter_increase">زيادة</string>
+    <string name="gate_pass_brightness_notice">تم رفع السطوع للمسح الضوئي</string>
+    <string name="gate_pass_close">إغلاق</string>
+    <string name="gate_pass_airline">طيران الإمارات</string>
+    <string name="gate_pass_passenger_label">المسافر</string>
+    <string name="gate_pass_gate_label">البوابة</string>
+    <string name="gate_pass_seat_label">المقعد</string>
+    <string name="gate_pass_terminal_label">المبنى</string>
+    <string name="gate_pass_boarding_label">الصعود</string>
+    <string name="gate_pass_group_label">المجموعة</string>
+    <string name="travel_trip_binder_title">ملف الرحلة الحالية</string>
+    <string name="travel_trip_binder_upcoming">رحلة قادمة</string>
+    <string name="travel_places_title">الأماكن وخرائط جوجل</string>
+    <string name="travel_places_navigate">الاتجاهات</string>
+    <string name="travel_checklist_title">قائمة المغادرة بدون إنترنت</string>
+    <string name="travel_checklist_passport">صلاحية جواز السفر &gt; 6 أشهر</string>
+    <string name="travel_checklist_boarding">بطاقة الصعود والباركود محفوظة</string>
+    <string name="travel_checklist_hotel">حجز الفندق مؤكد ومحفوظ</string>
+    <string name="travel_checklist_insurance">تأمين السفر الطبي ساري المفعول</string>
+    <string name="travel_checklist_roaming">تم إعداد التجوال الدولي والشريحة الإلكترونية</string>
+    <string name="travel_gate_pass_action">عرض بطاقة الصعود</string>
 </resources>

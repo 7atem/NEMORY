@@ -349,4 +349,16 @@
     <string name="vault_item_image_desc">صورة: %1$s</string>
     <string name="confidence_percent">الثقة %1$d%%</string>
     <string name="nav_back">رجوع</string>
+    <string name="deliveries_title">أمازون والشحنات</string>
+    <string name="deliveries_out_for_delivery">خارج للتوصيل</string>
+    <string name="deliveries_shipped">تم الشحن</string>
+    <string name="deliveries_ordered">تم الطلب</string>
+    <string name="deliveries_delivered">تم التوصيل</string>
+    <string name="deliveries_track_action">تتبع الشحنة</string>
+    <string name="deliveries_scan_email_action">مسح بريد الطلب</string>
+    <string name="deliveries_scan_dialog_title">الماسح الذكي لرسائل الطلبات</string>
+    <string name="deliveries_scan_dialog_desc">الصق تأكيد الطلب أو بريد الشحن لاستخراج تفاصيل شركة الشحن والتتبع.</string>
+    <string name="deliveries_scan_dialog_placeholder">الصق نص بريد أمازون أو UPS أو فيديكس أو آبل هنا…</string>
+    <string name="deliveries_scan_dialog_import">استيراد الشحنة</string>
+    <string name="deliveries_scan_dialog_cancel">إلغاء</string>
 </resources>

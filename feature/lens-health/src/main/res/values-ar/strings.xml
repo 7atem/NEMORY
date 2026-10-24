@@ -28,4 +28,17 @@
     <string name="health_section_older">الأقدم</string>
     <string name="health_vitals_trend">مؤشرات العلامات الحيوية</string>
     <string name="health_vitals_insufficient">لا توجد بيانات كافية لمؤشرات العلامات الحيوية</string>
+    <string name="health_vitals_title">ملخص المؤشرات الحيوية على الجهاز</string>
+    <string name="health_vitals_steps">الخطوات</string>
+    <string name="health_vitals_heart_rate">نبض القلب</string>
+    <string name="health_vitals_calories">السعرات النشطة</string>
+    <string name="health_vitals_sleep">مدة النوم</string>
+    <string name="health_prescriptions_title">الوصفات الطبية ومتتبع الجرعات</string>
+    <string name="health_refill_days_left">إعادة التعبئة خلال %1$d يوماً</string>
+    <string name="health_dose_taken_today">تم تسجيل الجرعة</string>
+    <string name="health_dose_pending">تسجيل الجرعة</string>
+    <string name="health_medical_profile_title">الملف الطبي للطوارئ</string>
+    <string name="health_medical_blood_type">فصيلة الدم: %1$s</string>
+    <string name="health_medical_allergies">الحساسية: %1$s</string>
+    <string name="health_medical_insurance">التأمين: %1$s</string>
 </resources>

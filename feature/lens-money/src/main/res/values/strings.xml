@@ -22,4 +22,15 @@
     <string name="money_iban_validator">IBAN Validator</string>
     <string name="money_trial_expiring_title">Trial expiring soon!</string>
     <string name="money_trial_expiring_message">Cancel %1$s in %2$d days to avoid charges</string>
+    <string name="money_spend_trends_title">Monthly Spending Trends</string>
+    <string name="money_spend_current_month">Current Month: %1$s</string>
+    <string name="money_spend_prev_month">vs %1$s last month</string>
+    <string name="money_categories_title">Spending by Category</string>
+    <string name="money_warranty_title">Warranties &amp; Return Windows</string>
+    <string name="money_warranty_days_left">%1$d days remaining</string>
+    <string name="money_warranty_expiring_soon">Expiring Soon</string>
+    <string name="money_warranty_active">Active</string>
+    <string name="money_tax_title">Tax Deductible Expenses</string>
+    <string name="money_tax_total_label">Tax Eligible: %1$s</string>
+    <string name="money_tax_export_btn">Export Tax-Deductible CSV</string>
 </resources>

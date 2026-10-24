@@ -340,4 +340,16 @@
     <string name="vault_item_image_desc">Image for %1$s</string>
     <string name="confidence_percent">%1$d%% confidence</string>
     <string name="nav_back">Back</string>
+    <string name="deliveries_title">Amazon &amp; Deliveries</string>
+    <string name="deliveries_out_for_delivery">Out for Delivery</string>
+    <string name="deliveries_shipped">Shipped</string>
+    <string name="deliveries_ordered">Ordered</string>
+    <string name="deliveries_delivered">Delivered</string>
+    <string name="deliveries_track_action">Track Carrier</string>
+    <string name="deliveries_scan_email_action">Scan Order Email</string>
+    <string name="deliveries_scan_dialog_title">Smart Forwarded Order Scanner</string>
+    <string name="deliveries_scan_dialog_desc">Paste an order confirmation or shipment email to extract carrier and tracking details.</string>
+    <string name="deliveries_scan_dialog_placeholder">Paste Amazon, UPS, FedEx or Apple email text here…</string>
+    <string name="deliveries_scan_dialog_import">Import Delivery</string>
+    <string name="deliveries_scan_dialog_cancel">Cancel</string>
 </resources>
