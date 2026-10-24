@@ -153,7 +153,7 @@ public struct RedactionResult: Sendable {
     public let foundSensitiveTypes: [String]
 }
 
-public final class SmartRedactionEngine {
+public final class SmartRedactionEngine: Sendable {
     public static let shared = SmartRedactionEngine()
 
     public func redactText(_ text: String) -> RedactionResult {
