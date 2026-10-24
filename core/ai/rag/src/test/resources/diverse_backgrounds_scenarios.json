@@ -1,0 +1,107 @@
+[
+  {
+    "mode": "sum",
+    "name": "expat_dual_currency_rent_and_transfer",
+    "query": "How much did I spend at Al Wasl Real Estate this month?",
+    "items": [
+      {"id": "aw1", "title": "Al Wasl Apartment Rent", "classification": "RECEIPT", "date": "2026-09-02", "total": "12500", "currency": "AED"},
+      {"id": "aw2", "title": "Al Wasl International Wire Fee", "classification": "RECEIPT", "date": "2026-09-02", "total": "45", "currency": "USD"}
+    ],
+    "merchant": "Al Wasl Real Estate",
+    "expectHeadline": "Totals by currency",
+    "expectFacts": ["AED 12500 • 1 items", "USD 45 • 1 items", "Merchant: al wasl real estate", "Period: this month"]
+  },
+  {
+    "mode": "expiry_tool",
+    "name": "expat_visa_renewal_chain_resolution",
+    "query": "Which documents are expiring soon?",
+    "items": [
+      {"id": "v1", "title": "Dubai Entry Permit", "classification": "IDENTITY_DOCUMENT", "expiry": "2026-04-10"},
+      {"id": "v2", "title": "Medical Fitness Certificate", "classification": "MEDICAL_RECORD", "expiry": "2026-04-12"},
+      {"id": "v3", "title": "Residence Visa Stamp", "classification": "IDENTITY_DOCUMENT", "expiry": "2026-09-25"}
+    ],
+    "relationships": [
+      {"sourceId": "v3", "targetId": "v1", "type": "REPLACES"}
+    ],
+    "expectHeadline": "1 items expiring soon",
+    "expectIds": ["v3"],
+    "expectFacts": ["Residence Visa Stamp"]
+  },
+  {
+    "mode": "parse",
+    "name": "expat_bilingual_arabic_english_tenancy_contract",
+    "query": "عقد الإيجار ينتهي في 2027",
+    "expectClassification": "DOCUMENT",
+    "expectType": "EXPIRY"
+  },
+  {
+    "mode": "sum",
+    "name": "freelancer_disputed_invoice_amendment",
+    "query": "How much did Apex Digital pay me this month?",
+    "items": [
+      {"id": "inv1", "title": "Apex Digital SOW Invoice", "classification": "INVOICE", "date": "2026-09-01", "total": "5000", "currency": "USD"},
+      {"id": "inv1b", "title": "Apex Digital SOW Invoice Revised", "classification": "INVOICE", "date": "2026-09-03", "total": "3800", "currency": "USD"}
+    ],
+    "relationships": [
+      {"sourceId": "inv1b", "targetId": "inv1", "type": "REPLACES"}
+    ],
+    "merchant": "Apex Digital",
+    "expectHeadline": "USD 3800",
+    "expectFacts": ["USD 3800 • 1 items", "1 superseded versions excluded"]
+  },
+  {
+    "mode": "expiry_tool",
+    "name": "freelancer_hardware_warranty_superseded",
+    "query": "Which warranties are expiring soon?",
+    "items": [
+      {"id": "w1", "title": "MacBook Standard 1-Year Warranty", "classification": "WARRANTY_CARD", "expiry": "2026-09-20"},
+      {"id": "w2", "title": "MacBook AppleCare+ 3-Year Plan", "classification": "WARRANTY_CARD", "expiry": "2028-10-15"}
+    ],
+    "relationships": [
+      {"sourceId": "w2", "targetId": "w1", "type": "REPLACES"}
+    ],
+    "expectHeadline": "0 items expiring soon",
+    "expectIds": [],
+    "expectFacts": []
+  },
+  {
+    "mode": "verify",
+    "name": "parent_multi_dependent_vaccine_attribution",
+    "quote": "Liam is scheduled for MMR Dose 1 on November 20, 2026.",
+    "draft": "Liam is scheduled for MMR Dose 1 on November 20, 2026. [1]",
+    "expectVerified": "> Liam is scheduled for MMR Dose 1 on November 20, 2026. [1]"
+  },
+  {
+    "mode": "verify",
+    "name": "patient_chronological_lab_trend",
+    "quote": "Recent blood test from August 20 reports HbA1c at 6.1%.",
+    "draft": "Recent blood test from August 20 reports HbA1c at 6.1%. [1]",
+    "expectVerified": "> Recent blood test from August 20 reports HbA1c at 6.1%. [1]"
+  },
+  {
+    "mode": "verify",
+    "name": "patient_emergency_allergy_grounding",
+    "quote": "Severe anaphylactic allergy to penicillin and sulfa drugs. Blood type: O-positive.",
+    "draft": "Severe anaphylactic allergy to penicillin and sulfa drugs. Blood type: O-positive. [1]",
+    "expectVerified": "> Severe anaphylactic allergy to penicillin and sulfa drugs. Blood type: O-positive. [1]"
+  },
+  {
+    "mode": "decoy_isolation",
+    "name": "privacy_decoy_mode_strict_isolation",
+    "regularItems": [
+      {"id": "r1", "title": "Groceries Receipt", "isStealth": false},
+      {"id": "r2", "title": "Gym Membership", "isStealth": false}
+    ],
+    "stealthItems": [
+      {"id": "s1", "title": "Confidential M&A Term Sheet", "isStealth": true},
+      {"id": "s2", "title": "Private Medical Diagnosis", "isStealth": true}
+    ]
+  },
+  {
+    "mode": "pii_redaction",
+    "name": "privacy_multi_pattern_pii_sanitization",
+    "rawText": "Patient SSN: 123-45-6789. Wire refund to IBAN: AE070331234567890123456. Card on file: 4111 2222 3333 4444. Passport No: N8391024.",
+    "expectSanitized": "Patient SSN: ███-██-████. Wire refund to IBAN: ████████████████████. Card on file: ████-████-████-████. Passport No: ████████.",
+    "expectRedactedCount": 4
+  }
+]

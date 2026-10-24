@@ -38,7 +38,7 @@ class DeterministicToolRegistry @Inject constructor(
         }
     }
 
-    private fun sumAmounts(
+    private suspend fun sumAmounts(
         items: List<VaultItem>,
         intent: QueryIntent.SumAmounts,
         arabic: Boolean,
@@ -46,7 +46,7 @@ class DeterministicToolRegistry @Inject constructor(
     ): RagResponse {
         data class Row(val item: VaultItem, val currency: String, val value: BigDecimal)
 
-        val rows = items.asSequence()
+        val candidateRows = items.asSequence()
             .filter(::isMoneyDocument)
             .filter { intent.merchant == null || matchesMerchant(it, intent.merchant) }
             .filter { intent.range == null || it.createdAt in intent.range.from..intent.range.to }
@@ -54,7 +54,11 @@ class DeterministicToolRegistry @Inject constructor(
                 amount(item)?.let { Row(item, currency(item), it) }
             }
             .toList()
-        val (matching, excludedDuplicates) = dedupeRows(rows,
+
+        val superseded = supersededIds(candidateRows.map { it.item }, items)
+        val activeRows = candidateRows.filter { it.item.id !in superseded }
+
+        val (matching, excludedDuplicates) = dedupeRows(activeRows,
             key = { "${duplicateKey(it.item)}|${it.currency}|${it.value}" },
             time = { it.item.createdAt })
         if (matching.isEmpty()) return noEvidence(
@@ -74,6 +78,10 @@ class DeterministicToolRegistry @Inject constructor(
             val count = matching.count { it.currency == currency }
             if (arabic) "$currency ${total.normalized()} • $count عناصر" else "$currency ${total.normalized()} • $count items"
         }.toMutableList()
+        if (superseded.isNotEmpty()) {
+            facts += if (arabic) "تم استبعاد ${superseded.size} نسخ سابقة ومستبدلة"
+                else "${superseded.size} superseded versions excluded"
+        }
         if (excludedDuplicates > 0) {
             facts += if (arabic) "تم استبعاد $excludedDuplicates عناصر مكررة محتملة"
                 else "$excludedDuplicates possible duplicates excluded"
@@ -440,7 +448,11 @@ class DeterministicToolRegistry @Inject constructor(
             val supersededId = if (rel.type == "RENEWS") rel.sourceItemId else rel.targetItemId
             if (supersededId !in candidateIds) return@mapNotNull null
             val otherId = if (rel.sourceItemId == supersededId) rel.targetItemId else rel.sourceItemId
-            val supersededExpiry = expiryById[supersededId] ?: return@mapNotNull null
+            val supersededExpiry = expiryById[supersededId]
+            if (supersededExpiry == null) {
+                // Non-expiring documents (invoices, bills, amendments): target is superseded
+                return@mapNotNull supersededId
+            }
             val otherExpiry = expiryById[otherId]
             if (otherExpiry == null || supersededExpiry <= otherExpiry) supersededId else null
         }.toSet()

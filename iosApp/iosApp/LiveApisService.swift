@@ -198,7 +198,7 @@ public final class SmartRedactionEngine: Sendable {
         }
 
         // 4. Passport Number (e.g., A12345678)
-        let passportRegex = try? NSRegularExpression(pattern: #"(?i)(?:passport|pp\s*no|document\s*no)[\s:#]+([A-Z0-9]{7,10})"#)
+        let passportRegex = try? NSRegularExpression(pattern: #"(?i)(?:passport(?:\s*(?:no|number))?|pp\s*no|document\s*no)[\s.:#]+([A-Z0-9]{7,10})"#)
         if let matches = passportRegex?.matches(in: result, range: NSRange(result.startIndex..., in: result)), !matches.isEmpty {
             for m in matches.reversed() {
                 if m.numberOfRanges > 1, let r = Range(m.range(at: 1), in: result) {

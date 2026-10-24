@@ -37,13 +37,12 @@ object SmartRedactionEngine {
         }
 
         // 4. Passport numbers
-        val passportRegex = Regex("""(?i)(?:passport|pp\s*no|document\s*no)[\s:#]+([A-Z0-9]{7,10})""")
+        val passportRegex = Regex("""(?i)(?:passport(?:\s*(?:no|number))?|pp\s*no|document\s*no)[\s.:#]+([A-Z0-9]{7,10})""")
         result = passportRegex.replace(result) { mr ->
             count++
             foundTypes.add("Passport Number")
-            val full = mr.value
             val num = mr.groupValues[1]
-            full.replace(num, "████████")
+            mr.value.replace(num, "████████")
         }
 
         return RedactionResult(result, count, foundTypes.toList())
