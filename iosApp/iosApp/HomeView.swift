@@ -309,6 +309,55 @@ struct HomeView: View {
                     }
                     .padding(.horizontal, 20)
 
+                    // Vault Health & Completeness Audit Card
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            HStack(spacing: 6) {
+                                Image(systemName: "shield.lefthalf.filled")
+                                    .font(.caption.weight(.bold))
+                                Text("VAULT HEALTH & AUDIT")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .tracking(1.0)
+                            }
+                            .foregroundStyle(Color.indigo)
+                            Spacer()
+                            Text("85% COMPLETE")
+                                .font(.system(size: 10, weight: .heavy))
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Color.indigo.opacity(0.15), in: Capsule())
+                                .foregroundStyle(Color.indigo)
+                        }
+
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(Color.primary.opacity(0.08))
+                                    .frame(height: 6)
+                                Capsule()
+                                    .fill(LinearGradient(colors: [Color.indigo, Color.blue], startPoint: .leading, endPoint: .trailing))
+                                    .frame(width: geo.size.width * 0.85, height: 6)
+                            }
+                        }
+                        .frame(height: 6)
+
+                        HStack(spacing: 8) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(Color.orange)
+                            Text("Add car insurance policy to reach 100% life protection.")
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(14)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18)
+                            .stroke(Color.indigo.opacity(0.18), lineWidth: 0.8)
+                    )
+                    .padding(.horizontal, 20)
+
                     // Live Ecosystem Connectors Card
                     NavigationLink {
                         ConnectorsHubView()

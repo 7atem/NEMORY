@@ -122,6 +122,20 @@ struct VaultItemDetailView: View {
                                     }
                                     .buttonStyle(.plain)
 
+                                    ShareLink(item: SmartRedactionEngine.shared.redactText(shareSummaryText).sanitizedText) {
+                                        VStack(spacing: 4) {
+                                            Image(systemName: "eye.slash.fill")
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundStyle(Color.indigo)
+                                            Text("Redact & Share")
+                                                .font(.caption2.weight(.medium))
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(Color.indigo.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+                                    }
+                                    .buttonStyle(.plain)
+
                                     Button {
                                         UIPasteboard.general.string = shareSummaryText
                                         UIImpactFeedbackGenerator(style: .medium).impactOccurred()

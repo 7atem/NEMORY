@@ -33,4 +33,14 @@
     <string name="money_tax_title">Tax Deductible Expenses</string>
     <string name="money_tax_total_label">Tax Eligible: %1$s</string>
     <string name="money_tax_export_btn">Export Tax-Deductible CSV</string>
+    <string name="money_fx_title">Live European Central Bank FX</string>
+    <string name="money_fx_badge">FRANKFURTER LIVE</string>
+    <string name="money_fx_rate">1 USD = %1$.3f %2$s</string>
+    <string name="money_cancel_title">Subscription Cancellation Concierge</string>
+    <string name="money_cancel_badge">1-TAP NOTICE</string>
+    <string name="money_cancel_desc">Auto-generate formal, legally structured cancellation notices with your member reference code to stop unwanted recurring charges.</string>
+    <string name="money_cancel_action">Cancel</string>
+    <string name="money_cancel_dialog_title">Subscription Termination Notice</string>
+    <string name="money_cancel_dialog_done">Done</string>
+    <string name="money_cancel_dialog_send">Send via Email App</string>
 </resources>

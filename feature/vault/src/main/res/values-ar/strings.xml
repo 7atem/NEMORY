@@ -361,4 +361,9 @@
     <string name="deliveries_scan_dialog_placeholder">الصق نص بريد أمازون أو UPS أو فيديكس أو آبل هنا…</string>
     <string name="deliveries_scan_dialog_import">استيراد الشحنة</string>
     <string name="deliveries_scan_dialog_cancel">إلغاء</string>
+    <string name="vault_health_audit_title">فحص وصحة الخزنة</string>
+    <string name="vault_health_score">%1$d%% مكتمل</string>
+    <string name="vault_health_warning_car_insurance">أضف وثيقة تأمين السيارة للوصول إلى حماية حياتية بنسبة 100%.</string>
+    <string name="vault_redact_share">تنقيح ومشاركة آمنة</string>
+    <string name="vault_redact_sanitized">تم حجب البيانات الحساسة (%1$d عنصر محجوب)</string>
 </resources>

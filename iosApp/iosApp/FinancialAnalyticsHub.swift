@@ -183,7 +183,10 @@ final class SpendingAnalyticsEngine: ObservableObject {
 
 struct FinancialAnalyticsHubView: View {
     @StateObject private var engine = SpendingAnalyticsEngine.shared
+    @StateObject private var currency = LiveCurrencyService.shared
     @State private var selectedTab: Int = 0
+    @State private var selectedCancelTarget: String? = nil
+    @State private var showingCancelModal: Bool = false
 
     var body: some View {
         ScrollView {
@@ -195,7 +198,9 @@ struct FinancialAnalyticsHubView: View {
                 Picker("View", selection: $selectedTab) {
                     Text("Breakdown").tag(0)
                     Text("Warranties").tag(1)
-                    Text("Tax Export").tag(2)
+                    Text("Tax").tag(2)
+                    Text("Live FX").tag(3)
+                    Text("Cancel").tag(4)
                 }
                 .pickerStyle(.segmented)
 
@@ -206,6 +211,10 @@ struct FinancialAnalyticsHubView: View {
                     warrantiesSection
                 case 2:
                     taxExportSection
+                case 3:
+                    liveCurrencySection
+                case 4:
+                    cancellationSection
                 default:
                     EmptyView()
                 }
@@ -215,6 +224,12 @@ struct FinancialAnalyticsHubView: View {
         }
         .navigationTitle("Finance & Spend Hub")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            await currency.fetchLatestRates()
+        }
+        .sheet(isPresented: $showingCancelModal) {
+            cancellationNoticeSheet
+        }
     }
 
     // MARK: - Subviews
@@ -491,5 +506,177 @@ struct FinancialAnalyticsHubView: View {
                 )
             }
         }
+    }
+
+    private var liveCurrencySection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Live FX Converter", systemImage: "coloncurrencysign.circle.fill")
+                    .font(.headline)
+                    .foregroundStyle(Color.indigo)
+                Spacer()
+                Text("FRANKFURTER LIVE")
+                    .font(.system(size: 9, weight: .bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.indigo.opacity(0.15), in: Capsule())
+                    .foregroundStyle(Color.indigo)
+            }
+
+            VStack(spacing: 8) {
+                currencyRow(currencyCode: "EUR", name: "Euro (€)", rate: currency.rates["EUR"] ?? 0.92)
+                currencyRow(currencyCode: "AED", name: "UAE Dirham (AED)", rate: currency.rates["AED"] ?? 3.6725)
+                currencyRow(currencyCode: "GBP", name: "British Pound (£)", rate: currency.rates["GBP"] ?? 0.78)
+                currencyRow(currencyCode: "SAR", name: "Saudi Riyal (SAR)", rate: currency.rates["SAR"] ?? 3.75)
+                currencyRow(currencyCode: "JPY", name: "Japanese Yen (¥)", rate: currency.rates["JPY"] ?? 154.5)
+            }
+        }
+    }
+
+    private func currencyRow(currencyCode: String, name: String, rate: Double) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(currencyCode)
+                    .font(.subheadline.weight(.heavy))
+                Text(name)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("1 USD = \(String(format: "%.3f", rate)) \(currencyCode)")
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Color.indigo)
+                Text("Live European Central Bank FX")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color.indigo.opacity(0.18), lineWidth: 0.8)
+        )
+    }
+
+    private var cancellationSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Subscription Cancellation Concierge", systemImage: "xmark.shield.fill")
+                    .font(.headline)
+                    .foregroundStyle(Color.red)
+                Spacer()
+                Text("1-TAP NOTICE")
+                    .font(.system(size: 9, weight: .bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.red.opacity(0.15), in: Capsule())
+                    .foregroundStyle(Color.red)
+            }
+
+            Text("Auto-generate formal, legally structured cancellation notices with your member reference code to stop unwanted recurring charges.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            let sampleSubs = [
+                ("Gym Nation Elite Membership", "$85.00/mo", "GN-9182049"),
+                ("Adobe Creative Cloud All Apps", "$54.99/mo", "AD-4819024"),
+                ("Crunchyroll Mega Fan Annual", "$9.99/mo", "CR-1029481")
+            ]
+
+            ForEach(sampleSubs, id: \.0) { sub, price, ref in
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(sub)
+                            .font(.subheadline.weight(.bold))
+                        Text("\(price) • Ref: \(ref)")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    Button {
+                        selectedCancelTarget = sub
+                        showingCancelModal = true
+                    } label: {
+                        Text("Cancel")
+                            .font(.caption.weight(.bold))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.red, in: RoundedRectangle(cornerRadius: 8))
+                            .foregroundStyle(.white)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(12)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.red.opacity(0.2), lineWidth: 0.8)
+                )
+            }
+        }
+    }
+
+    private var cancellationNoticeSheet: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Text("Subscription Termination Notice")
+                    .font(.headline.weight(.bold))
+                Spacer()
+                Button("Done") {
+                    showingCancelModal = false
+                }
+            }
+            .padding(.top, 16)
+
+            VStack(alignment: .leading, spacing: 12) {
+                Text("PRE-FILLED LEGAL CANCELLATION LETTER")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.secondary)
+
+                let noticeText = """
+                Subject: Formal Notice of Subscription Cancellation - \(selectedCancelTarget ?? "Membership")
+
+                Dear Customer Support Team,
+
+                Please accept this communication as formal notice to terminate my subscription for \(selectedCancelTarget ?? "my service"), effective immediately.
+
+                Please ensure that no further recurring payments are debited from my payment method on file, and send written confirmation of this termination to my email.
+
+                Sincerely,
+                Hatem El Sayed
+                Account Reference: #VAULT-MEM-84910
+                """
+
+                Text(noticeText)
+                    .font(.system(.caption, design: .monospaced))
+                    .padding(14)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12))
+
+                Button {
+                    let encoded = (noticeText.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")
+                    if let mailUrl = URL(string: "mailto:support@merchant.com?subject=Subscription%20Cancellation&body=\(encoded)") {
+                        UIApplication.shared.open(mailUrl)
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "envelope.fill")
+                        Text("Send via Mail App")
+                            .font(.subheadline.weight(.bold))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.red, in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(.white)
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 20)
     }
 }

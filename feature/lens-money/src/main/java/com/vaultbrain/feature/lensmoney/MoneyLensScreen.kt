@@ -54,6 +54,18 @@ fun MoneyLensScreen(
 
     val categories = remember { SpendingAnalyticsProvider.getCategories() }
     val warranties = remember { SpendingAnalyticsProvider.getWarranties() }
+    var rates by remember { mutableStateOf<List<CurrencyRateItem>>(emptyList()) }
+    var cancelTarget by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(Unit) {
+        rates = LiveCurrencyClient.fetchRates()
+    }
+
+    cancelTarget?.let { subName ->
+        SubscriptionCancellationDialog(
+            targetName = subName,
+            onDismiss = { cancelTarget = null }
+        )
+    }
 
     val recentItems = items.filter { (now - it.createdAt) <= 7 * 24 * 60 * 60 * 1000L }
     val olderItems = items.filter { (now - it.createdAt) > 7 * 24 * 60 * 60 * 1000L }
@@ -97,6 +109,18 @@ fun MoneyLensScreen(
         // Tax Deductible Expenses & CSV Export Hero
         item {
             TaxDeductibleCard(onExportClick = onExportClick)
+        }
+
+        if (rates.isNotEmpty()) {
+            item {
+                LiveCurrencyRatesCard(rates = rates)
+            }
+        }
+
+        item {
+            SubscriptionCancellationCard(
+                onCancelClick = { cancelTarget = it }
+            )
         }
 
         item {
@@ -627,4 +651,233 @@ private fun MoneyItemCard(item: VaultItem, onClick: () -> Unit) {
             }
         }
     )
+}
+
+@Composable
+private fun LiveCurrencyRatesCard(rates: List<CurrencyRateItem>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.money_fx_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFF4F46E5).copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = stringResource(R.string.money_fx_badge),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black,
+                        color = Color(0xFF4F46E5),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            rates.forEach { rate ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${rate.code} (${rate.name})",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = stringResource(R.string.money_fx_rate, rate.rateAgainstUsd, rate.code),
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF4F46E5)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubscriptionCancellationCard(onCancelClick: (String) -> Unit) {
+    val sampleSubs = listOf(
+        Triple("Gym Nation Elite Membership", "$85.00/mo", "GN-9182049"),
+        Triple("Adobe Creative Cloud All Apps", "$54.99/mo", "AD-4819024"),
+        Triple("Crunchyroll Mega Fan Annual", "$9.99/mo", "CR-1029481")
+    )
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.money_cancel_title),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color(0xFFDC2626).copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = stringResource(R.string.money_cancel_badge),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Black,
+                        color = Color(0xFFDC2626),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            Text(
+                text = stringResource(R.string.money_cancel_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            sampleSubs.forEach { (name, price, ref) ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(10.dp))
+                        .padding(10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "$price • Ref: $ref",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Button(
+                        onClick = { onCancelClick(name) },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.money_cancel_action),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubscriptionCancellationDialog(
+    targetName: String,
+    onDismiss: () -> Unit
+) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val letterText = """
+Subject: Formal Notice of Subscription Cancellation - $targetName
+
+Dear Customer Support Team,
+
+Please accept this communication as formal notice to terminate my subscription for $targetName, effective immediately.
+
+Please ensure that no further recurring payments are debited from my payment method on file, and send written confirmation of this termination to my email.
+
+Sincerely,
+Hatem El Sayed
+Account Reference: #VAULT-MEM-84910
+""".trimIndent()
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.money_cancel_dialog_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = null)
+                    }
+                }
+
+                Text(
+                    text = letterText,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(10.dp))
+                        .padding(12.dp)
+                )
+
+                Button(
+                    onClick = {
+                        val intent = android.content.Intent(android.content.Intent.ACTION_SENDTO).apply {
+                            data = android.net.Uri.parse("mailto:")
+                            putExtra(android.content.Intent.EXTRA_SUBJECT, "Formal Notice of Subscription Cancellation - $targetName")
+                            putExtra(android.content.Intent.EXTRA_TEXT, letterText)
+                        }
+                        try {
+                            context.startActivity(intent)
+                        } catch (_: Exception) { }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626)),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.money_cancel_dialog_send),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
 }

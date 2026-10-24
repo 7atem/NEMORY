@@ -33,4 +33,14 @@
     <string name="money_tax_title">المصروفات الخاضعة للخصم الضريبي</string>
     <string name="money_tax_total_label">المؤهل ضريبياً: %1$s</string>
     <string name="money_tax_export_btn">تصدير كشف الضرائب CSV</string>
+    <string name="money_fx_title">أسعار الصرف المباشرة للبنك المركزي الأوروبي</string>
+    <string name="money_fx_badge">مباشر عبر FRANKFURTER</string>
+    <string name="money_fx_rate">1 دولار = %1$.3f %2$s</string>
+    <string name="money_cancel_title">خدمة إلغاء الاشتراكات</string>
+    <string name="money_cancel_badge">إشعار بنقرة واحدة</string>
+    <string name="money_cancel_desc">إنشاء إشعارات إلغاء رسمية وقانونية مع رقم العضوية المرجعي لإيقاف الرسوم المتكررة غير المرغوب فيها.</string>
+    <string name="money_cancel_action">إلغاء</string>
+    <string name="money_cancel_dialog_title">إشعار إنهاء الاشتراك</string>
+    <string name="money_cancel_dialog_done">تم</string>
+    <string name="money_cancel_dialog_send">إرسال عبر تطبيق البريد</string>
 </resources>

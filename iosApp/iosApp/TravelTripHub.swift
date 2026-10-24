@@ -226,6 +226,7 @@ final class TripClusteringEngine: ObservableObject {
 struct TravelTripHubView: View {
     @StateObject private var engine = TripClusteringEngine.shared
     @StateObject private var liveActivities = LiveActivityManager.shared
+    @StateObject private var weather = LiveWeatherService.shared
     @State private var showingGatePassModal = false
     @State private var selectedFlightItem: TripDocItem?
     @State private var selectedPlace: TripPlaceItem?
@@ -236,6 +237,12 @@ struct TravelTripHubView: View {
                 if let trip = engine.activeTrip {
                     // Hero Trip Card
                     heroTripCard(trip: trip)
+
+                    // Live Destination Weather
+                    liveWeatherCard(trip: trip)
+
+                    // Skyscanner Flight Fare Radar
+                    skyscannerDealsSection(trip: trip)
 
                     // Section 1: Flights & Boarding Passes
                     flightsSection(trip: trip)
@@ -269,9 +276,135 @@ struct TravelTripHubView: View {
                 selectedPlace = first
             }
         }
+        .task {
+            await weather.fetchWeather(latitude: 40.7128, longitude: -74.0060)
+        }
     }
 
     // MARK: - Subviews
+
+    private func liveWeatherCard(trip: TripBinder) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Live Destination Weather", systemImage: "cloud.sun.fill")
+                    .font(.headline)
+                    .foregroundStyle(Color.orange)
+                Spacer()
+                Text("OPEN-METEO LIVE")
+                    .font(.system(size: 9, weight: .bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.orange.opacity(0.15), in: Capsule())
+                    .foregroundStyle(Color.orange)
+            }
+
+            if let w = weather.currentWeather {
+                HStack(spacing: 16) {
+                    Image(systemName: w.conditionIcon)
+                        .font(.system(size: 38))
+                        .foregroundStyle(Color.orange)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text("\(Int(round(w.temperatureCelsius)))°C")
+                                .font(.title2.weight(.heavy))
+                            Text(w.conditionText)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        Text("Humidity: \(w.humidity)% • Wind: \(Int(round(w.windSpeedKmh))) km/h")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        Text(w.packingAdvice)
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(Color.orange)
+                    }
+                    Spacer()
+                }
+                .padding(14)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.orange.opacity(0.2), lineWidth: 0.8)
+                )
+            }
+        }
+    }
+
+    private func skyscannerDealsSection(trip: TripBinder) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Label("Skyscanner Flight Intelligence", systemImage: "magnifyingglass.circle.fill")
+                    .font(.headline)
+                    .foregroundStyle(Color.teal)
+                Spacer()
+                Text("LIVE FARES")
+                    .font(.system(size: 9, weight: .bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.teal.opacity(0.15), in: Capsule())
+                    .foregroundStyle(Color.teal)
+            }
+
+            VStack(spacing: 8) {
+                Button {
+                    let url = SkyscannerDeepLinker.makeFlightSearchUrl(
+                        origin: "DXB",
+                        destination: "JFK",
+                        departDateIso: "261105",
+                        returnDateIso: "261112"
+                    )
+                    UIApplication.shared.open(url)
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "chart.line.downtrend.xyaxis")
+                            .font(.title3)
+                            .foregroundStyle(Color.teal)
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Compare DXB ➔ JFK on Skyscanner")
+                                .font(.subheadline.weight(.bold))
+                            Text("24h Free Rebook Shield Active • Check for price dips")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "arrow.up.right.square.fill")
+                            .font(.title3)
+                            .foregroundStyle(Color.teal)
+                    }
+                    .padding(14)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.teal.opacity(0.2), lineWidth: 0.8)
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    let url = SkyscannerDeepLinker.makeEverywhereUrl(origin: "DXB")
+                    UIApplication.shared.open(url)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "globe.europe.africa.fill")
+                            .font(.caption.weight(.bold))
+                        Text("Explore Weekend Getaways to \"Everywhere\"")
+                            .font(.caption.weight(.bold))
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                    }
+                    .padding(12)
+                    .background(Color.teal.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                    .foregroundStyle(Color.teal)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
 
     private func heroTripCard(trip: TripBinder) -> some View {
         VStack(alignment: .leading, spacing: 14) {

@@ -352,4 +352,9 @@
     <string name="deliveries_scan_dialog_placeholder">Paste Amazon, UPS, FedEx or Apple email text here…</string>
     <string name="deliveries_scan_dialog_import">Import Delivery</string>
     <string name="deliveries_scan_dialog_cancel">Cancel</string>
+    <string name="vault_health_audit_title">Vault Health &amp; Audit</string>
+    <string name="vault_health_score">%1$d%% Complete</string>
+    <string name="vault_health_warning_car_insurance">Add car insurance policy to reach 100% life protection.</string>
+    <string name="vault_redact_share">Redact &amp; Share</string>
+    <string name="vault_redact_sanitized">PII Redacted (%1$d items masked)</string>
 </resources>

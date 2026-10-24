@@ -46,4 +46,10 @@
     <string name="travel_checklist_insurance">Travel medical policy active</string>
     <string name="travel_checklist_roaming">Data roaming &amp; eSIM configured</string>
     <string name="travel_gate_pass_action">Show Gate Pass</string>
+    <string name="travel_weather_title">Live Destination Weather</string>
+    <string name="travel_weather_live_badge">OPEN-METEO LIVE</string>
+    <string name="travel_skyscanner_title">Skyscanner Flight Intelligence</string>
+    <string name="travel_skyscanner_compare">Compare DXB ➔ JFK on Skyscanner</string>
+    <string name="travel_skyscanner_shield">24h Free Rebook Shield Active • Check for price dips</string>
+    <string name="travel_skyscanner_everywhere">Explore Weekend Getaways to "Everywhere"</string>
 </resources>

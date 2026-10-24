@@ -46,4 +46,10 @@
     <string name="travel_checklist_insurance">تأمين السفر الطبي ساري المفعول</string>
     <string name="travel_checklist_roaming">تم إعداد التجوال الدولي والشريحة الإلكترونية</string>
     <string name="travel_gate_pass_action">عرض بطاقة الصعود</string>
+    <string name="travel_weather_title">الطقس المباشر في وجهتك</string>
+    <string name="travel_weather_live_badge">مباشر عبر OPEN-METEO</string>
+    <string name="travel_skyscanner_title">ذكاء رحلات الطيران من سكاي سكانر</string>
+    <string name="travel_skyscanner_compare">قارن أسعار DXB ➔ JFK على سكاي سكانر</string>
+    <string name="travel_skyscanner_shield">درع إلغاء مجاني 24 ساعة نشط • تحقق من انخفاض الأسعار</string>
+    <string name="travel_skyscanner_everywhere">استكشف رحلات عطلة نهاية الأسبوع إلى "أي مكان"</string>
 </resources>
