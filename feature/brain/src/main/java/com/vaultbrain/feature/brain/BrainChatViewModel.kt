@@ -248,7 +248,15 @@ class BrainChatViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             com.vaultbrain.core.common.security.DecoySessionState.isDecoy.collect { decoy ->
-                if (decoy) { _agentProposals.value = emptyList(); handledAgentProposals.clear() }
+                if (decoy) {
+                    _agentProposals.value = emptyList()
+                    handledAgentProposals.clear()
+                    _messages.value = emptyList()
+                    _pendingWrite.value = null
+                    _pendingCollectionCreation.value = null
+                    _cloudConsent.value = null
+                    _cloudMessage.value = null
+                }
             }
         }
         // Optional prefill from the Today composer ("brain?query=..."). Prefill only —
@@ -256,6 +264,10 @@ class BrainChatViewModel @Inject constructor(
         savedStateHandle.get<String>("query")?.takeIf { it.isNotBlank() }?.let { _input.value = it }
         viewModelScope.launch {
             conversationRepository.observeAll().collect { stored ->
+                if (com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value) {
+                    _messages.value = emptyList()
+                    return@collect
+                }
                 // A streaming turn is committed once complete, so database refreshes cannot
                 // replace its in-memory placeholder or partial answer.
                 if (!_isLoading.value) _messages.value = stored.mapNotNull(::toUiMessage)

@@ -37,7 +37,9 @@ class DriveBackupManagerInstrumentedTest {
         backupFile.delete()
         val keystoreManager = KeystoreManager(context)
         val databaseKey = keystoreManager.getOrCreateDatabasePassphrase()
+        val mediaKey = keystoreManager.getOrCreateMediaPassphrase()
         val expectedDatabaseKey = databaseKey.copyOf()
+        val expectedMediaKey = mediaKey.copyOf()
         database = VaultDatabase.build(context, databaseKey)
 
         val item = VaultItemEntity(
@@ -62,7 +64,9 @@ class DriveBackupManagerInstrumentedTest {
             manager.importFromUri(Uri.fromFile(backupFile), "test-passphrase".toCharArray()).getOrThrow()
         )
         val restoredDatabaseKey = keystoreManager.getOrCreateDatabasePassphrase()
+        val restoredMediaKey = keystoreManager.getOrCreateMediaPassphrase()
         assertArrayEquals(expectedDatabaseKey, restoredDatabaseKey)
+        assertArrayEquals(expectedMediaKey, restoredMediaKey)
         database = VaultDatabase.build(context, restoredDatabaseKey)
         assertEquals(item.title, database!!.vaultItemDao().getById(item.id)?.title)
     }

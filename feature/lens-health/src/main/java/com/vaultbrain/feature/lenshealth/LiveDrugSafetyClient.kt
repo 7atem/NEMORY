@@ -22,7 +22,7 @@ data class MedicationSafetyAudit(
 )
 
 object LiveDrugSafetyClient {
-    suspend fun auditDrugSafety(): MedicationSafetyAudit = withContext(Dispatchers.IO) {
+    suspend fun auditDrugSafety(prescriptionsCount: Int = 0): MedicationSafetyAudit = withContext(Dispatchers.IO) {
         try {
             val urlString = "https://api.fda.gov/drug/enforcement.json?limit=3"
             val conn = (URL(urlString).openConnection() as HttpURLConnection).apply {
@@ -51,7 +51,7 @@ object LiveDrugSafetyClient {
                         )
                     }
                     return@withContext MedicationSafetyAudit(
-                        totalPrescriptionsVerified = 4,
+                        totalPrescriptionsVerified = prescriptionsCount,
                         activeRecallsCount = 0,
                         recentRecalls = list
                     )
@@ -62,18 +62,9 @@ object LiveDrugSafetyClient {
         }
 
         MedicationSafetyAudit(
-            totalPrescriptionsVerified = 4,
+            totalPrescriptionsVerified = prescriptionsCount,
             activeRecallsCount = 0,
-            recentRecalls = listOf(
-                DrugSafetyRecall(
-                    recallNumber = "D-0824-2026",
-                    productDescription = "Generic Metformin HCl 500mg (Lot #482910)",
-                    reasonForRecall = "Trace impurity levels above acceptable daily intake limit",
-                    status = "Completed",
-                    classification = "Class II",
-                    recallDate = "2026-09-14"
-                )
-            )
+            recentRecalls = emptyList()
         )
     }
 }

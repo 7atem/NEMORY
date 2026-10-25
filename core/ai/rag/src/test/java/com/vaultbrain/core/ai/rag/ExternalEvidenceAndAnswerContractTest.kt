@@ -59,7 +59,7 @@ class ExternalEvidenceAndAnswerContractTest {
     }
 
     @Test
-    fun `search_calendar filters records by from_date and to_date`() = runTest {
+    fun `search_calendar filters records by from_date and to_date with wide query limit`() = runTest {
         val now = LocalDate.of(2026, 10, 25).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val later = LocalDate.of(2026, 11, 15).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
@@ -68,7 +68,8 @@ class ExternalEvidenceAndAnswerContractTest {
         val novEvent = ExternalRecord("calendar", "device", "evt_nov", ExternalSource.CALENDAR, ExternalRecordType.EVENT,
             title = "November Meeting", startAt = later)
 
-        coEvery { contextEngine.assembleContext(any()) } returns ContextResult(records = listOf(octEvent, novEvent))
+        val querySlot = slot<ContextQuery>()
+        coEvery { contextEngine.assembleContext(capture(querySlot)) } returns ContextResult(records = listOf(octEvent, novEvent))
 
         val executor = AgentToolExecutor(vaultRepo, contextEngine, reminderDao)
         val args = buildJsonObject {
@@ -78,6 +79,7 @@ class ExternalEvidenceAndAnswerContractTest {
         }
         val result = executor.execute("search_calendar", args, SearchFilters())
 
+        assertThat(querySlot.captured.limit).isEqualTo(50)
         assertThat(result.records).containsExactly(octEvent)
     }
 
@@ -104,6 +106,25 @@ class ExternalEvidenceAndAnswerContractTest {
         assertThat(record.title).isEqualTo("Pay electric bill")
         assertThat(record.source).isEqualTo(ExternalSource.VAULT_REMINDER)
         assertThat(record.payload["due_date"]).isEqualTo("2026-10-26")
+    }
+
+    @Test
+    fun `get_reminders retrieves completed reminders when status is completed`() = runTest {
+        val time = LocalDate.of(2026, 10, 20).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val active = VaultReminderEntity(id = "r_active", title = "Active task", dueAt = time + 86400000, status = VaultReminderStatus.SCHEDULED, createdAt = time, updatedAt = time)
+        val completed = VaultReminderEntity(id = "r_done", title = "Done task", dueAt = time, status = VaultReminderStatus.COMPLETED, createdAt = time, updatedAt = time)
+
+        every { reminderDao.observeAll() } returns flowOf(listOf(active, completed))
+
+        val executor = AgentToolExecutor(vaultRepo, contextEngine, reminderDao)
+        val args = buildJsonObject { put("status", "completed") }
+        val result = executor.execute("get_reminders", args, SearchFilters())
+
+        assertThat(result.records).hasSize(1)
+        val record = result.records.single()
+        assertThat(record.externalId).isEqualTo("r_done")
+        assertThat(record.title).isEqualTo("Done task")
+        assertThat(record.payload["status"]).isEqualTo("COMPLETED")
     }
 
     @Test

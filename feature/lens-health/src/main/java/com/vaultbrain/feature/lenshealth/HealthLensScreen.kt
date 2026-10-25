@@ -63,9 +63,9 @@ fun HealthLensScreen(
     var airQuality by remember { mutableStateOf<AirQualitySnapshot?>(null) }
     var fdaAudit by remember { mutableStateOf<MedicationSafetyAudit?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(prescriptionCount) {
         airQuality = LiveAirQualityClient.fetchAirQuality()
-        fdaAudit = LiveDrugSafetyClient.auditDrugSafety()
+        fdaAudit = LiveDrugSafetyClient.auditDrugSafety(prescriptionCount)
     }
 
     val recentItems = items.filter { (now - it.createdAt) <= 7 * 24 * 60 * 60 * 1000L }
@@ -112,8 +112,10 @@ fun HealthLensScreen(
         }
 
         // Live FDA Medication Safety & Recall Verification
-        item {
-            FdaSafetyAuditCard(audit = fdaAudit)
+        if (prescriptionCount > 0 || (fdaAudit?.activeRecallsCount ?: 0) > 0) {
+            item {
+                FdaSafetyAuditCard(audit = fdaAudit, prescriptionsCount = prescriptionCount)
+            }
         }
 
         item {
@@ -798,10 +800,11 @@ fun LiveAirQualityCard(
 @Composable
 fun FdaSafetyAuditCard(
     audit: MedicationSafetyAudit?,
+    prescriptionsCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val currentAudit = audit ?: MedicationSafetyAudit(
-        totalPrescriptionsVerified = 4,
+        totalPrescriptionsVerified = prescriptionsCount,
         activeRecallsCount = 0,
         recentRecalls = emptyList()
     )

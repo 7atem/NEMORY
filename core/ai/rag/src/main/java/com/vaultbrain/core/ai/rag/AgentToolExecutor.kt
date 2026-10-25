@@ -52,13 +52,14 @@ class AgentToolExecutor @Inject constructor(
                     val q = text("query").trim()
                     val calendarIntent = tool == "search_calendar" && isCalendarIntent(q)
                     val effectiveQuery = if (calendarIntent) "" else q
+                    val fromDate = text("from_date").takeIf { it.isNotBlank() }
+                    val toDate = text("to_date").takeIf { it.isNotBlank() }
+                    val queryLimit = if (fromDate != null && toDate != null) 50 else 10
                     var records = context.assembleContext(ContextQuery(
                         text = effectiveQuery,
                         sources = if (tool == "search_calendar") setOf(ExternalSource.CALENDAR) else null,
-                        timeWindowMs = 240L * 86_400_000, limit = 10
+                        timeWindowMs = 240L * 86_400_000, limit = queryLimit
                     )).records
-                    val fromDate = text("from_date").takeIf { it.isNotBlank() }
-                    val toDate = text("to_date").takeIf { it.isNotBlank() }
                     if (fromDate != null && toDate != null) {
                         val fromMs = LocalDate.parse(fromDate).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
                         val toMs = LocalDate.parse(toDate).plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -67,16 +68,21 @@ class AgentToolExecutor @Inject constructor(
                             anchor in fromMs until toMs
                         }
                     }
-                    AgentToolResult(records = records)
+                    AgentToolResult(records = records.take(10))
                 }
                 "get_reminders" -> {
                     val status = text("status").lowercase()
                     require(status in setOf("", "pending", "active", "completed", "all"))
-                    val activeList = reminders?.observeActive()?.first().orEmpty()
+                    val reminderList = when (status) {
+                        "completed" -> reminders?.observeAll()?.first().orEmpty()
+                            .filter { it.status == com.vaultbrain.shared.model.VaultReminderStatus.COMPLETED }
+                        "all" -> reminders?.observeAll()?.first().orEmpty()
+                        else -> reminders?.observeActive()?.first().orEmpty()
+                    }
                     val query = text("query").trim().lowercase()
                     val filtered = if (query.isNotBlank()) {
-                        activeList.filter { it.title.lowercase().contains(query) }
-                    } else activeList
+                        reminderList.filter { it.title.lowercase().contains(query) }
+                    } else reminderList
                     AgentToolResult(records = filtered.take(10).map { reminder ->
                         val localDate = java.time.Instant.ofEpochMilli(reminder.dueAt)
                             .atZone(ZoneId.systemDefault()).toLocalDate().toString()
@@ -84,7 +90,8 @@ class AgentToolExecutor @Inject constructor(
                             ExternalRecordType.TASK, title = reminder.title, dueAt = reminder.dueAt,
                             payload = mapOf(
                                 "due_date" to localDate,
-                                "due" to localDate
+                                "due" to localDate,
+                                "status" to reminder.status.name
                             ), updatedAt = reminder.updatedAt)
                     })
                 }

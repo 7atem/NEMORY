@@ -323,6 +323,23 @@ class BrainChatViewModelTest {
         coVerify(exactly = 1) { vaultRepository.addItemToCollection("item1", "collection-id") }
     }
 
+    @Test
+    fun `decoy mode clears messages and proposals immediately`() = runTest {
+        com.vaultbrain.core.common.security.DecoySessionState.setDecoyMode(false)
+        val viewModel = viewModel()
+        advanceUntilIdle()
+
+        com.vaultbrain.core.common.security.DecoySessionState.setDecoyMode(true)
+        advanceUntilIdle()
+
+        assertThat(viewModel.messages.value).isEmpty()
+        assertThat(viewModel.agentProposals.value).isEmpty()
+        assertThat(viewModel.pendingWrite.value).isNull()
+        assertThat(viewModel.pendingCollectionCreation.value).isNull()
+
+        com.vaultbrain.core.common.security.DecoySessionState.setDecoyMode(false)
+    }
+
     private val actionExecutor = io.mockk.mockk<com.vaultbrain.core.integrations.action.ActionExecutor>(relaxed = true)
 
     private fun viewModel() = BrainChatViewModel(

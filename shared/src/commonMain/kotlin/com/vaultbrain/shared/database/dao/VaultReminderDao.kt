@@ -32,6 +32,9 @@ interface VaultReminderDao {
     )
     fun observeActive(): Flow<List<VaultReminderEntity>>
 
+    @Query("SELECT * FROM vault_reminders ORDER BY due_at ASC")
+    fun observeAll(): Flow<List<VaultReminderEntity>>
+
     @Query(
         "SELECT * FROM vault_reminders WHERE status IN ('SCHEDULED', 'SNOOZED') " +
             "AND due_at <= :now ORDER BY due_at ASC"

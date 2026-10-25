@@ -88,6 +88,7 @@ class DriveBackupManager @Inject constructor(
     private fun writePortableBackup(output: OutputStream, passphrase: CharArray) {
         val databaseSnapshot = File.createTempFile("nemory_backup_", ".db", context.cacheDir)
         val databaseKey = keystoreManager.getOrCreateDatabasePassphrase()
+        val mediaKey = keystoreManager.getOrCreateMediaPassphrase()
         try {
             // Ensure Room has created/migrated the source, then use an independent connection
             // so ATTACH does not alter Room's connection pool or WAL configuration.
@@ -137,6 +138,7 @@ class DriveBackupManager @Inject constructor(
                 ZipOutputStream(BufferedOutputStream(encrypted)).use { zip ->
                     putBytes(zip, MANIFEST_ENTRY, """{"format":1,"app":"Nemory","createdAt":${System.currentTimeMillis()}}""".toByteArray())
                     putBytes(zip, DATABASE_KEY_ENTRY, databaseKey)
+                    putBytes(zip, MEDIA_KEY_ENTRY, mediaKey)
                     putFile(zip, DATABASE_ENTRY, databaseSnapshot)
                     mediaDirectory.listFiles()?.filter(File::isFile)?.forEach { file ->
                         putFile(zip, "$MEDIA_PREFIX${file.name}", file)
@@ -145,6 +147,7 @@ class DriveBackupManager @Inject constructor(
             }
         } finally {
             databaseKey.fill(0)
+            mediaKey.fill(0)
             databaseSnapshot.delete()
         }
     }
@@ -187,12 +190,18 @@ class DriveBackupManager @Inject constructor(
                 "Backup is incomplete"
             }
             val importedKey = File(staging, DATABASE_KEY_ENTRY).readBytes()
+            val importedMediaKeyFile = File(staging, MEDIA_KEY_ENTRY)
+            val importedMediaKey = if (importedMediaKeyFile.exists()) importedMediaKeyFile.readBytes() else null
             try {
                 require(importedKey.size == DATABASE_KEY_BYTES) { "Invalid database key" }
+                if (importedMediaKey != null) {
+                    require(importedMediaKey.size == DATABASE_KEY_BYTES) { "Invalid media key" }
+                }
                 validateDatabase(File(staging, DATABASE_ENTRY), importedKey)
-                installStagedBackup(staging, importedKey)
+                installStagedBackup(staging, importedKey, importedMediaKey)
             } finally {
                 importedKey.fill(0)
+                importedMediaKey?.fill(0)
             }
         } finally {
             staging.deleteRecursively()
@@ -214,7 +223,7 @@ class DriveBackupManager @Inject constructor(
         }
     }
 
-    private fun installStagedBackup(staging: File, importedKey: ByteArray) {
+    private fun installStagedBackup(staging: File, importedKey: ByteArray, importedMediaKey: ByteArray?) {
         val dbTarget = context.getDatabasePath(DB_NAME)
         dbTarget.parentFile?.mkdirs()
         val walFile = File(dbTarget.parentFile, "$DB_NAME-wal")
@@ -224,6 +233,7 @@ class DriveBackupManager @Inject constructor(
         val rollbackShm = File(context.cacheDir, "vaultbrain_restore_rollback.db-shm")
         val mediaRollback = File(context.cacheDir, "vault_media_restore_rollback")
         val oldKey = keystoreManager.getOrCreateDatabasePassphrase()
+        val oldMediaKey = keystoreManager.getOrCreateMediaPassphrase()
         database.close()
         val hadExistingDatabase = dbTarget.exists()
         rollback.delete()
@@ -240,6 +250,9 @@ class DriveBackupManager @Inject constructor(
             walFile.delete()
             shmFile.delete()
             keystoreManager.replaceDatabasePassphrase(importedKey)
+            if (importedMediaKey != null) {
+                keystoreManager.replaceMediaPassphrase(importedMediaKey)
+            }
             mediaDirectory.deleteRecursively()
             val stagedMedia = File(staging, MEDIA_PREFIX)
             if (stagedMedia.exists()) stagedMedia.copyRecursively(mediaDirectory, overwrite = true)
@@ -255,15 +268,17 @@ class DriveBackupManager @Inject constructor(
             mediaDirectory.deleteRecursively()
             if (mediaRollback.exists()) mediaRollback.copyRecursively(mediaDirectory, overwrite = true)
             keystoreManager.replaceDatabasePassphrase(oldKey)
+            keystoreManager.replaceMediaPassphrase(oldMediaKey)
             throw failure
         } finally {
             oldKey.fill(0)
+            oldMediaKey.fill(0)
             importedKey.fill(0)
         }
     }
 
     private fun isAllowedEntry(name: String): Boolean =
-        name == MANIFEST_ENTRY || name == DATABASE_ENTRY || name == DATABASE_KEY_ENTRY ||
+        name == MANIFEST_ENTRY || name == DATABASE_ENTRY || name == DATABASE_KEY_ENTRY || name == MEDIA_KEY_ENTRY ||
             (name.startsWith(MEDIA_PREFIX) && name.removePrefix(MEDIA_PREFIX).matches(SAFE_MEDIA_NAME))
 
     private fun copyLimited(input: InputStream, output: OutputStream, remaining: Long): Long {
@@ -316,6 +331,7 @@ class DriveBackupManager @Inject constructor(
         const val MANIFEST_ENTRY = "manifest.json"
         const val DATABASE_ENTRY = "database/vaultbrain.db"
         const val DATABASE_KEY_ENTRY = "key/database.key"
+        const val MEDIA_KEY_ENTRY = "key/media.key"
         const val MEDIA_PREFIX = "media/"
         val MAGIC = byteArrayOf(0x4E, 0x45, 0x4D, 0x4F, 0x52, 0x59, 0x42, 0x4B)
         val SAFE_MEDIA_NAME = Regex("[A-Za-z0-9._-]{1,180}")
