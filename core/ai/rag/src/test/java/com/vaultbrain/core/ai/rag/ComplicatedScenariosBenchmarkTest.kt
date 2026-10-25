@@ -55,6 +55,10 @@ class ComplicatedScenariosBenchmarkTest(private val mode: String, private val na
             "classify" -> classifyScenario()
             "proactive" -> proactiveScenario()
             "retrieve" -> retrieveScenario()
+            "trip_briefing" -> tripBriefingScenario()
+            "recurring_spend" -> recurringSpendScenario()
+            "missing_documents" -> missingDocumentsScenario()
+            "media_backlog" -> mediaBacklogScenario()
         }
     }
 
@@ -304,12 +308,84 @@ class ComplicatedScenariosBenchmarkTest(private val mode: String, private val na
         }
     }
 
+    private suspend fun tripBriefingScenario() {
+        val repository = mockk<VaultRepository>(relaxed = true)
+        coEvery { repository.getActive() } returns items("items").map { entry ->
+            VaultItem(
+                id = entry.jsonObject.getValue("id").jsonPrimitive.content,
+                title = entry.jsonObject.getValue("title").jsonPrimitive.content,
+                sourceType = SourceType.CAMERA,
+                aiClassification = Classification.valueOf(entry.jsonObject.getValue("classification").jsonPrimitive.content),
+                expiryDate = entry.jsonObject["date"]?.let { day(it.jsonPrimitive.content) },
+                parsedMetadata = entry.jsonObject["metadata"]?.jsonObject?.mapValues { it.value.jsonPrimitive.content } ?: emptyMap()
+            )
+        }
+        val result = DeterministicToolRegistry(repository, QueryIntentParser()).execute(value("query"), now)!!
+        assertThat(result.evidence!!.headline).isEqualTo(value("expectHeadline"))
+        fixture["expectFacts"]?.jsonArray?.forEach { assertThat(result.evidence!!.supportingFacts).contains(it.jsonPrimitive.content) }
+    }
+
+    private suspend fun recurringSpendScenario() {
+        val repository = mockk<VaultRepository>(relaxed = true)
+        coEvery { repository.getActive() } returns items("items").map { entry ->
+            VaultItem(
+                id = entry.jsonObject.getValue("id").jsonPrimitive.content,
+                title = entry.jsonObject.getValue("title").jsonPrimitive.content,
+                sourceType = SourceType.CAMERA,
+                createdAt = day(entry.jsonObject.getValue("date").jsonPrimitive.content),
+                recurringRule = entry.jsonObject["recurring"]?.jsonPrimitive?.content,
+                parsedMetadata = buildMap {
+                    put("merchant", entry.jsonObject.getValue("merchant").jsonPrimitive.content)
+                    put("total", entry.jsonObject.getValue("total").jsonPrimitive.content)
+                    put("currency", entry.jsonObject.getValue("currency").jsonPrimitive.content)
+                    entry.jsonObject["recurring"]?.let { put("recurring", it.jsonPrimitive.content) }
+                }
+            )
+        }
+        val result = DeterministicToolRegistry(repository, QueryIntentParser()).execute(value("query"), now)!!
+        assertThat(result.evidence!!.headline).isEqualTo(value("expectHeadline"))
+        fixture["expectFacts"]?.jsonArray?.forEach { assertThat(result.evidence!!.supportingFacts).contains(it.jsonPrimitive.content) }
+    }
+
+    private suspend fun missingDocumentsScenario() {
+        val repository = mockk<VaultRepository>(relaxed = true)
+        coEvery { repository.getActive() } returns items("items").map { entry ->
+            VaultItem(
+                id = entry.jsonObject.getValue("id").jsonPrimitive.content,
+                title = entry.jsonObject.getValue("title").jsonPrimitive.content,
+                sourceType = SourceType.CAMERA,
+                aiClassification = Classification.valueOf(entry.jsonObject.getValue("classification").jsonPrimitive.content),
+                expiryDate = entry.jsonObject["date"]?.let { day(it.jsonPrimitive.content) },
+                parsedMetadata = entry.jsonObject["metadata"]?.jsonObject?.mapValues { it.value.jsonPrimitive.content } ?: emptyMap()
+            )
+        }
+        val result = DeterministicToolRegistry(repository, QueryIntentParser()).execute(value("query"), now)!!
+        assertThat(result.evidence!!.headline).isEqualTo(value("expectHeadline"))
+        fixture["expectFacts"]?.jsonArray?.forEach { assertThat(result.evidence!!.supportingFacts).contains(it.jsonPrimitive.content) }
+    }
+
+    private suspend fun mediaBacklogScenario() {
+        val repository = mockk<VaultRepository>(relaxed = true)
+        coEvery { repository.getActive() } returns items("items").map { entry ->
+            VaultItem(
+                id = entry.jsonObject.getValue("id").jsonPrimitive.content,
+                title = entry.jsonObject.getValue("title").jsonPrimitive.content,
+                sourceType = SourceType.CAMERA,
+                aiClassification = Classification.valueOf(entry.jsonObject.getValue("classification").jsonPrimitive.content),
+                parsedMetadata = entry.jsonObject["metadata"]?.jsonObject?.mapValues { it.value.jsonPrimitive.content } ?: emptyMap()
+            )
+        }
+        val result = DeterministicToolRegistry(repository, QueryIntentParser()).execute(value("query"), now)!!
+        assertThat(result.evidence!!.headline).isEqualTo(value("expectHeadline"))
+        fixture["expectFacts"]?.jsonArray?.forEach { assertThat(result.evidence!!.supportingFacts).contains(it.jsonPrimitive.content) }
+    }
+
     companion object {
         @JvmStatic @Parameterized.Parameters(name = "{index}: {0} {1}")
         fun cases(): Collection<Array<Any>> {
             val stream = requireNotNull(ComplicatedScenariosBenchmarkTest::class.java.getResourceAsStream("/complicated_scenarios.json"))
             val fixtures = stream.bufferedReader().use { Json.parseToJsonElement(it.readText()) }.jsonArray
-            require(fixtures.size == 37)
+            require(fixtures.size == 43)
             return fixtures.map { arrayOf<Any>(it.jsonObject.getValue("mode").jsonPrimitive.content,
                 it.jsonObject.getValue("name").jsonPrimitive.content, it.jsonObject) }
         }
