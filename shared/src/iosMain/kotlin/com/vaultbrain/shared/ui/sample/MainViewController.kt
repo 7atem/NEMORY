@@ -8,7 +8,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ExperimentalComposeApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.AccessibilitySyncOptions
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.ComposeUIViewController
@@ -23,7 +25,12 @@ import platform.UIKit.UIViewController
  * recreating or cross-boundary state writes deadlock Kotlin/Native under
  * XCUITest.
  */
-fun MainViewController(): UIViewController = ComposeUIViewController {
+@OptIn(ExperimentalComposeApi::class)
+fun MainViewController(): UIViewController = ComposeUIViewController(
+    configure = {
+        accessibilitySyncOptions = AccessibilitySyncOptions.Always(debugLogger = null)
+    }
+) {
     val arabic = SampleLanguageState.isArabic.value
 
     // Sibling composables at the root container overlap; the toggle and the
