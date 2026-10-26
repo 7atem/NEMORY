@@ -28,7 +28,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 
-/** Realistic messy-scenario contracts over a pinned clock; 37 cases across six categories. */
+/** Realistic messy-scenario contracts over a pinned clock; 43 cases across ten categories. */
 @RunWith(Parameterized::class)
 class ComplicatedScenariosBenchmarkTest(private val mode: String, private val name: String, private val fixture: JsonObject) {
     private val now = Instant.parse("2026-09-14T12:00:00Z").toEpochMilli()
@@ -59,6 +59,7 @@ class ComplicatedScenariosBenchmarkTest(private val mode: String, private val na
             "recurring_spend" -> recurringSpendScenario()
             "missing_documents" -> missingDocumentsScenario()
             "media_backlog" -> mediaBacklogScenario()
+            else -> error("Unsupported scenario mode: '$mode' for test case: '" + value("name") + "'")
         }
     }
 
@@ -149,6 +150,10 @@ class ComplicatedScenariosBenchmarkTest(private val mode: String, private val na
         val result = DeterministicToolRegistry(repository, QueryIntentParser()).execute(value("query"), now)!!
         assertThat(result.evidence!!.headline).isEqualTo(value("expectHeadline"))
         fixture["expectFacts"]?.jsonArray?.forEach { assertThat(result.evidence!!.supportingFacts).contains(it.jsonPrimitive.content) }
+        fixture["expectExcludedIds"]?.jsonArray?.forEach {
+            val excludedId = it.jsonPrimitive.content
+            assertThat(result.sources.map { s -> s.id }).doesNotContain(excludedId)
+        }
     }
 
     private fun relationshipSectionScenario() {
@@ -323,6 +328,10 @@ class ComplicatedScenariosBenchmarkTest(private val mode: String, private val na
         val result = DeterministicToolRegistry(repository, QueryIntentParser()).execute(value("query"), now)!!
         assertThat(result.evidence!!.headline).isEqualTo(value("expectHeadline"))
         fixture["expectFacts"]?.jsonArray?.forEach { assertThat(result.evidence!!.supportingFacts).contains(it.jsonPrimitive.content) }
+        fixture["expectExcludedIds"]?.jsonArray?.forEach {
+            val excludedId = it.jsonPrimitive.content
+            assertThat(result.sources.map { s -> s.id }).doesNotContain(excludedId)
+        }
     }
 
     private suspend fun recurringSpendScenario() {

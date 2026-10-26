@@ -113,7 +113,6 @@ jobs:
           path: iosApp/build/Nemory-iOS.ipa
       - name: Build, launch and test bilingual iOS sample
         timeout-minutes: 30
-        continue-on-error: true
         run: |
           set -euo pipefail
           xcodebuild \

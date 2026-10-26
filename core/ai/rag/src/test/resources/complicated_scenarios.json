@@ -969,6 +969,15 @@
           "gate": "3",
           "seat": "14B"
         }
+      },
+      {
+        "id": "t_distant",
+        "title": "Future Flight to Tokyo HND",
+        "classification": "TICKET",
+        "date": "2026-10-25",
+        "metadata": {
+          "flight_number": "JL041"
+        }
       }
     ],
     "expectHeadline": "Trip briefing | 3 items",
@@ -976,6 +985,9 @@
       "Flight to London DXB-LHR | 2026-09-20 | Flight EK001 | Gate B14 | Seat 12A",
       "Hilton London Metropole | 2026-09-21 | Hilton London Metropole",
       "Flight to Dubai LHR-DXB | 2026-09-25 | Flight EK002 | Gate 3 | Seat 14B"
+    ],
+    "expectExcludedIds": [
+      "t_distant"
     ]
   },
   {
@@ -997,6 +1009,41 @@
         "date": "2026-09-01",
         "metadata": {
           "vehicle": "Mazda CX-5"
+        }
+      },
+      {
+        "id": "neg_trip",
+        "title": "Flight to Paris CDG",
+        "classification": "TICKET",
+        "date": "2026-11-01",
+        "metadata": {}
+      },
+      {
+        "id": "neg_hotel",
+        "title": "Hotel Paris Opera",
+        "classification": "HOTEL",
+        "date": "2026-11-02",
+        "metadata": {
+          "hotel": "Hotel Paris Opera"
+        }
+      },
+      {
+        "id": "neg_veh",
+        "title": "Honda Civic Mulkiya",
+        "classification": "IDENTITY_DOCUMENT",
+        "date": "2026-09-01",
+        "metadata": {
+          "vehicle": "Honda Civic"
+        }
+      },
+      {
+        "id": "neg_ins",
+        "title": "Honda Civic Comprehensive Policy",
+        "classification": "LEGAL_DOCUMENT",
+        "date": "2026-09-01",
+        "metadata": {
+          "vehicle": "Honda Civic",
+          "insurance": "true"
         }
       }
     ],
@@ -1026,6 +1073,42 @@
         "date": "2026-08-01",
         "merchant": "CloudHost",
         "total": "52",
+        "currency": "USD",
+        "recurring": "true"
+      },
+      {
+        "id": "unchanged_1",
+        "title": "Music Stream July",
+        "date": "2026-07-01",
+        "merchant": "MusicStream",
+        "total": "10",
+        "currency": "USD",
+        "recurring": "true"
+      },
+      {
+        "id": "unchanged_2",
+        "title": "Music Stream August",
+        "date": "2026-08-01",
+        "merchant": "MusicStream",
+        "total": "10",
+        "currency": "USD",
+        "recurring": "true"
+      },
+      {
+        "id": "decreased_1",
+        "title": "VPN July",
+        "date": "2026-07-01",
+        "merchant": "VPNPlus",
+        "total": "15",
+        "currency": "USD",
+        "recurring": "true"
+      },
+      {
+        "id": "decreased_2",
+        "title": "VPN August",
+        "date": "2026-08-01",
+        "merchant": "VPNPlus",
+        "total": "12",
         "currency": "USD",
         "recurring": "true"
       }
@@ -1069,6 +1152,9 @@
     "expectFacts": [
       "Dune: Part Two | Movie | to_watch",
       "Atomic Habits | Book | reading"
+    ],
+    "expectExcludedIds": [
+      "mb3"
     ]
   },
   {
@@ -1122,6 +1208,41 @@
         "date": "2026-09-01",
         "metadata": {
           "vehicle": "نيسان باترول"
+        }
+      },
+      {
+        "id": "ar_neg_t",
+        "title": "رحلة باريس",
+        "classification": "TICKET",
+        "date": "2026-11-01",
+        "metadata": {}
+      },
+      {
+        "id": "ar_neg_h",
+        "title": "فندق باريس",
+        "classification": "HOTEL",
+        "date": "2026-11-02",
+        "metadata": {
+          "hotel": "فندق باريس"
+        }
+      },
+      {
+        "id": "ar_neg_c",
+        "title": "ملكية تويوتا",
+        "classification": "IDENTITY_DOCUMENT",
+        "date": "2026-09-01",
+        "metadata": {
+          "vehicle": "تويوتا كامري"
+        }
+      },
+      {
+        "id": "ar_neg_ins",
+        "title": "تأمين تويوتا",
+        "classification": "LEGAL_DOCUMENT",
+        "date": "2026-09-01",
+        "metadata": {
+          "vehicle": "تويوتا كامري",
+          "insurance": "true"
         }
       }
     ],

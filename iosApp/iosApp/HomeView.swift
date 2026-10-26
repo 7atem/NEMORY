@@ -55,6 +55,19 @@ struct HomeView: View {
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
                             Spacer()
                             NavigationLink {
+                                ContentView()
+                            } label: {
+                                Image(systemName: "text.bubble.fill")
+                                    .font(.title3)
+                                    .foregroundStyle(.secondary)
+                                    .padding(8)
+                                    .background(.ultraThinMaterial, in: Circle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("openSample")
+                            .accessibilityLabel("Open Sample")
+
+                            NavigationLink {
                                 SettingsDemoView()
                             } label: {
                                 Image(systemName: "gearshape.fill")
