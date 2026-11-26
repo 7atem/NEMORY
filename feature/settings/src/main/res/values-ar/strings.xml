@@ -160,4 +160,9 @@
     <string name="privacy_card_calendar_title">الوصول إلى التقويم</string>
     <string name="privacy_card_gmail_title">حالة Gmail</string>
     <string name="pin_setup_dots_description">تم إدخال %1$d من %2$d أرقام</string>
+    <string name="settings_lens_money">المال</string>
+    <string name="settings_lens_health">الصحة</string>
+    <string name="settings_lens_travel">السفر</string>
+    <string name="settings_lens_bureaucracy">المعاملات الرسمية</string>
+    <string name="settings_lens_media">قائمة المشاهدة</string>
 </resources>

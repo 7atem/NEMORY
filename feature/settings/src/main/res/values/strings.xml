@@ -160,4 +160,9 @@
     <string name="privacy_card_calendar_title">Calendar access</string>
     <string name="privacy_card_gmail_title">Gmail status</string>
     <string name="pin_setup_dots_description">%1$d of %2$d digits entered</string>
+    <string name="settings_lens_money">Money</string>
+    <string name="settings_lens_health">Health</string>
+    <string name="settings_lens_travel">Travel</string>
+    <string name="settings_lens_bureaucracy">Bureaucracy</string>
+    <string name="settings_lens_media">Watchlist</string>
 </resources>

@@ -642,8 +642,16 @@ private fun GeneralSection(
     SettingsCard(title = stringResource(R.string.settings_general), icon = Icons.Default.Settings) {
         Text(stringResource(R.string.settings_lenses), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(vertical = 8.dp))
         lensAccess.forEach { (name, _) ->
+            val localizedLens = when (name.lowercase()) {
+                "money" -> stringResource(R.string.settings_lens_money)
+                "health" -> stringResource(R.string.settings_lens_health)
+                "travel" -> stringResource(R.string.settings_lens_travel)
+                "bureaucracy" -> stringResource(R.string.settings_lens_bureaucracy)
+                "media" -> stringResource(R.string.settings_lens_media)
+                else -> name
+            }
             ListItem(
-                headlineContent = { Text(name) },
+                headlineContent = { Text(localizedLens) },
                 supportingContent = { Text(stringResource(R.string.settings_enabled_for_everyone)) },
                 leadingContent = { Icon(Icons.Default.Storage, contentDescription = null) }
             )

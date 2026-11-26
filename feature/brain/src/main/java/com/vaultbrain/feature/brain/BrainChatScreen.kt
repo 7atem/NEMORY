@@ -265,8 +265,8 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
             LazyColumn(
                     state = listState,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .widthIn(max = 840.dp),
+                        .widthIn(max = 840.dp)
+                        .fillMaxSize(),
                     contentPadding = PaddingValues(
                         top = paddingValues.calculateTopPadding() + 16.dp,
                         bottom = paddingValues.calculateBottomPadding() + 16.dp,
@@ -1026,13 +1026,12 @@ private fun ChatInputBar(
                     contentPadding = PaddingValues(horizontal = 0.dp, vertical = 4.dp)
                 ) {
                     items(suggestions) { query ->
-                        FilterChip(
-                            selected = false,
+                        androidx.compose.material3.SuggestionChip(
                             onClick = {
                                 onSuggestedQuery(query)
                                 showSuggestions = false
                             },
-                            label = { Text(query) }
+                            label = { Text(query, maxLines = 1, softWrap = false) }
                         )
                     }
                 }
