@@ -30,8 +30,6 @@ import androidx.compose.ui.unit.dp
 import com.vaultbrain.shared.model.Classification
 import com.vaultbrain.shared.model.VaultItem
 import androidx.core.net.toUri
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 import com.vaultbrain.core.common.ui.SharedItemCard
 
@@ -107,6 +105,9 @@ fun MediaLensScreen(
             }
         } else {
             LazyColumn(
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    bottom = com.vaultbrain.core.common.ui.VaultSpacing.fabClearance
+                ),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -281,5 +282,9 @@ private fun mediaStatusLabel(status: String): String = when (
     else -> status
 }
 
-private fun formatDate(timestamp: Long): String =
-    SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(timestamp))
+private fun formatDate(timestamp: Long): String {
+    val date = java.time.Instant.ofEpochMilli(timestamp).atZone(java.time.ZoneId.systemDefault()).toLocalDate()
+    return java.time.format.DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+        .withLocale(Locale.getDefault())
+        .format(date)
+}

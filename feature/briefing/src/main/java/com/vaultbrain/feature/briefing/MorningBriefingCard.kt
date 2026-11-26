@@ -31,6 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -96,7 +98,8 @@ internal fun MorningBriefingContent(
                     Text(
                         text = greetingText(greeting),
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.semantics { heading() }
                     )
                     Text(
                         text = stringResource(R.string.today_title),
@@ -233,7 +236,7 @@ private fun TodayInsightRow(
                 }
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = stringResource(R.string.today_review),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(18.dp)
                 )
@@ -245,7 +248,7 @@ private fun TodayInsightRow(
                 is TodayInsight.SpendingIncrease -> stringResource(R.string.today_note_spending)
                 is TodayInsight.UpcomingTravel -> stringResource(R.string.today_note_travel)
                 is TodayInsight.MediaBacklog -> stringResource(R.string.today_note_media)
-                is TodayInsight.ActionableExternalInsight -> "Automated radar insight based on a linked account or message."
+                is TodayInsight.ActionableExternalInsight -> stringResource(R.string.today_note_external)
             }
 
             Surface(

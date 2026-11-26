@@ -48,4 +48,5 @@
     <string name="today_action_view_details">Details</string>
     <string name="today_action_renew">Renew</string>
     <string name="today_action_cancel">Cancel</string>
+    <string name="today_note_external">Automated radar insight based on a linked account or message.</string>
 </resources>

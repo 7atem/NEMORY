@@ -8,6 +8,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -57,9 +61,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.vaultbrain.core.common.ui.ResponsiveContainer
+import com.vaultbrain.core.common.ui.VaultSpacing
 import com.vaultbrain.shared.model.PersonalCollection
+import com.vaultbrain.feature.vault.components.EmptyState
 import com.vaultbrain.feature.vault.components.VaultItemCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,39 +101,47 @@ fun CollectionsScreen(
         }
     ) { padding ->
         val shown = if (showArchived) state.archived else state.active
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                Text(
-                    stringResource(
-                        if (showArchived) R.string.collections_archived_intro else R.string.collections_intro
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            if (shown.isEmpty()) {
+        ResponsiveContainer(modifier = Modifier.fillMaxSize().padding(padding)) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = VaultSpacing.lg,
+                    top = VaultSpacing.lg,
+                    end = VaultSpacing.lg,
+                    bottom = VaultSpacing.fabClearance
+                ),
+                verticalArrangement = Arrangement.spacedBy(VaultSpacing.md)
+            ) {
                 item {
-                    CollectionEmptyCard(
-                        archived = showArchived,
-                        onCreate = { showCreate = true }
+                    Text(
+                        stringResource(
+                            if (showArchived) R.string.collections_archived_intro else R.string.collections_intro
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-            } else {
-                items(shown, key = PersonalCollection::id) { collection ->
-                    CollectionCard(collection, onClick = { onCollectionClick(collection.id) })
+                if (shown.isEmpty()) {
+                    item {
+                        CollectionEmptyCard(
+                            message = stringResource(if (showArchived) R.string.collections_empty_archived else R.string.collections_empty),
+                            actionLabel = if (!showArchived) stringResource(R.string.collections_new) else null,
+                            onAction = { showCreate = true }
+                        )
+                    }
+                } else {
+                    items(shown, key = PersonalCollection::id) { collection ->
+                        CollectionCard(collection, onClick = { onCollectionClick(collection.id) })
+                    }
                 }
-            }
-            item {
-                TextButton(onClick = { showArchived = !showArchived }) {
-                    Icon(
-                        if (showArchived) Icons.Default.Folder else Icons.Default.Archive,
-                        contentDescription = null
-                    )
-                    Spacer(Modifier.padding(horizontal = 4.dp))
-                    Text(stringResource(if (showArchived) R.string.collections_show_active else R.string.collections_show_archived))
+                item {
+                    TextButton(onClick = { showArchived = !showArchived }) {
+                        Icon(
+                            if (showArchived) Icons.Default.Folder else Icons.Default.Archive,
+                            contentDescription = null
+                        )
+                        Spacer(Modifier.padding(horizontal = 4.dp))
+                        Text(stringResource(if (showArchived) R.string.collections_show_active else R.string.collections_show_archived))
+                    }
                 }
             }
         }
@@ -198,39 +216,55 @@ fun CollectionDetailScreen(
                 CircularProgressIndicator()
             }
             collection == null -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.collection_not_found))
+                EmptyState(
+                    text = stringResource(R.string.collection_not_found),
+                    illustration = com.vaultbrain.core.common.R.drawable.il_empty_search,
+                    actionLabel = stringResource(R.string.nav_back),
+                    onAction = onBack
+                )
             }
-            else -> LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                if (collection.isArchived) {
-                    item {
-                        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
-                            Text(
-                                stringResource(R.string.collection_archived_body),
-                                modifier = Modifier.padding(16.dp)
-                            )
+            else -> ResponsiveContainer(modifier = Modifier.fillMaxSize().padding(padding)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(
+                        start = VaultSpacing.lg,
+                        top = VaultSpacing.lg,
+                        end = VaultSpacing.lg,
+                        bottom = VaultSpacing.fabClearance
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(VaultSpacing.md)
+                ) {
+                    if (collection.isArchived) {
+                        item {
+                            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)) {
+                                Text(
+                                    stringResource(R.string.collection_archived_body),
+                                    modifier = Modifier.padding(VaultSpacing.lg)
+                                )
+                            }
                         }
                     }
-                }
-                if (state.items.isEmpty()) {
-                    item {
-                        CollectionEmptyCard(archived = collection.isArchived, onCreate = { showAddItems = true })
-                    }
-                } else {
-                    items(state.items, key = { it.id }) { item ->
-                        VaultItemCard(
-                            item = item,
-                            onClick = { onItemClick(item.id) },
-                            onArchive = {},
-                            extraContent = {
-                                TextButton(onClick = { viewModel.removeItem(item.id) }) {
-                                    Text(stringResource(R.string.collection_remove_item))
+                    if (state.items.isEmpty()) {
+                        item {
+                            CollectionEmptyCard(
+                                message = stringResource(R.string.collection_empty_items),
+                                actionLabel = if (!collection.isArchived) stringResource(R.string.collection_add_items) else null,
+                                onAction = { showAddItems = true }
+                            )
+                        }
+                    } else {
+                        items(state.items, key = { it.id }) { item ->
+                            VaultItemCard(
+                                item = item,
+                                onClick = { onItemClick(item.id) },
+                                onArchive = null,
+                                extraContent = {
+                                    TextButton(onClick = { viewModel.removeItem(item.id) }) {
+                                        Text(stringResource(R.string.collection_remove_item))
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
@@ -279,15 +313,25 @@ fun CollectionDetailScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { toggleSelection(item.id) }
-                                        .padding(vertical = 8.dp),
+                                        .heightIn(min = VaultSpacing.minTouchTarget)
+                                        .toggleable(
+                                            value = isSelected,
+                                            role = Role.Checkbox,
+                                            onValueChange = { toggleSelection(item.id) }
+                                        )
+                                        .padding(vertical = VaultSpacing.xs),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
                                         checked = isSelected,
-                                        onCheckedChange = { toggleSelection(item.id) }
+                                        onCheckedChange = null
                                     )
-                                    Text(item.title, modifier = Modifier.weight(1f))
+                                    Text(
+                                        item.title,
+                                        modifier = Modifier.weight(1f).padding(start = VaultSpacing.sm),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                             }
                         }
@@ -304,15 +348,25 @@ fun CollectionDetailScreen(
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .clickable { toggleSelection(item.id) }
-                                        .padding(vertical = 8.dp),
+                                        .heightIn(min = VaultSpacing.minTouchTarget)
+                                        .toggleable(
+                                            value = isSelected,
+                                            role = Role.Checkbox,
+                                            onValueChange = { toggleSelection(item.id) }
+                                        )
+                                        .padding(vertical = VaultSpacing.xs),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Checkbox(
                                         checked = isSelected,
-                                        onCheckedChange = { toggleSelection(item.id) }
+                                        onCheckedChange = null
                                     )
-                                    Text(item.title, modifier = Modifier.weight(1f))
+                                    Text(
+                                        item.title,
+                                        modifier = Modifier.weight(1f).padding(start = VaultSpacing.sm),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                             }
                         }
@@ -383,7 +437,12 @@ internal fun CollectionCard(
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(collection.name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    collection.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(
                     pluralStringResource(R.plurals.collection_item_count, collection.itemCount, collection.itemCount),
                     style = MaterialTheme.typography.bodySmall,
@@ -402,7 +461,11 @@ internal fun CollectionCard(
 }
 
 @Composable
-private fun CollectionEmptyCard(archived: Boolean, onCreate: () -> Unit) {
+private fun CollectionEmptyCard(
+    message: String,
+    actionLabel: String?,
+    onAction: () -> Unit
+) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(20.dp),
@@ -410,8 +473,10 @@ private fun CollectionEmptyCard(archived: Boolean, onCreate: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(Icons.Default.CreateNewFolder, contentDescription = null)
-            Text(stringResource(if (archived) R.string.collections_empty_archived else R.string.collections_empty))
-            if (!archived) OutlinedButton(onClick = onCreate) { Text(stringResource(R.string.collections_new)) }
+            Text(message)
+            if (actionLabel != null) {
+                OutlinedButton(onClick = onAction) { Text(actionLabel) }
+            }
         }
     }
 }
@@ -424,6 +489,9 @@ internal fun CollectionNameDialog(
     onConfirm: (String) -> Unit
 ) {
     var name by remember(initialName) { mutableStateOf(initialName) }
+    val submit = {
+        if (name.isNotBlank()) onConfirm(name.trim())
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
@@ -432,11 +500,15 @@ internal fun CollectionNameDialog(
                 value = name,
                 onValueChange = { if (it.length <= 120) name = it },
                 label = { Text(stringResource(R.string.collection_name)) },
-                singleLine = true
+                supportingText = { Text("${name.length}/120") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { submit() })
             )
         },
         confirmButton = {
-            Button(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) {
+            Button(onClick = submit, enabled = name.isNotBlank()) {
                 Text(stringResource(R.string.detail_save))
             }
         },

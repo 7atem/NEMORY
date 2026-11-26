@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.vaultbrain.core.common.ui.SharedItemCard
 import com.vaultbrain.shared.model.VaultItem
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun TravelLensScreen(
     items: List<VaultItem>,
@@ -71,7 +71,7 @@ fun TravelLensScreen(
     }
 
     LazyColumn(
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = com.vaultbrain.core.common.ui.VaultSpacing.fabClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = modifier.fillMaxSize()
     ) {
@@ -143,8 +143,9 @@ fun TravelLensScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 TravelQuickAddChip(label = stringResource(R.string.travel_quick_add_ticket), onClick = onQuickAdd)

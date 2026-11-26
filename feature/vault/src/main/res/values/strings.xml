@@ -361,4 +361,15 @@
     <string name="lens_name_media">Watchlist</string>
     <string name="home_reminder_completed">Reminder completed</string>
     <string name="home_reminder_snoozed">Reminder snoozed for 15 minutes</string>
+    <string name="collection_empty_items">No items in this collection yet.</string>
+    <string name="review_item_accepted">Item marked as reviewed</string>
+    <string name="onboarding_page_indicator">Step %1$d of %2$d</string>
+    <string name="lens_stat_saved">Saved</string>
+    <string name="lens_stat_total">Total</string>
+    <string name="lens_stat_expiring">Expiring</string>
+    <string name="lens_empty_generic">Nothing here yet. Tap the + button to start capturing.</string>
+    <plurals name="deliveries_active_count">
+        <item quantity="one">%d active shipment</item>
+        <item quantity="other">%d active shipments</item>
+    </plurals>
 </resources>

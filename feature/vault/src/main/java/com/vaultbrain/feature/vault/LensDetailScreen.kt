@@ -99,12 +99,10 @@ internal fun LensDetailContent(
             }
 
             if (state.items.isEmpty()) {
-                val (emptyText, emptyAction) = lensEmptyState(state.lensId)
                 item {
                     EmptyState(
-                        text = emptyText,
-                        illustration = com.vaultbrain.core.common.R.drawable.il_empty_lens,
-                        actionLabel = emptyAction
+                        text = stringResource(R.string.lens_empty_generic),
+                        illustration = com.vaultbrain.core.common.R.drawable.il_empty_lens
                     )
                 }
             } else {
@@ -119,16 +117,6 @@ internal fun LensDetailContent(
     }
 }
 
-/** Returns a (message, actionLabel?) pair for the empty state of each lens. */
-private fun lensEmptyState(lensId: String): Pair<String, String?> = when (lensId) {
-    LensId.MONEY -> "Drop a receipt or invoice here.\nNemory tracks your spending privately." to "Capture a Receipt"
-    LensId.HEALTH -> "Add a prescription, vaccination record, or medical report.\nNemory keeps your health history secure." to "Capture a Document"
-    LensId.TRAVEL -> "Add a boarding pass and Nemory will remind you before check-in." to "Capture a Boarding Pass"
-    LensId.BUREAUCRACY -> "Store IDs, contracts, or official letters.\nNemory alerts you before they expire." to "Capture a Document"
-    LensId.MEDIA -> "Save books, films, or articles for later.\nNemory will remind you when you\'re ready." to "Capture a Watch/Read Item"
-    else -> "Nothing here yet. Tap the + button to start capturing." to null
-}
-
 @Composable
 private fun StatsRow(total: Int, expiring: Int, moneySaved: Double, showMoneySaved: Boolean) {
     Row(
@@ -136,10 +124,10 @@ private fun StatsRow(total: Int, expiring: Int, moneySaved: Double, showMoneySav
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (showMoneySaved) {
-            StatCard(label = "Saved", value = "$${moneySaved.toInt()}", modifier = Modifier.weight(1f))
+            StatCard(label = stringResource(R.string.lens_stat_saved), value = "$${moneySaved.toInt()}", modifier = Modifier.weight(1f))
         }
-        StatCard(label = "Total", value = total.toString(), modifier = Modifier.weight(1f))
-        StatCard(label = "Expiring", value = expiring.toString(), modifier = Modifier.weight(1f))
+        StatCard(label = stringResource(R.string.lens_stat_total), value = total.toString(), modifier = Modifier.weight(1f))
+        StatCard(label = stringResource(R.string.lens_stat_expiring), value = expiring.toString(), modifier = Modifier.weight(1f))
     }
 }
 

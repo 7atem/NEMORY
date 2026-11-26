@@ -2,9 +2,13 @@ package com.vaultbrain.core.common.ui
 
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -43,6 +47,36 @@ object VaultSpacing {
 
     /** Bottom padding for scrolling content so the last row clears the FAB. */
     val fabClearance: Dp = 88.dp
+
+    /** Maximum comfortable reading width for forms, settings, and lists on tablets/desktop. */
+    val maxReadableWidth: Dp = 840.dp
+
+    /** Maximum width for focused single-column flows (onboarding, confirmation, PIN). */
+    val maxFocusedWidth: Dp = 520.dp
+}
+
+/**
+ * Centers content horizontally and constrains its width on wide screens (tablets/desktop)
+ * while remaining full-width on compact phones.
+ */
+@Composable
+fun ResponsiveContainer(
+    modifier: Modifier = Modifier,
+    maxWidth: Dp = VaultSpacing.maxReadableWidth,
+    contentAlignment: Alignment = Alignment.TopCenter,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = contentAlignment
+    ) {
+        Box(
+            modifier = Modifier
+                .widthIn(max = maxWidth)
+                .fillMaxWidth(),
+            content = content
+        )
+    }
 }
 
 /**

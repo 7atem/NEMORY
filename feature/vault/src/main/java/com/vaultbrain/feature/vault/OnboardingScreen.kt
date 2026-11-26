@@ -11,8 +11,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.vaultbrain.core.common.ui.LocalReducedMotion
+import com.vaultbrain.core.common.ui.VaultSpacing
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -93,6 +99,7 @@ fun OnboardingScreen(
 
     val pagerState = rememberPagerState(pageCount = { pageCount })
     val scope = rememberCoroutineScope()
+    val reducedMotion = LocalReducedMotion.current
 
     Scaffold { padding ->
         Column(
@@ -119,12 +126,15 @@ fun OnboardingScreen(
                     return@HorizontalPager
                 }
                 val slide = contentSlides[page] as OnboardingPage.Text
-                // Calculate page offset for parallax effect
-                val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
+                // Calculate page offset for parallax effect (disabled under reduced motion)
+                val pageOffset = if (reducedMotion) 0f else ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).absoluteValue
                 val rtlMultiplier = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1f else 1f
 
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(vertical = VaultSpacing.lg),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
@@ -184,11 +194,17 @@ fun OnboardingScreen(
             }
 
             // Pager indicators
+            val indicatorDescription = stringResource(
+                R.string.onboarding_page_indicator,
+                pagerState.currentPage + 1,
+                pagerState.pageCount
+            )
             Row(
                 modifier = Modifier
                     .wrapContentHeight()
                     .fillMaxWidth()
-                    .padding(bottom = 8.dp),
+                    .padding(bottom = 8.dp)
+                    .semantics { contentDescription = indicatorDescription },
                 horizontalArrangement = Arrangement.Center
             ) {
                 repeat(pagerState.pageCount) { iteration ->
@@ -209,8 +225,9 @@ fun OnboardingScreen(
             // Actions
             Box(
                 modifier = Modifier
+                    .widthIn(max = VaultSpacing.maxFocusedWidth)
                     .fillMaxWidth()
-                    .padding(32.dp),
+                    .padding(VaultSpacing.xl),
                 contentAlignment = Alignment.Center
             ) {
                 when {
@@ -242,10 +259,19 @@ fun OnboardingScreen(
                         }
                     }
                     pagerState.currentPage == scanInviteIndex -> {
-                        // Scan invite page supplies its own actions.
-                        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        // Scan invite page supplies its own primary actions; still offer Next if model download follows.
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (offerModelDownload) Arrangement.SpaceBetween else Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             TextButton(onClick = onOnboardingComplete) {
                                 Text(stringResource(R.string.onboarding_skip))
+                            }
+                            if (offerModelDownload) {
+                                TextButton(onClick = { scope.launch { pagerState.animateScrollToPage(modelPageIndex) } }) {
+                                    Text(stringResource(R.string.onboarding_next))
+                                }
                             }
                         }
                     }
@@ -280,7 +306,10 @@ fun OnboardingScreen(
 @Composable
 private fun ModelDownloadPage(status: OnDeviceModelStatus) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 32.dp, vertical = VaultSpacing.lg),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -343,7 +372,10 @@ private fun ScanInvitePage(
     onDemoClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 32.dp, vertical = VaultSpacing.lg),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -369,14 +401,14 @@ private fun ScanInvitePage(
         Spacer(modifier = Modifier.height(32.dp))
         Button(
             onClick = onScanClick,
-            modifier = Modifier.fillMaxWidth().height(56.dp)
+            modifier = Modifier.widthIn(max = VaultSpacing.maxFocusedWidth).fillMaxWidth().height(56.dp)
         ) {
             Text(stringResource(R.string.onboarding_scan_button))
         }
         Spacer(modifier = Modifier.height(12.dp))
         OutlinedButton(
             onClick = onDemoClick,
-            modifier = Modifier.fillMaxWidth().height(56.dp)
+            modifier = Modifier.widthIn(max = VaultSpacing.maxFocusedWidth).fillMaxWidth().height(56.dp)
         ) {
             Text(stringResource(R.string.onboarding_try_demo_button))
         }
@@ -385,8 +417,9 @@ private fun ScanInvitePage(
 
 @Composable
 fun MockScannerAnimation() {
+    val reducedMotion = LocalReducedMotion.current
     val infiniteTransition = rememberInfiniteTransition(label = "scanner")
-    val scanPosition by infiniteTransition.animateFloat(
+    val animatedPosition by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 150f,
         animationSpec = infiniteRepeatable(
@@ -395,6 +428,7 @@ fun MockScannerAnimation() {
         ),
         label = "scan_position"
     )
+    val scanPosition = if (reducedMotion) 75f else animatedPosition
 
     Box(
         modifier = Modifier

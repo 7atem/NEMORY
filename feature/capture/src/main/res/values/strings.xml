@@ -430,4 +430,8 @@
     <string name="feature_capture_open_settings">Open Settings</string>
     <string name="feature_capture_pick_from_gallery">Pick from Gallery</string>
     <string name="feature_capture_experience_something_else">Something else?</string>
+    <string name="feature_capture_title_label">Title</string>
+    <string name="feature_capture_section_expanded">Expanded</string>
+    <string name="feature_capture_section_collapsed">Collapsed</string>
+    <string name="feature_capture_close">Close</string>
 </resources>

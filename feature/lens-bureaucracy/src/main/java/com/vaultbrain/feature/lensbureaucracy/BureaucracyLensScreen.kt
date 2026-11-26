@@ -2,6 +2,8 @@ package com.vaultbrain.feature.lensbureaucracy
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -9,15 +11,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,14 +30,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.vaultbrain.shared.model.VaultItem
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.TimeUnit
+import com.vaultbrain.core.common.ui.ResponsiveContainer
+import com.vaultbrain.core.common.ui.SectionHeading
 import com.vaultbrain.core.common.ui.SharedItemCard
+import com.vaultbrain.core.common.ui.VaultSpacing
+import com.vaultbrain.shared.model.VaultItem
+import java.util.concurrent.TimeUnit
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BureaucracyLensScreen(
     items: List<VaultItem>,
@@ -47,59 +54,74 @@ fun BureaucracyLensScreen(
     }
     val pinnedCount = items.count { it.isPinned }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.bureaucracy_lens_view_subtitle),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        BureaucracyStatCard(
-            totalCount = items.size,
-            expiringCount = expiringCount,
-            pinnedCount = pinnedCount
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = stringResource(R.string.bureaucracy_quick_add_title),
-            style = MaterialTheme.typography.labelLarge
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            BureaucracyQuickAddChip(label = stringResource(R.string.bureaucracy_quick_add_id), onClick = onQuickAdd)
-            BureaucracyQuickAddChip(label = stringResource(R.string.bureaucracy_quick_add_contract), onClick = onQuickAdd)
-            BureaucracyQuickAddChip(label = stringResource(R.string.bureaucracy_quick_add_permit), onClick = onQuickAdd)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = stringResource(R.string.bureaucracy_items_title),
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
+    ResponsiveContainer(modifier = modifier.fillMaxSize()) {
         LazyColumn(
-            contentPadding = PaddingValues(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(
+                start = VaultSpacing.lg,
+                top = VaultSpacing.lg,
+                end = VaultSpacing.lg,
+                bottom = VaultSpacing.fabClearance
+            ),
+            verticalArrangement = Arrangement.spacedBy(VaultSpacing.md),
             modifier = Modifier.fillMaxSize()
         ) {
-            items(items, key = { it.id }) { item ->
-                BureaucracyItemCard(item = item, onClick = { onItemClick(item) })
+            item {
+                Text(
+                    text = stringResource(R.string.bureaucracy_lens_view_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            item {
+                BureaucracyStatCard(
+                    totalCount = items.size,
+                    expiringCount = expiringCount,
+                    pinnedCount = pinnedCount
+                )
+            }
+
+            item {
+                Column(verticalArrangement = Arrangement.spacedBy(VaultSpacing.sm)) {
+                    Text(
+                        text = stringResource(R.string.bureaucracy_quick_add_title),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(VaultSpacing.sm),
+                        verticalArrangement = Arrangement.spacedBy(VaultSpacing.xs),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        BureaucracyQuickAddChip(label = stringResource(R.string.bureaucracy_quick_add_id), onClick = onQuickAdd)
+                        BureaucracyQuickAddChip(label = stringResource(R.string.bureaucracy_quick_add_contract), onClick = onQuickAdd)
+                        BureaucracyQuickAddChip(label = stringResource(R.string.bureaucracy_quick_add_permit), onClick = onQuickAdd)
+                    }
+                }
+            }
+
+            item {
+                SectionHeading(text = stringResource(R.string.bureaucracy_items_title))
+            }
+
+            if (items.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.bureaucracy_empty_message),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth().padding(VaultSpacing.xl)
+                        )
+                    }
+                }
+            } else {
+                items(items, key = { it.id }) { item ->
+                    BureaucracyItemCard(item = item, onClick = { onItemClick(item) })
+                }
             }
         }
     }
@@ -151,47 +173,58 @@ private fun BureaucracyStatCard(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BureaucracyQuickAddChip(label: String, onClick: () -> Unit) {
-    FilterChip(
-        selected = false,
+    AssistChip(
         onClick = onClick,
         label = { Text(label) },
         leadingIcon = {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = null,
-                modifier = Modifier.height(18.dp)
+                modifier = Modifier.size(18.dp)
             )
         }
     )
 }
-
-private fun formatDate(timestamp: Long): String =
-    SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date(timestamp))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BureaucracyItemCard(item: VaultItem, onClick: () -> Unit) {
     val mrzInfo = item.customFields["mrz"]?.let(MrzParser::parse)
         ?: item.rawOcrText?.let(MrzParser::parse)
-    
+
     SharedItemCard(
         item = item,
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         extraContent = {
             if (mrzInfo != null) {
+                val statusColor = if (mrzInfo.isChecksumValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                 Column(modifier = Modifier.fillMaxWidth().padding(top = 4.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(VaultSpacing.xs)
+                    ) {
+                        Icon(
+                            imageVector = if (mrzInfo.isChecksumValid) Icons.Default.CheckCircle else Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = statusColor,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            stringResource(R.string.bureaucracy_mrz_document, mrzInfo.documentNumber),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = statusColor
+                        )
+                    }
                     Text(
-                        "MRZ document: ${mrzInfo.documentNumber}",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = if (mrzInfo.isChecksumValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-                    )
-                    Text(
-                        if (mrzInfo.isChecksumValid) "MRZ checksums verified" else "MRZ needs manual verification",
-                        style = MaterialTheme.typography.labelSmall
+                        stringResource(
+                            if (mrzInfo.isChecksumValid) R.string.bureaucracy_mrz_verified
+                            else R.string.bureaucracy_mrz_needs_review
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

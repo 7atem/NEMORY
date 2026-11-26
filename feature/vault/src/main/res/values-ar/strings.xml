@@ -370,4 +370,19 @@
     <string name="lens_name_media">قائمة المشاهدة</string>
     <string name="home_reminder_completed">تم إكمال التذكير</string>
     <string name="home_reminder_snoozed">تم تأجيل التذكير لمدة 15 دقيقة</string>
+    <string name="collection_empty_items">لا توجد عناصر في هذه المجموعة بعد.</string>
+    <string name="review_item_accepted">تم تأكيد مراجعة العنصر</string>
+    <string name="onboarding_page_indicator">الخطوة %1$d من %2$d</string>
+    <string name="lens_stat_saved">المدخر</string>
+    <string name="lens_stat_total">الإجمالي</string>
+    <string name="lens_stat_expiring">ينتهي قريبًا</string>
+    <string name="lens_empty_generic">لا يوجد شيء هنا بعد. اضغط على زر + لبدء الالتقاط.</string>
+    <plurals name="deliveries_active_count">
+        <item quantity="zero">لا توجد شحنات نشطة</item>
+        <item quantity="one">شحنة نشطة واحدة</item>
+        <item quantity="two">شحنتان نشطتان</item>
+        <item quantity="few">%d شحنات نشطة</item>
+        <item quantity="many">%d شحنة نشطة</item>
+        <item quantity="other">%d شحنة نشطة</item>
+    </plurals>
 </resources>

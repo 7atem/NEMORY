@@ -12,4 +12,8 @@
     <string name="bureaucracy_items_title">Documents</string>
     <string name="bureaucracy_item_expires">Expires: %1$s</string>
     <string name="bureaucracy_lens_view_subtitle">View over your vault — items can appear in multiple lenses.</string>
+    <string name="bureaucracy_empty_message">No official documents saved yet. Tap + to add an ID, contract, or permit.</string>
+    <string name="bureaucracy_mrz_document">MRZ document: %1$s</string>
+    <string name="bureaucracy_mrz_verified">MRZ checksums verified</string>
+    <string name="bureaucracy_mrz_needs_review">MRZ needs manual verification</string>
 </resources>

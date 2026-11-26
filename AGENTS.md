@@ -103,10 +103,12 @@ answer limitations, and the Gmail/tasks authorization and sync work still needed
 
 ## UI conventions
 
-Shared tokens and primitives live in `core/common/ui/DesignTokens.kt`: `VaultSpacing`,
-`InfoPill` (non-interactive labels; never use chips with empty `onClick`),
-`SectionHeading` (heading semantics), and `LocalReducedMotion` (provided by
-`VaultBrainTheme`; gate decorative animation on it). Every swipe gesture needs an
+Shared tokens and primitives live in `core/common/ui/DesignTokens.kt`: `VaultSpacing`
+(including `minTouchTarget`, `fabClearance`, `maxReadableWidth`, `maxFocusedWidth`),
+`ResponsiveContainer` (centers and constrains width on tablet/desktop), `InfoPill`
+(non-interactive labels; never use chips with empty `onClick`), `SectionHeading`
+(heading semantics), and `LocalReducedMotion` (provided by `VaultBrainTheme`, which
+also syncs system status/navigation bar icon contrast; gate decorative animation on it). Every swipe gesture needs an
 accessibility custom action (see `VaultItemCard.accessibilityActions`). Destructive
 confirmations use error colors. Lens names come from `lensTitleRes`/`lensDisplayName`
 (bilingual), not the English `lensTitle` fallback.

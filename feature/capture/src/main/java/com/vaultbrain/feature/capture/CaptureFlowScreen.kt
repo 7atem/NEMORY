@@ -15,9 +15,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ErrorOutline
+import com.vaultbrain.core.common.ui.VaultSpacing
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -122,7 +128,8 @@ fun CaptureFlowScreen(
                         onPickFromGallery = {
                             showPermissionDenied = false
                             galleryLauncher.launch(arrayOf("image/*", "application/pdf"))
-                        }
+                        },
+                        onClose = onComplete
                     )
                 } else {
                     CameraPreview(
@@ -201,8 +208,16 @@ fun CaptureFlowScreen(
             }
 
             is CaptureUiState.Saved -> {
+                Box(
+                    modifier = Modifier.fillMaxSize().systemBarsPadding(),
+                    contentAlignment = Alignment.Center
+                ) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    modifier = Modifier
+                        .widthIn(max = VaultSpacing.maxFocusedWidth)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(VaultSpacing.xl),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -300,37 +315,62 @@ fun CaptureFlowScreen(
                         Text(stringResource(R.string.feature_capture_done))
                     }
                 }
+                }
             }
 
             is CaptureUiState.Error -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                Box(
+                    modifier = Modifier.fillMaxSize().systemBarsPadding(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = state.message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    Button(
-                        onClick = {
-                            pendingCameraUri?.let { uri ->
-                                viewModel.process(
-                                    CaptureInput(
-                                        initialUris = listOf(uri),
-                                        sourceType = SourceType.CAMERA
-                                    )
-                                )
-                            } ?: run {
-                                viewModel.process(initialInput)
-                            }
-                        },
-                        modifier = Modifier.padding(top = 16.dp)
+                    Column(
+                        modifier = Modifier
+                            .widthIn(max = VaultSpacing.maxFocusedWidth)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .padding(VaultSpacing.xl),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text(stringResource(R.string.feature_capture_retry))
+                        Icon(
+                            imageVector = Icons.Default.ErrorOutline,
+                            contentDescription = null,
+                            modifier = Modifier.size(56.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(VaultSpacing.lg))
+                        Text(
+                            text = state.message,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodyLarge,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(VaultSpacing.xl))
+                        Button(
+                            onClick = {
+                                pendingCameraUri?.let { uri ->
+                                    viewModel.process(
+                                        CaptureInput(
+                                            initialUris = listOf(uri),
+                                            sourceType = SourceType.CAMERA,
+                                            preferredLensTags = initialInput.preferredLensTags
+                                        )
+                                    )
+                                } ?: run {
+                                    viewModel.process(initialInput)
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.feature_capture_retry))
+                        }
+                        Spacer(modifier = Modifier.height(VaultSpacing.sm))
+                        TextButton(
+                            onClick = onComplete,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(stringResource(R.string.feature_capture_close))
+                        }
                     }
                 }
             }
@@ -341,40 +381,53 @@ fun CaptureFlowScreen(
 @Composable
 private fun PermissionDeniedScreen(
     onOpenSettings: () -> Unit,
-    onPickFromGallery: () -> Unit
+    onPickFromGallery: () -> Unit,
+    onClose: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = Modifier.fillMaxSize().systemBarsPadding(),
+        contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.CameraAlt,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = stringResource(R.string.feature_capture_camera_perm_req_title),
-            style = MaterialTheme.typography.titleLarge
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = stringResource(R.string.feature_capture_camera_perm_req_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.feature_capture_open_settings))
-        }
-        Spacer(modifier = Modifier.height(12.dp))
-        OutlinedButton(onClick = onPickFromGallery, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.feature_capture_pick_from_gallery))
+        Column(
+            modifier = Modifier
+                .widthIn(max = VaultSpacing.maxFocusedWidth)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(VaultSpacing.xl),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.CameraAlt,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.feature_capture_camera_perm_req_title),
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.feature_capture_camera_perm_req_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(32.dp))
+            Button(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.feature_capture_open_settings))
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(onClick = onPickFromGallery, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.feature_capture_pick_from_gallery))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(onClick = onClose, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.feature_capture_close))
+            }
         }
     }
 }

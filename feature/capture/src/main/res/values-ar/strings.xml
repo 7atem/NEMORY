@@ -118,4 +118,8 @@
     <string name="feature_capture_open_settings">فتح الإعدادات</string>
     <string name="feature_capture_pick_from_gallery">اختيار من المعرض</string>
     <string name="feature_capture_experience_something_else">شيء آخر؟</string>
+    <string name="feature_capture_title_label">العنوان</string>
+    <string name="feature_capture_section_expanded">موسّع</string>
+    <string name="feature_capture_section_collapsed">مطوي</string>
+    <string name="feature_capture_close">إغلاق</string>
 </resources>

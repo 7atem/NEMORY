@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Attachment
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -24,11 +25,15 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import com.vaultbrain.core.common.ui.ResponsiveContainer
+import com.vaultbrain.core.common.ui.VaultSpacing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -78,48 +83,55 @@ fun ShareReviewScreen(
         },
         bottomBar = {
             BottomAppBar {
-                TextButton(onClick = onCancel, modifier = Modifier.padding(horizontal = 8.dp)) {
+                TextButton(onClick = onCancel, modifier = Modifier.padding(start = VaultSpacing.sm)) {
                     Text(stringResource(R.string.feature_capture_discard))
                 }
                 Spacer(modifier = Modifier.weight(1f))
-                TextButton(
+                OutlinedButton(
                     onClick = {
                         onSave(selectedCollectionId(selectedCollectionIndex, collections), true)
-                    }
+                    },
+                    modifier = Modifier.padding(end = VaultSpacing.sm)
                 ) {
                     Text(stringResource(R.string.feature_capture_share_save_without_ai))
                 }
-                TextButton(
+                Button(
                     onClick = {
                         onSave(selectedCollectionId(selectedCollectionIndex, collections), false)
-                    }
+                    },
+                    modifier = Modifier.padding(end = VaultSpacing.sm)
                 ) {
                     Text(stringResource(R.string.feature_capture_share_save))
                 }
             }
         }
     ) { padding ->
-        Column(
+        ResponsiveContainer(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            SharePreviewCard(share = share)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(VaultSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(VaultSpacing.lg)
+            ) {
+                SharePreviewCard(share = share)
 
-            if (collections.isNotEmpty()) {
-                CollectionPicker(
-                    collections = collections,
-                    selectedIndex = selectedCollectionIndex,
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it },
-                    onSelect = { index ->
-                        selectedCollectionIndex = index
-                        expanded = false
-                    }
-                )
+                if (collections.isNotEmpty()) {
+                    CollectionPicker(
+                        collections = collections,
+                        selectedIndex = selectedCollectionIndex,
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it },
+                        onSelect = { index ->
+                            selectedCollectionIndex = index
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
     }
@@ -149,7 +161,7 @@ private fun CollectionPicker(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
         )
         ExposedDropdownMenu(
             expanded = expanded,

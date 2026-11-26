@@ -1,9 +1,18 @@
 package com.vaultbrain.feature.capture.ui.components
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import com.vaultbrain.core.common.ui.LocalReducedMotion
+import com.vaultbrain.core.common.ui.ResponsiveContainer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -100,6 +109,8 @@ fun ReviewScreen(
     val haptic = LocalHapticFeedback.current
     var showDiscardDialog by remember { mutableStateOf(false) }
 
+    BackHandler { showDiscardDialog = true }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         bottomBar = {
@@ -152,11 +163,14 @@ fun ReviewScreen(
             }
         }
     ) { padding ->
-        Column(
+        ResponsiveContainer(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+        ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // Header
@@ -230,6 +244,7 @@ fun ReviewScreen(
                         OutlinedTextField(
                             value = draft.title,
                             onValueChange = onTitleChange,
+                            label = { Text(stringResource(R.string.feature_capture_title_label)) },
                             isError = draft.title.isBlank(),
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
@@ -389,6 +404,7 @@ fun ReviewScreen(
             
             Spacer(Modifier.height(32.dp))
         }
+        }
     }
 
     if (showDiscardDialog) {
@@ -422,13 +438,23 @@ private fun ExpandableSection(
     content: @Composable () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val rotation by animateFloatAsState(targetValue = if (expanded) 180f else 0f, label = "expandRotation")
+    val reducedMotion = LocalReducedMotion.current
+    val rotation by animateFloatAsState(
+        targetValue = if (expanded) 180f else 0f,
+        animationSpec = if (reducedMotion) snap() else androidx.compose.animation.core.spring(),
+        label = "expandRotation"
+    )
+    val stateLabel = stringResource(
+        if (expanded) R.string.feature_capture_section_expanded
+        else R.string.feature_capture_section_collapsed
+    )
 
-    Column(modifier = modifier.fillMaxWidth().animateContentSize()) {
+    Column(modifier = if (reducedMotion) modifier.fillMaxWidth() else modifier.fillMaxWidth().animateContentSize()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .semantics { stateDescription = stateLabel }
+                .clickable(role = Role.Button) { expanded = !expanded }
                 .padding(vertical = 12.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
@@ -443,7 +469,11 @@ private fun ExpandableSection(
                 modifier = Modifier.rotate(rotation)
             )
         }
-        AnimatedVisibility(visible = expanded) {
+        AnimatedVisibility(
+            visible = expanded,
+            enter = if (reducedMotion) EnterTransition.None else androidx.compose.animation.fadeIn() + androidx.compose.animation.expandVertically(),
+            exit = if (reducedMotion) ExitTransition.None else androidx.compose.animation.fadeOut() + androidx.compose.animation.shrinkVertically()
+        ) {
             Box(modifier = Modifier.padding(bottom = 12.dp)) {
                 content()
             }

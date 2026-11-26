@@ -12,4 +12,8 @@
     <string name="bureaucracy_items_title">المستندات</string>
     <string name="bureaucracy_item_expires">ينتهي: %1$s</string>
     <string name="bureaucracy_lens_view_subtitle">عرض لخزنتك — يمكن أن تظهر العناصر في أكثر من عدسة.</string>
+    <string name="bureaucracy_empty_message">لا توجد مستندات رسمية محفوظة بعد. اضغط على + لإضافة هوية أو عقد أو تصريح.</string>
+    <string name="bureaucracy_mrz_document">مستند MRZ: %1$s</string>
+    <string name="bureaucracy_mrz_verified">تم التحقق من رموز MRZ</string>
+    <string name="bureaucracy_mrz_needs_review">يحتاج MRZ إلى مراجعة يدوية</string>
 </resources>

@@ -71,26 +71,39 @@ class MainActivity : FragmentActivity() {
             if (crashFile.exists()) {
                 val crashText = crashFile.readText()
                 VaultBrainTheme(darkTheme = androidx.compose.foundation.isSystemInDarkTheme()) {
-                    androidx.compose.foundation.layout.Box(modifier = Modifier.fillMaxSize()) {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
                         val lines = crashText.lines()
-                        androidx.compose.foundation.lazy.LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+                        androidx.compose.foundation.lazy.LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                                top = 48.dp,
+                                bottom = 32.dp
+                            ),
+                            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp)
+                        ) {
                             item {
                                 androidx.compose.material3.Text(
                                     text = getString(R.string.crash_log_found),
-                                    color = androidx.compose.ui.graphics.Color.Red,
+                                    color = MaterialTheme.colorScheme.error,
                                     style = MaterialTheme.typography.titleLarge
                                 )
                             }
                             item {
-                                androidx.compose.foundation.layout.Row {
+                                androidx.compose.foundation.layout.Row(
+                                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                                ) {
                                     androidx.compose.material3.Button(
-                                        onClick = { crashFile.delete(); finish(); startActivity(Intent(this@MainActivity, MainActivity::class.java)) },
-                                        modifier = Modifier.padding(end = 8.dp)
+                                        onClick = { crashFile.delete(); finish(); startActivity(Intent(this@MainActivity, MainActivity::class.java)) }
                                     ) {
                                         androidx.compose.material3.Text(getString(R.string.crash_clear_restart))
                                     }
                                     val context = androidx.compose.ui.platform.LocalContext.current
-                                    androidx.compose.material3.Button(
+                                    androidx.compose.material3.OutlinedButton(
                                         onClick = {
                                             val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                             val clip = android.content.ClipData.newPlainText("Crash Log", getString(R.string.crash_copy_warning) + "\n\n" + crashText)
@@ -105,7 +118,7 @@ class MainActivity : FragmentActivity() {
                             items(lines.size) { index ->
                                 androidx.compose.material3.Text(
                                     text = lines[index],
-                                    color = androidx.compose.ui.graphics.Color.Red,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     style = MaterialTheme.typography.bodySmall,
                                     fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
                                 )

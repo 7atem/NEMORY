@@ -40,6 +40,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Description
@@ -223,6 +224,9 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
                         selected = isDeepResearch,
                         onClick = { viewModel.toggleDeepResearch() },
                         label = { Text(stringResource(R.string.brain_chat_deep_filter)) },
+                        leadingIcon = if (isDeepResearch) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        } else null,
                         modifier = Modifier.padding(end = 8.dp)
                     )
                     if (messages.isNotEmpty()) {
@@ -253,6 +257,7 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
             }
         }
     ) { paddingValues ->
+        val reducedMotion = com.vaultbrain.core.common.ui.LocalReducedMotion.current
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.TopCenter
@@ -284,7 +289,8 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
                         val isLatest = index == messages.lastIndex
                         AnimatedVisibility(
                             visible = true,
-                            enter = fadeIn(animationSpec = tween(300)) + slideInVertically(animationSpec = tween(300)) { it / 2 }
+                            enter = if (reducedMotion) androidx.compose.animation.EnterTransition.None
+                            else fadeIn(animationSpec = tween(300)) + slideInVertically(animationSpec = tween(300)) { it / 2 }
                         ) {
                             ChatBubble(
                                 message = message,

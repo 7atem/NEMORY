@@ -10,13 +10,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Palette
@@ -26,10 +29,12 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.Psychology
-import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -58,16 +63,27 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.vaultbrain.core.common.ui.ResponsiveContainer
+import com.vaultbrain.core.common.ui.SectionHeading
+import com.vaultbrain.core.common.ui.VaultSpacing
 import com.vaultbrain.core.security.BiometricPromptHelper
 import com.vaultbrain.feature.settings.viewmodel.SettingsUiState
 import com.vaultbrain.feature.settings.viewmodel.SettingsViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 import com.vaultbrain.core.ai.llm.OnDeviceModelStatus as PrivateAiStatus
 import com.vaultbrain.core.ai.llm.gemma.OnDeviceModelStatus as GemmaModelStatus
@@ -90,6 +106,9 @@ fun SettingsScreen(
     val biometricHelper = remember { BiometricPromptHelper() }
     var backupAction by remember { mutableStateOf<BackupAction?>(null) }
     var backupPassphrase by remember { mutableStateOf("") }
+    var showBackupPassphrase by remember { mutableStateOf(false) }
+    var showDeleteModelDialog by remember { mutableStateOf(false) }
+    var showClearApprovalsDialog by remember { mutableStateOf(false) }
     val exportBackup = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri ->
@@ -124,29 +143,52 @@ fun SettingsScreen(
     }
 
     backupAction?.let { action ->
+        val minLength = if (action == BackupAction.EXPORT) 12 else 1
+        val remaining = (minLength - backupPassphrase.length).coerceAtLeast(0)
         AlertDialog(
-            onDismissRequest = { backupAction = null; backupPassphrase = "" },
+            onDismissRequest = { backupAction = null; backupPassphrase = ""; showBackupPassphrase = false },
             title = {
                 Text(stringResource(if (action == BackupAction.EXPORT) R.string.settings_backup_export else R.string.settings_backup_restore))
             },
             text = {
-                Column {
+                Column(verticalArrangement = Arrangement.spacedBy(VaultSpacing.sm)) {
                     Text(stringResource(R.string.settings_backup_passphrase_help))
                     OutlinedTextField(
                         value = backupPassphrase,
                         onValueChange = { backupPassphrase = it },
                         label = { Text(stringResource(R.string.settings_backup_passphrase)) },
                         singleLine = true,
-                        visualTransformation = PasswordVisualTransformation(),
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password)
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = if (showBackupPassphrase) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Password),
+                        trailingIcon = {
+                            IconButton(onClick = { showBackupPassphrase = !showBackupPassphrase }) {
+                                Icon(
+                                    imageVector = if (showBackupPassphrase) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                    contentDescription = stringResource(
+                                        if (showBackupPassphrase) R.string.settings_backup_hide_passphrase
+                                        else R.string.settings_backup_show_passphrase
+                                    )
+                                )
+                            }
+                        },
+                        supportingText = if (action == BackupAction.EXPORT) {
+                            {
+                                Text(
+                                    if (remaining > 0) stringResource(R.string.settings_backup_passphrase_remaining, remaining)
+                                    else stringResource(R.string.settings_backup_passphrase_ready)
+                                )
+                            }
+                        } else null
                     )
                 }
             },
             confirmButton = {
-                TextButton(
-                    enabled = backupPassphrase.length >= if (action == BackupAction.EXPORT) 12 else 1,
+                Button(
+                    enabled = backupPassphrase.length >= minLength,
                     onClick = {
                         backupAction = null
+                        showBackupPassphrase = false
                         if (action == BackupAction.EXPORT) {
                             exportBackup.launch("nemory-${java.time.LocalDate.now()}.nemorybackup")
                         } else {
@@ -156,7 +198,55 @@ fun SettingsScreen(
                 ) { Text(stringResource(R.string.settings_continue)) }
             },
             dismissButton = {
-                TextButton(onClick = { backupAction = null; backupPassphrase = "" }) {
+                TextButton(onClick = { backupAction = null; backupPassphrase = ""; showBackupPassphrase = false }) {
+                    Text(stringResource(R.string.settings_cancel))
+                }
+            }
+        )
+    }
+
+    if (showDeleteModelDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteModelDialog = false },
+            icon = { Icon(Icons.Default.Delete, contentDescription = null) },
+            title = { Text(stringResource(R.string.settings_gemma_delete_title)) },
+            text = { Text(stringResource(R.string.settings_gemma_delete_body)) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteModelDialog = false
+                        viewModel.deleteGemmaModel()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) { Text(stringResource(R.string.settings_gemma_delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteModelDialog = false }) {
+                    Text(stringResource(R.string.settings_cancel))
+                }
+            }
+        )
+    }
+
+    if (showClearApprovalsDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearApprovalsDialog = false },
+            title = { Text(stringResource(R.string.settings_cloud_approvals_clear_title)) },
+            text = { Text(stringResource(R.string.settings_cloud_approvals_clear_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showClearApprovalsDialog = false
+                        viewModel.clearCloudApprovals()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) { Text(stringResource(R.string.settings_cloud_approvals_clear)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearApprovalsDialog = false }) {
                     Text(stringResource(R.string.settings_cancel))
                 }
             }
@@ -178,13 +268,17 @@ fun SettingsScreen(
             )
         }
     ) { padding ->
-        Column(
+        ResponsiveContainer(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(VaultSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(VaultSpacing.lg)
         ) {
             PrivacyDashboardSection(onPrivacyScoreClick = onPrivacyScoreClick)
             
@@ -206,14 +300,14 @@ fun SettingsScreen(
                 total = uiState.localAiTotal,
                 lastImproved = uiState.localAiLastImproved,
                 onDownload = viewModel::downloadGemmaModel,
-                onDelete = viewModel::deleteGemmaModel,
+                onDelete = { showDeleteModelDialog = true },
                 onReprocessAll = viewModel::reprocessAllWithGemma
             )
 
             CloudApprovalsSection(
                 categories = uiState.cloudOptInCategories,
                 onRevoke = viewModel::revokeCloudCategory,
-                onClear = viewModel::clearCloudApprovals
+                onClear = { showClearApprovalsDialog = true }
             )
 
             AppearanceSection(
@@ -229,12 +323,16 @@ fun SettingsScreen(
                     if (enabled && activity != null && biometricHelper.canAuthenticate(activity)) {
                         biometricHelper.showPrompt(
                             activity = activity,
-                            title = "Enable biometric unlock",
-                            subtitle = "Authenticate to enable biometric access",
-                            negativeButtonText = "Cancel",
+                            title = context.getString(R.string.settings_biometric_prompt_title),
+                            subtitle = context.getString(R.string.settings_biometric_prompt_subtitle),
+                            negativeButtonText = context.getString(R.string.settings_cancel),
                             onSuccess = { viewModel.setBiometricEnabled(true) },
                             onError = { _, _ ->
-                                Toast.makeText(context, "Biometric setup failed", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    context,
+                                    context.getString(R.string.settings_biometric_setup_failed),
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         )
                     } else {
@@ -255,6 +353,7 @@ fun SettingsScreen(
             )
 
             ConnectionsSection(onManageClick = onConnectionsClick)
+        }
         }
     }
 }
@@ -391,6 +490,7 @@ private fun GemmaModelSection(
                 TextButton(
                     onClick = onDelete,
                     enabled = !workRunning,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(stringResource(R.string.settings_gemma_delete))
@@ -437,7 +537,11 @@ private fun CloudApprovalsSection(
                 )
             }
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            TextButton(onClick = onClear, modifier = Modifier.fillMaxWidth()) {
+            TextButton(
+                onClick = onClear,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text(stringResource(R.string.settings_cloud_approvals_clear))
             }
         }
@@ -459,11 +563,18 @@ private fun Classification.cloudCategoryLabel(): String = stringResource(
 @Composable
 private fun PrivacyDashboardSection(onPrivacyScoreClick: () -> Unit = {}) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.privacy_overview_title), style = MaterialTheme.typography.titleMedium)
-            Text(stringResource(R.string.privacy_local_ai), style = MaterialTheme.typography.bodySmall)
+        Column(Modifier.padding(VaultSpacing.lg), verticalArrangement = Arrangement.spacedBy(VaultSpacing.sm)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(VaultSpacing.sm)) {
+                Icon(Icons.Default.Shield, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                SectionHeading(stringResource(R.string.privacy_overview_title))
+            }
+            Text(
+                stringResource(R.string.privacy_local_ai),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             TextButton(onClick = onPrivacyScoreClick, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.privacy_overview_title))
+                Text(stringResource(R.string.settings_privacy_open_details))
             }
         }
     }
@@ -642,8 +753,8 @@ private fun SecuritySection(
         ) {
             Icon(
                 imageVector = Icons.Default.Shield,
-                contentDescription = stringResource(R.string.settings_security_health),
-                tint = if (state.biometricEnabled || state.pinSet) Color(0xFF4CAF50) else Color(0xFFF44336),
+                contentDescription = null,
+                tint = if (state.biometricEnabled || state.pinSet) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(32.dp)
             )
             Spacer(modifier = Modifier.width(16.dp))
@@ -742,10 +853,16 @@ private fun SecuritySection(
         }
 
         if (state.showAuditLog) {
+            val formatter = remember {
+                DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT).withLocale(Locale.getDefault())
+            }
             Spacer(modifier = Modifier.height(8.dp))
             state.auditLogs.forEach { log ->
+                val formatted = remember(log.timestamp, formatter) {
+                    formatter.format(Instant.ofEpochMilli(log.timestamp).atZone(ZoneId.systemDefault()))
+                }
                 Text(
-                    text = "${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm", java.util.Locale.getDefault()).format(java.util.Date(log.timestamp))} - ${log.action}",
+                    text = "$formatted — ${log.action}",
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -762,13 +879,16 @@ private fun DataManagementSection(
     onImportBackup: () -> Unit
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
-    val storageUsedFormatted = remember {
-        runCatching {
-            var totalBytes = 0L
-            context.filesDir?.walkTopDown()?.forEach { if (it.isFile) totalBytes += it.length() }
-            context.cacheDir?.walkTopDown()?.forEach { if (it.isFile) totalBytes += it.length() }
-            android.text.format.Formatter.formatFileSize(context, totalBytes)
-        }.getOrDefault("—")
+    var storageUsedFormatted by remember { mutableStateOf("…") }
+    LaunchedEffect(context) {
+        storageUsedFormatted = withContext(Dispatchers.IO) {
+            runCatching {
+                var totalBytes = 0L
+                context.filesDir?.walkTopDown()?.forEach { if (it.isFile) totalBytes += it.length() }
+                context.cacheDir?.walkTopDown()?.forEach { if (it.isFile) totalBytes += it.length() }
+                android.text.format.Formatter.formatFileSize(context, totalBytes)
+            }.getOrDefault("—")
+        }
     }
 
     SettingsCard(title = stringResource(R.string.settings_data_management), icon = Icons.Default.Storage) {
@@ -898,7 +1018,7 @@ private fun AppearanceSection(
             }
         }
         SettingsSwitch(
-            label = "Dynamic color",
+            label = stringResource(R.string.settings_dynamic_color),
             checked = dynamicColor,
             onCheckedChange = onDynamicColorChange
         )
@@ -912,13 +1032,13 @@ private fun SettingsCard(
     content: @Composable () -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(VaultSpacing.lg)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                Spacer(modifier = Modifier.width(VaultSpacing.sm))
+                SectionHeading(text = title)
             }
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = VaultSpacing.sm))
             content()
         }
     }
@@ -934,10 +1054,22 @@ private fun SettingsSwitch(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .heightIn(min = VaultSpacing.minTouchTarget)
+            .toggleable(
+                value = checked,
+                enabled = enabled,
+                role = Role.Switch,
+                onValueChange = onCheckedChange
+            )
+            .padding(vertical = VaultSpacing.xs),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(text = label, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f).padding(end = VaultSpacing.sm),
+            color = if (enabled) MaterialTheme.colorScheme.onSurface
+            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        )
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }

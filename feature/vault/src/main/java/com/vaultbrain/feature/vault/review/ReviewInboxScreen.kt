@@ -2,6 +2,8 @@ package com.vaultbrain.feature.vault.review
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Rule
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
@@ -24,11 +25,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -36,8 +41,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.core.text.BidiFormatter
+import com.vaultbrain.core.common.ui.ResponsiveContainer
+import com.vaultbrain.core.common.ui.VaultSpacing
 import com.vaultbrain.shared.model.VaultItem
 import com.vaultbrain.feature.vault.R
+import com.vaultbrain.feature.vault.components.EmptyState
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +56,12 @@ fun ReviewInboxScreen(
     viewModel: ReviewInboxViewModel = hiltViewModel()
 ) {
     val items by viewModel.items.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val acceptedMessage = stringResource(R.string.review_item_accepted)
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.review_title)) },
@@ -63,50 +77,46 @@ fun ReviewInboxScreen(
         }
     ) { padding ->
         if (items.isEmpty()) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(32.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Icon(Icons.Default.CheckCircle, contentDescription = null)
-                Text(
-                    stringResource(R.string.review_all_clear),
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(top = 12.dp)
-                )
-                Text(
-                    stringResource(R.string.review_all_clear_body),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 6.dp)
-                )
-            }
+            EmptyState(
+                text = "${stringResource(R.string.review_all_clear)}\n${stringResource(R.string.review_all_clear_body)}",
+                illustration = com.vaultbrain.core.common.R.drawable.il_empty_vault,
+                actionLabel = stringResource(R.string.nav_back),
+                onAction = onBack,
+                modifier = Modifier.fillMaxSize().padding(padding)
+            )
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                item {
-                    Text(
-                        stringResource(R.string.review_intro),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                items(items, key = VaultItem::id) { item ->
-                    ReviewItemCard(
-                        item = item,
-                        onAccept = { viewModel.accept(item) },
-                        onOpen = { onOpenItem(item.id) },
-                        onCompare = item.possibleDuplicateOfItemId?.let { id ->
-                            { onOpenItem(id) }
-                        }
-                    )
+            ResponsiveContainer(modifier = Modifier.fillMaxSize().padding(padding)) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(VaultSpacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(VaultSpacing.md)
+                ) {
+                    item {
+                        Text(
+                            stringResource(R.string.review_intro),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    items(items, key = VaultItem::id) { item ->
+                        ReviewItemCard(
+                            item = item,
+                            onAccept = {
+                                viewModel.accept(item)
+                                scope.launch { snackbarHostState.showSnackbar(acceptedMessage) }
+                            },
+                            onOpen = { onOpenItem(item.id) },
+                            onCompare = item.possibleDuplicateOfItemId?.let { id ->
+                                { onOpenItem(id) }
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ReviewItemCard(
     item: VaultItem,
@@ -138,8 +148,8 @@ private fun ReviewItemCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(VaultSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(VaultSpacing.sm)
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -152,7 +162,10 @@ private fun ReviewItemCard(
                 }
             }
             Text(body, style = MaterialTheme.typography.bodyMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(VaultSpacing.sm),
+                verticalArrangement = Arrangement.spacedBy(VaultSpacing.sm)
+            ) {
                 Button(onClick = onAccept) {
                     Text(
                         stringResource(

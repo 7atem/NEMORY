@@ -34,4 +34,10 @@ class DesignTokensTest {
         assertEquals(scale.sorted(), scale)
         assertEquals(scale.size, scale.toSet().size)
     }
+
+    @Test
+    fun `responsive width tokens are positive and ordered`() {
+        assertTrue(VaultSpacing.maxFocusedWidth > 0.dp)
+        assertTrue(VaultSpacing.maxReadableWidth > VaultSpacing.maxFocusedWidth)
+    }
 }

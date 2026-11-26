@@ -58,4 +58,5 @@
         <item quantity="many">%1$d عنصرًا ينتظر في قائمة القراءة</item>
         <item quantity="other">%1$d عنصر ينتظر في قائمة القراءة</item>
     </plurals>
+    <string name="today_note_external">ملاحظة تلقائية مستندة إلى حساب أو رسالة مرتبطة.</string>
 </resources>

@@ -206,7 +206,11 @@ fun DeliveriesTrackerCard(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${deliveries.size} active shipments",
+                            text = androidx.compose.ui.res.pluralStringResource(
+                                R.plurals.deliveries_active_count,
+                                deliveries.size,
+                                deliveries.size
+                            ),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

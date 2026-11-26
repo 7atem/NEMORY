@@ -28,6 +28,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -106,13 +111,14 @@ fun PinSetupScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth()
             ) {
                 Text(
                     text = subtitle,
@@ -135,6 +141,8 @@ fun PinSetupScreen(
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             NumericPad(
                 onDigit = { digit ->
                     if ((isConfirmStep && confirmPin.length < MAX_PIN_LENGTH) ||
@@ -148,11 +156,13 @@ fun PinSetupScreen(
                         updatePin(currentPin.dropLast(1))
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth()
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 TextButton(
@@ -179,7 +189,9 @@ fun PinSetupScreen(
 
 @Composable
 private fun PinDots(length: Int, maxDots: Int) {
+    val description = stringResource(R.string.pin_setup_dots_description, length, maxDots)
     Row(
+        modifier = Modifier.semantics { contentDescription = description },
         horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically
     ) {
