@@ -12,6 +12,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import com.vaultbrain.core.common.ui.ResponsiveContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.History
@@ -60,6 +65,7 @@ fun ExperiencePickerScreen(
     scoredSuggestions: List<ExperienceKeywordLibrary.ScoredExperience> = emptyList()
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
     var query by remember { mutableStateOf("") }
     var showAll by remember { mutableStateOf(false) }
 
@@ -149,10 +155,14 @@ fun ExperiencePickerScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
+        ResponsiveContainer(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+        ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
                 .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
@@ -234,6 +244,9 @@ fun ExperiencePickerScreen(
                             if (it.isNotBlank()) showAll = true
                         },
                         label = { Text(stringResource(R.string.feature_capture_experience_search)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -263,6 +276,7 @@ fun ExperiencePickerScreen(
             }
 
             item { androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp)) }
+        }
         }
     }
 }

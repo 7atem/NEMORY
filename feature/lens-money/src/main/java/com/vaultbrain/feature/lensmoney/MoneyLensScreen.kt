@@ -24,7 +24,7 @@ import com.vaultbrain.core.common.ui.SharedItemCard
 import com.vaultbrain.shared.model.VaultItem
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun MoneyLensScreen(
     items: List<VaultItem>,
@@ -53,6 +53,8 @@ fun MoneyLensScreen(
         daysUntil in 0..7
     }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isDemoMode = remember(context) { com.vaultbrain.core.common.OnboardingState.isDemoModeEnabled(context) }
     val categories = remember { SpendingAnalyticsProvider.getCategories() }
     val warranties = remember { SpendingAnalyticsProvider.getWarranties() }
     var rates by remember { mutableStateOf<List<CurrencyRateItem>>(emptyList()) }
@@ -100,19 +102,22 @@ fun MoneyLensScreen(
             }
         }
 
-        // Monthly Spend Trends & Category Progress Breakdown
-        item {
-            MonthlySpendingCard(categories = categories)
-        }
+        // Sample Spend Trends & Warranties (Demo Mode only)
+        if (isDemoMode) {
+            item {
+                MonthlySpendingCard(categories = categories)
+            }
 
-        // Warranties & Return Windows Section
-        item {
-            WarrantiesSection(warranties = warranties)
+            item {
+                WarrantiesSection(warranties = warranties)
+            }
         }
 
         // Tax Deductible Expenses & CSV Export Hero
-        item {
-            TaxDeductibleCard(onExportClick = onExportClick)
+        if (items.isNotEmpty() || isDemoMode) {
+            item {
+                TaxDeductibleCard(onExportClick = onExportClick)
+            }
         }
 
         if (rates.isNotEmpty()) {
@@ -127,10 +132,12 @@ fun MoneyLensScreen(
             }
         }
 
-        item {
-            SubscriptionCancellationCard(
-                onCancelClick = { cancelTarget = it }
-            )
+        if (isDemoMode) {
+            item {
+                SubscriptionCancellationCard(
+                    onCancelClick = { cancelTarget = it }
+                )
+            }
         }
 
         item {
@@ -158,8 +165,9 @@ fun MoneyLensScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
+            FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 MoneyQuickAddChip(label = stringResource(R.string.money_quick_add_receipt), onClick = onQuickAdd)

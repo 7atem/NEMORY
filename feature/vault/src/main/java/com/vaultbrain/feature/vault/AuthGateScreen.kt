@@ -17,10 +17,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import com.vaultbrain.core.common.ui.LocalReducedMotion
+import com.vaultbrain.core.common.ui.VaultSpacing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
@@ -97,6 +103,7 @@ fun AuthGateScreen(
         }
     }
 
+    val reducedMotion = LocalReducedMotion.current
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -110,20 +117,24 @@ fun AuthGateScreen(
                     radius = 800f
                 )
             )
+            .systemBarsPadding()
             .imePadding(),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
+                .widthIn(max = VaultSpacing.maxFocusedWidth)
                 .fillMaxWidth()
-                .padding(horizontal = 32.dp),
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 32.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             // Logo area
             AnimatedVisibility(
                 visible = true,
-                enter = fadeIn(tween(600)) + slideInVertically(tween(600)) { -40 }
+                enter = if (reducedMotion) androidx.compose.animation.EnterTransition.None
+                else fadeIn(tween(600)) + slideInVertically(tween(600)) { -40 }
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(

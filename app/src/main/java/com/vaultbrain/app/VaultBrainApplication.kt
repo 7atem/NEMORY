@@ -50,63 +50,62 @@ class VaultBrainApplication : Application(), Configuration.Provider, ImageLoader
     lateinit var workerFactory: HiltWorkerFactory
 
     @Inject
-    lateinit var mediaVaultStorage: MediaVaultStorage
+    lateinit var mediaVaultStorage: dagger.Lazy<MediaVaultStorage>
 
     override fun newImageLoader(): ImageLoader {
         return ImageLoader.Builder(this)
             .components {
-                add(VaultMediaFetcher.Factory(mediaVaultStorage))
+                add(VaultMediaFetcher.Factory(mediaVaultStorage.get()))
             }
             .build()
     }
 
+    @Inject
+    lateinit var persistentCaptureNotificationManager: dagger.Lazy<com.vaultbrain.core.notifications.PersistentCaptureNotificationManager>
 
     @Inject
-    lateinit var persistentCaptureNotificationManager: com.vaultbrain.core.notifications.PersistentCaptureNotificationManager
+    lateinit var gemmaDownloadEligibility: dagger.Lazy<GemmaDownloadEligibility>
 
     @Inject
-    lateinit var gemmaDownloadEligibility: GemmaDownloadEligibility
-
-    @Inject
-    lateinit var gemmaModelManager: GemmaModelManager
+    lateinit var gemmaModelManager: dagger.Lazy<GemmaModelManager>
 
     @Inject
     @Gemma
-    lateinit var gemmaLlmClient: LlmClient
+    lateinit var gemmaLlmClient: dagger.Lazy<LlmClient>
 
     @Inject
-    lateinit var localAiAdoptionManager: LocalAiAdoptionManager
+    lateinit var localAiAdoptionManager: dagger.Lazy<LocalAiAdoptionManager>
 
     @Inject
-    lateinit var vaultRepository: VaultRepository
+    lateinit var vaultRepository: dagger.Lazy<VaultRepository>
 
     @Inject
-    lateinit var gemmaDownloadPromptManager: GemmaDownloadPromptManager
+    lateinit var gemmaDownloadPromptManager: dagger.Lazy<GemmaDownloadPromptManager>
 
     @Inject
-    lateinit var connectorRegistry: ConnectorRegistry
+    lateinit var connectorRegistry: dagger.Lazy<ConnectorRegistry>
 
     @Inject
-    lateinit var calendarConnector: CalendarConnector
+    lateinit var calendarConnector: dagger.Lazy<CalendarConnector>
 
     @Inject
-    lateinit var gmailConnector: GmailConnector
+    lateinit var gmailConnector: dagger.Lazy<GmailConnector>
 
     @Inject
-    lateinit var googleTasksConnector: com.vaultbrain.core.integrations.google.GoogleTasksConnector
+    lateinit var googleTasksConnector: dagger.Lazy<com.vaultbrain.core.integrations.google.GoogleTasksConnector>
 
     @Inject
-    lateinit var externalContextRepository: com.vaultbrain.core.integrations.repository.ExternalContextRepository
+    lateinit var externalContextRepository: dagger.Lazy<com.vaultbrain.core.integrations.repository.ExternalContextRepository>
 
     @Inject
-    lateinit var vaultReminderDao: com.vaultbrain.shared.database.dao.VaultReminderDao
+    lateinit var vaultReminderDao: dagger.Lazy<com.vaultbrain.shared.database.dao.VaultReminderDao>
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val gemmaRuntimeActivated = MutableStateFlow(false)
 
     override fun onCreate() {
         super.onCreate()
-        
+
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
             try {
@@ -123,50 +122,61 @@ class VaultBrainApplication : Application(), Configuration.Provider, ImageLoader
             defaultHandler?.uncaughtException(thread, throwable)
         }
 
-        runCatching {
-            androidx.work.WorkManager.initialize(this, workManagerConfiguration)
+        // Defer WorkManager, connector registration, and DB/AI singleton initialization off the
+        // main thread so cold start renders the first frame immediately without risking ANRs.
+        applicationScope.launch(Dispatchers.IO) {
+            runCatching {
+                androidx.work.WorkManager.initialize(this@VaultBrainApplication, workManagerConfiguration)
+            }
+            runCatching { persistentCaptureNotificationManager.get().showPersistentNotification() }
+            runCatching { com.vaultbrain.app.widgets.WidgetUpdateWorker.enqueue(this@VaultBrainApplication) }
+            runCatching { com.vaultbrain.core.notifications.AlertWorker.clearLegacyPreviews(this@VaultBrainApplication) }
+            runCatching {
+                val registry = connectorRegistry.get()
+                registry.register(calendarConnector.get())
+                registry.register(gmailConnector.get())
+                registry.register(googleTasksConnector.get())
+            }
+            runCatching { androidx.work.WorkManager.getInstance(this@VaultBrainApplication).cancelUniqueWork("gmail_bounded_sync") }
+            runCatching { com.vaultbrain.sync.gmail.GoogleSyncWorker.enqueue(this@VaultBrainApplication) }
+            runCatching { androidx.work.WorkManager.getInstance(this@VaultBrainApplication).cancelUniqueWork("radar_proactive_worker") }
+            runCatching { com.vaultbrain.core.ai.rag.ProactiveInsightWorker.enqueue(this@VaultBrainApplication) }
+            runCatching { CalendarSyncWorker.enqueuePeriodic(this@VaultBrainApplication) }
+            // One-time backfill: embed items saved before embedding generation existed.
+            runCatching { com.vaultbrain.feature.capture.worker.EmbeddingBackfillWorker.enqueueOnce(this@VaultBrainApplication) }
+            runCatching { com.vaultbrain.feature.capture.worker.VaultInsightsWorker.enqueue(this@VaultBrainApplication) }
         }
-        runCatching { persistentCaptureNotificationManager.showPersistentNotification() }
-        com.vaultbrain.app.widgets.WidgetUpdateWorker.enqueue(this)
-        com.vaultbrain.core.notifications.AlertWorker.clearLegacyPreviews(this)
-        connectorRegistry.register(calendarConnector)
-        connectorRegistry.register(gmailConnector)
-        connectorRegistry.register(googleTasksConnector)
-        runCatching { androidx.work.WorkManager.getInstance(this).cancelUniqueWork("gmail_bounded_sync") }
-        runCatching { com.vaultbrain.sync.gmail.GoogleSyncWorker.enqueue(this) }
-        runCatching { androidx.work.WorkManager.getInstance(this).cancelUniqueWork("radar_proactive_worker") }
-        runCatching { com.vaultbrain.core.ai.rag.ProactiveInsightWorker.enqueue(this) }
-        runCatching { CalendarSyncWorker.enqueuePeriodic(this) }
+
         // Precompile the ~944 keyword regexes off the main thread so the first
         // capture doesn't pay the compilation cost.
         applicationScope.launch {
             runCatching { ExperienceKeywordLibrary.warmUp() }
         }
-        applicationScope.launch {
-            combine(vaultRepository.observeActive(), externalContextRepository.observeRecords(),
-                vaultReminderDao.observeActive()) { items, records, reminders ->
+        applicationScope.launch(Dispatchers.IO) {
+            combine(
+                vaultRepository.get().observeActive(),
+                externalContextRepository.get().observeRecords(),
+                vaultReminderDao.get().observeActive()
+            ) { items, records, reminders ->
                 com.vaultbrain.core.ai.rag.DailyInsightStore.digest(items.toString() + records.toString() + reminders.toString())
             }.distinctUntilChanged().collect {
                 if (!com.vaultbrain.core.common.security.DecoySessionState.isDecoy.value)
                     com.vaultbrain.core.ai.rag.ProactiveInsightWorker.enqueue(this@VaultBrainApplication, changed = true)
             }
         }
-        // One-time backfill: embed items saved before embedding generation existed.
-        runCatching { com.vaultbrain.feature.capture.worker.EmbeddingBackfillWorker.enqueueOnce(this) }
-        runCatching { com.vaultbrain.feature.capture.worker.VaultInsightsWorker.enqueue(this) }
         // Offer the Gemma Tier 2 model once when this device has no Gemini Nano.
-        applicationScope.launch {
+        applicationScope.launch(Dispatchers.IO) {
             runCatching { maybePromptGemmaDownload() }
         }
         // A verified file is not enough: load the MediaPipe runtime first, then adopt Gemma as
         // the primary local model and visibly improve both historical and future items.
-        applicationScope.launch {
-            gemmaModelManager.status.collect { status ->
+        applicationScope.launch(Dispatchers.IO) {
+            gemmaModelManager.get().status.collect { status ->
                 if (status == OnDeviceModelStatus.READY) {
-                    val activated = runCatching { gemmaLlmClient.warmup() }.getOrDefault(false)
+                    val activated = runCatching { gemmaLlmClient.get().warmup() }.getOrDefault(false)
                     gemmaRuntimeActivated.value = activated
                     if (activated) {
-                        val historicalItemsQueued = localAiAdoptionManager.prepareExistingItemsIfNeeded()
+                        val historicalItemsQueued = localAiAdoptionManager.get().prepareExistingItemsIfNeeded()
                         DeferredAnalysisWorker.enqueue(this@VaultBrainApplication)
                         LlmEnrichmentWorker.enqueue(
                             context = this@VaultBrainApplication,
@@ -180,10 +190,10 @@ class VaultBrainApplication : Application(), Configuration.Provider, ImageLoader
         }
         // Covers every future insert path, not only CaptureViewModel: whenever a ready item
         // appears anywhere in the app, ensure a local-AI worker is attached to the queue.
-        applicationScope.launch {
+        applicationScope.launch(Dispatchers.IO) {
             combine(
                 gemmaRuntimeActivated,
-                vaultRepository.observeEnrichmentCandidateCount()
+                vaultRepository.get().observeEnrichmentCandidateCount()
             ) { activated, count -> activated && count > 0 }
                 .distinctUntilChanged()
                 .collect { shouldRun ->
@@ -199,8 +209,8 @@ class VaultBrainApplication : Application(), Configuration.Provider, ImageLoader
      */
     private suspend fun maybePromptGemmaDownload() {
         if (!com.vaultbrain.core.common.OnboardingState.hasSeenOnboarding(this)) return
-        if (!gemmaDownloadEligibility.isPromptEligible()) return
-        gemmaDownloadPromptManager.showPromptIfEligible()
+        if (!gemmaDownloadEligibility.get().isPromptEligible()) return
+        gemmaDownloadPromptManager.get().showPromptIfEligible()
     }
 
     override val workManagerConfiguration: Configuration
