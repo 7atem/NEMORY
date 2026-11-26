@@ -22,4 +22,17 @@
     <string name="alert_action_dismiss">تجاهل</string>
     <string name="alert_private_title">تذكير من نيموري</string>
     <string name="alert_private_body">افتح نيموري لمراجعة تذكيراتك.</string>
+    <string name="notif_digest_title">صباح الخير</string>
+    <string name="notif_quick_capture_title">التقاط سريع في نيموري</string>
+    <string name="notif_quick_capture_body">اضغط لحفظ شيء في خزنتك</string>
+    <string name="notif_quick_capture_voice">صوت</string>
+    <string name="notif_quick_capture_text">نص</string>
+    <plurals name="notif_digest_body">
+        <item quantity="zero">عدد العناصر التي تحتاج إلى انتباهك اليوم: %d</item>
+        <item quantity="one">عدد العناصر التي تحتاج إلى انتباهك اليوم: %d</item>
+        <item quantity="two">عدد العناصر التي تحتاج إلى انتباهك اليوم: %d</item>
+        <item quantity="few">عدد العناصر التي تحتاج إلى انتباهك اليوم: %d</item>
+        <item quantity="many">عدد العناصر التي تحتاج إلى انتباهك اليوم: %d</item>
+        <item quantity="other">عدد العناصر التي تحتاج إلى انتباهك اليوم: %d</item>
+    </plurals>
 </resources>

@@ -429,4 +429,5 @@
     <string name="feature_capture_camera_perm_req_body">Please grant camera permission in settings to take photos, or pick an image from your gallery.</string>
     <string name="feature_capture_open_settings">Open Settings</string>
     <string name="feature_capture_pick_from_gallery">Pick from Gallery</string>
+    <string name="feature_capture_experience_something_else">Something else?</string>
 </resources>

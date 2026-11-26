@@ -37,8 +37,6 @@
     <string name="fab_dump">Dump</string>
     <string name="home_action_settings">Settings</string>
     <string name="home_search_placeholder">Search titles, OCR text, tags…</string>
-    <string name="home_action_scan">Scan</string>
-    <string name="home_action_import">Import</string>
     <string name="home_greeting_morning">Good morning</string>
     <string name="home_greeting_afternoon">Good afternoon</string>
     <string name="home_greeting_evening">Good evening</string>
@@ -46,12 +44,10 @@
     <string name="home_attention_review">%1$d items to review</string>
     <string name="home_ask_placeholder">Ask Nemory anything...</string>
     <string name="home_ask_send">Ask Nemory</string>
-    <string name="home_action_voice">Voice</string>
     <string name="home_search_recent">Recent</string>
     <string name="home_search_close">Close search</string>
     <string name="home_backup_nudge_title">Protect your vault</string>
     <string name="home_backup_nudge_body">Your data stays offline. Set up an encrypted backup to prevent data loss.</string>
-    <string name="home_backup_nudge_setup">Setup Backup</string>
     <string name="home_backup_nudge_dismiss">Dismiss</string>
     <string name="home_demo_mode_title">Demo mode</string>
     <string name="home_demo_mode_body">These are sample items. Scan a real document to replace them.</string>
@@ -299,7 +295,6 @@
     <string name="browser_clear_selection">Clear selection</string>
     <string name="browser_select_all">Select all</string>
     <string name="browser_pin_selection">Pin selected items</string>
-    <string name="browser_back">Back</string>
     <string name="browser_clear_search">Clear search</string>
     <string name="browser_toggle_view">Switch list or timeline view</string>
 
@@ -357,4 +352,13 @@
     <string name="vault_health_warning_car_insurance">Add car insurance policy to reach 100% life protection.</string>
     <string name="vault_redact_share">Redact &amp; Share</string>
     <string name="vault_redact_sanitized">PII Redacted (%1$d items masked)</string>
+    <string name="card_action_select">Select</string>
+    <string name="card_action_deselect">Deselect</string>
+    <string name="lens_name_money">Money</string>
+    <string name="lens_name_health">Health</string>
+    <string name="lens_name_travel">Travel</string>
+    <string name="lens_name_bureaucracy">Bureaucracy</string>
+    <string name="lens_name_media">Watchlist</string>
+    <string name="home_reminder_completed">Reminder completed</string>
+    <string name="home_reminder_snoozed">Reminder snoozed for 15 minutes</string>
 </resources>

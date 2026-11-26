@@ -63,5 +63,4 @@
     <string name="brain_collection_create_action">إنشاء</string>
     <string name="brain_collection_add_title">إضافة إلى مجموعة</string>
     <string name="brain_collection_empty_message">لا توجد مجموعات بعد. أنشئ مجموعة من تبويب الخزنة أولاً.</string>
-    <string name="brain_chat_back">رجوع</string>
 </resources>

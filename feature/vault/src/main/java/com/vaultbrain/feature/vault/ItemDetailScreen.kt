@@ -68,6 +68,7 @@ import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.semantics.heading
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Button
@@ -333,7 +334,7 @@ internal fun ItemDetailContent(
                             else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    IconButton(onClick = {
+                    IconButton(enabled = state.item != null, onClick = {
                         val title = state.item?.title ?: ""
                         val summary = state.item?.summary ?: ""
                         val ocr = state.item?.rawOcrText ?: ""
@@ -346,13 +347,13 @@ internal fun ItemDetailContent(
                     }) {
                         Icon(imageVector = Icons.Default.Share, contentDescription = stringResource(R.string.detail_share))
                     }
-                    IconButton(onClick = { showEditDialog = true }) {
+                    IconButton(onClick = { showEditDialog = true }, enabled = state.item != null) {
                         Icon(imageVector = Icons.Default.Edit, contentDescription = stringResource(R.string.detail_edit))
                     }
                     var showExportMenu by remember { mutableStateOf(false) }
                     Box {
-                        IconButton(onClick = { showExportMenu = true }) {
-                            Icon(imageVector = Icons.Default.MoreVert, contentDescription = "More options")
+                        IconButton(onClick = { showExportMenu = true }, enabled = state.item != null) {
+                            Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(R.string.detail_more_options))
                         }
                         DropdownMenu(
                             expanded = showExportMenu,
@@ -403,10 +404,12 @@ internal fun ItemDetailContent(
                 }
 
                 state.item == null -> {
-                    Text(
+                    // Recoverable state: explain and offer a way out instead of a bare red error.
+                    com.vaultbrain.feature.vault.components.EmptyState(
                         text = stringResource(R.string.detail_not_found),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error
+                        illustration = com.vaultbrain.core.common.R.drawable.il_empty_search,
+                        actionLabel = stringResource(R.string.nav_back),
+                        onAction = onBack
                     )
                 }
 
@@ -415,27 +418,31 @@ internal fun ItemDetailContent(
 
                     Text(
                         text = item.title,
-                        style = MaterialTheme.typography.headlineMedium
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.semantics { heading() }
                     )
 
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        AssistChip(
-                            onClick = {},
-                            label = {
-                                Text(
-                                    stringResource(
-                                        when (item.processingStatus) {
-                                            ItemProcessingStatus.SAVED -> R.string.card_status_saved
-                                            ItemProcessingStatus.ORGANIZING -> R.string.card_status_organizing
-                                            ItemProcessingStatus.READY -> R.string.card_status_ready
-                                            ItemProcessingStatus.NEEDS_REVIEW -> R.string.card_status_needs_review
-                                        }
-                                    )
-                                )
-                            }
+                        // Status is informational, not an action: render a pill, not a dead chip.
+                        com.vaultbrain.core.common.ui.InfoPill(
+                            text = stringResource(
+                                when (item.processingStatus) {
+                                    ItemProcessingStatus.SAVED -> R.string.card_status_saved
+                                    ItemProcessingStatus.ORGANIZING -> R.string.card_status_organizing
+                                    ItemProcessingStatus.READY -> R.string.card_status_ready
+                                    ItemProcessingStatus.NEEDS_REVIEW -> R.string.card_status_needs_review
+                                }
+                            ),
+                            modifier = Modifier.align(Alignment.CenterVertically),
+                            containerColor = if (item.processingStatus == ItemProcessingStatus.NEEDS_REVIEW) {
+                                MaterialTheme.colorScheme.errorContainer
+                            } else MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = if (item.processingStatus == ItemProcessingStatus.NEEDS_REVIEW) {
+                                MaterialTheme.colorScheme.onErrorContainer
+                            } else MaterialTheme.colorScheme.onSecondaryContainer
                         )
                         AssistChip(
                             onClick = { showPrivacyInfo = true },
@@ -456,7 +463,10 @@ internal fun ItemDetailContent(
                             .distinct()
                             .take(6)
                             .forEach { label ->
-                                AssistChip(onClick = {}, label = { Text(label) })
+                                com.vaultbrain.core.common.ui.InfoPill(
+                                    text = label,
+                                    modifier = Modifier.align(Alignment.CenterVertically)
+                                )
                             }
                         if (item.isPinned) {
                             AssistChip(
@@ -568,12 +578,17 @@ internal fun ItemDetailContent(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(stringResource(R.string.detail_delete_title)) },
             text = { Text(stringResource(R.string.detail_delete_body)) },
+            icon = { Icon(Icons.Default.Delete, contentDescription = null) },
             confirmButton = {
                 Button(
                     onClick = {
                         showDeleteDialog = false
                         onDelete()
-                    }
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
                 ) {
                     Text(stringResource(R.string.detail_delete))
                 }

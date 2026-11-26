@@ -166,6 +166,27 @@ Deep links are supported for item, lens, Brain, and collection destinations unde
 `nemory://` scheme. A Quick Settings tile, app widget, FileProvider, and Android Share
 entry point are also registered.
 
+Today section order (top to bottom): demo banner, personal collections, search + ask
+composer (with a visible send action and labeled Scan/Voice/Import shortcuts), Needs
+attention, today's agenda (reminders and Calendar), proactive insights, model/quick-capture
+banners, overview, recent items, then briefing, deliveries, and vault health. Vault and
+Brain are top-level destinations and show no Up arrow; system back still works. A lens
+screen's add button opens capture with `lens=` so the lens is pre-tagged.
+
+UI and accessibility conventions (`core/common/ui/DesignTokens.kt`):
+
+- `VaultSpacing` is the shared spacing scale (including the 48dp minimum touch target).
+- `InfoPill` renders informational status/tag/metadata labels. Never use clickable chips
+  with empty `onClick` handlers.
+- `SectionHeading` marks section titles as accessibility headings.
+- `LocalReducedMotion` (provided by `VaultBrainTheme` from the system animator duration
+  scale) disables decorative motion: card press-scale, list placement, empty-state reveal,
+  shimmer, FAB menu, and the capture slide.
+- Every swipe gesture has an accessibility custom action on `VaultItemCard` (archive on
+  Today, select/delete in Vault). Selection mode exits on system back, and unselected
+  cards show an empty selection ring.
+- Destructive confirmations (delete item, bulk delete, clear Brain chat) use error colors.
+
 ### 2.2 Authentication and onboarding
 
 The authentication gate supports a local PIN and optional biometrics. A separate

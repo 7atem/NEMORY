@@ -36,8 +36,6 @@
     <string name="fab_dump">إضافة</string>
     <string name="home_action_settings">الإعدادات</string>
     <string name="home_search_placeholder">البحث في العناوين، النصوص، العلامات…</string>
-    <string name="home_action_scan">مسح</string>
-    <string name="home_action_import">استيراد</string>
     <string name="home_greeting_morning">صباح الخير</string>
     <string name="home_greeting_afternoon">طاب يومك</string>
     <string name="home_greeting_evening">مساء الخير</string>
@@ -45,12 +43,10 @@
     <string name="home_attention_review">%1$d عناصر للمراجعة</string>
     <string name="home_ask_placeholder">اسأل نيموري أي شيء...</string>
     <string name="home_ask_send">اسأل نيموري</string>
-    <string name="home_action_voice">صوت</string>
     <string name="home_search_recent">الأخيرة</string>
     <string name="home_search_close">إغلاق البحث</string>
     <string name="home_backup_nudge_title">احمِ خزنتك</string>
     <string name="home_backup_nudge_body">بياناتك تبقى على جهازك. قم بإعداد نسخة احتياطية مشفرة لمنع فقدان البيانات.</string>
-    <string name="home_backup_nudge_setup">إعداد النسخ الاحتياطي</string>
     <string name="home_backup_nudge_dismiss">إغلاق</string>
     <string name="home_demo_mode_title">وضع العرض التوضيحي</string>
     <string name="home_demo_mode_body">هذه عناصر تجريبية. امسح مستندًا حقيقيًا لاستبدالها.</string>
@@ -309,7 +305,6 @@
     <string name="browser_clear_selection">إلغاء التحديد</string>
     <string name="browser_select_all">تحديد الكل</string>
     <string name="browser_pin_selection">تثبيت العناصر المحددة</string>
-    <string name="browser_back">رجوع</string>
     <string name="browser_clear_search">مسح البحث</string>
     <string name="browser_toggle_view">التبديل بين القائمة والخط الزمني</string>
     <string name="home_collection_prompt">إنشاء مجموعة</string>
@@ -366,4 +361,13 @@
     <string name="vault_health_warning_car_insurance">أضف وثيقة تأمين السيارة للوصول إلى حماية حياتية بنسبة 100%.</string>
     <string name="vault_redact_share">تنقيح ومشاركة آمنة</string>
     <string name="vault_redact_sanitized">تم حجب البيانات الحساسة (%1$d عنصر محجوب)</string>
+    <string name="card_action_select">تحديد</string>
+    <string name="card_action_deselect">إلغاء التحديد</string>
+    <string name="lens_name_money">المال</string>
+    <string name="lens_name_health">الصحة</string>
+    <string name="lens_name_travel">السفر</string>
+    <string name="lens_name_bureaucracy">المعاملات الرسمية</string>
+    <string name="lens_name_media">قائمة المشاهدة</string>
+    <string name="home_reminder_completed">تم إكمال التذكير</string>
+    <string name="home_reminder_snoozed">تم تأجيل التذكير لمدة 15 دقيقة</string>
 </resources>

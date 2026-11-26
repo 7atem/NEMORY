@@ -47,4 +47,10 @@
     <string name="money_crypto_badge">COINGECKO LIVE</string>
     <string name="money_crypto_price_usd">$%1$.2f</string>
     <string name="money_crypto_price_aed">%1$.0f AED</string>
+    <string name="money_iban_field_label">IBAN</string>
+    <string name="money_iban_valid">Valid IBAN format · country code %1$s</string>
+    <string name="money_iban_invalid">Check this IBAN: the format or checksum doesn\'t match</string>
+    <string name="money_iban_hint">Type or paste an IBAN to check it. Checked on your device only.</string>
+    <string name="money_item_category">Category: %1$s</string>
+    <string name="money_item_tax">Tax: %1$s</string>
 </resources>

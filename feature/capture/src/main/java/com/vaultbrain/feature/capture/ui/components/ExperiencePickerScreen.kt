@@ -219,7 +219,7 @@ fun ExperiencePickerScreen(
                             contentDescription = null,
                             modifier = Modifier.padding(end = 8.dp)
                         )
-                        Text("Something else?")
+                        Text(stringResource(R.string.feature_capture_experience_something_else))
                     }
                 }
             }

@@ -24,7 +24,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PushPin
@@ -155,6 +157,10 @@ internal fun VaultBrowserContent(
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     var isTimelineView by rememberSaveable { mutableStateOf(false) }
 
+    androidx.activity.compose.BackHandler(enabled = state.isSelectionMode, onBack = onClearSelection)
+    val focusManager = androidx.compose.ui.platform.LocalFocusManager.current
+    val reducedMotion = com.vaultbrain.core.common.ui.LocalReducedMotion.current
+
     val groupedItems = remember(state.items, androidx.compose.ui.platform.LocalConfiguration.current.locales.toLanguageTags()) {
         state.items.groupBy { item ->
             val date = java.time.Instant.ofEpochMilli(item.createdAt)
@@ -191,26 +197,10 @@ internal fun VaultBrowserContent(
                     )
                 )
             } else {
+                // Vault is a top-level destination (bottom bar / rail), so it has no Up arrow;
+                // system back still returns to the previous destination.
                 TopAppBar(
-                    title = {
-                        Column {
-                            Text(stringResource(R.string.browser_title))
-                            Text(
-                                androidx.compose.ui.res.pluralStringResource(
-                                    R.plurals.browser_item_count,
-                                    state.items.size,
-                                    state.items.size
-                                ),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.browser_back))
-                        }
-                    },
+                    title = { Text(stringResource(R.string.browser_title)) }
                 )
             }
         },
@@ -247,7 +237,13 @@ internal fun VaultBrowserContent(
                     }
                 },
                 shape = MaterialTheme.shapes.extraLarge,
-                singleLine = true
+                singleLine = true,
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                    imeAction = androidx.compose.ui.text.input.ImeAction.Search
+                ),
+                keyboardActions = androidx.compose.foundation.text.KeyboardActions(
+                    onSearch = { focusManager.clearFocus() }
+                )
             )
 
             // Filter Chips: generic item-state filters, then the user's personal collections.
@@ -259,16 +255,24 @@ internal fun VaultBrowserContent(
                 items(BrowserFilter.entries) { filter ->
                     val count = state.filterCounts[filter] ?: 0
                     if (count > 0 || (state.activeFilter == filter && state.activeCollectionId == null)) {
+                        val selected = state.activeFilter == filter && state.activeCollectionId == null
                         FilterChip(
-                            selected = state.activeFilter == filter && state.activeCollectionId == null,
+                            selected = selected,
                             onClick = { onFilterSelected(filter) },
-                            label = { Text("${stringResource(filter.labelRes)} ($count)") }
+                            label = { Text("${stringResource(filter.labelRes)} ($count)") },
+                            leadingIcon = if (selected) {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                            } else null
                         )
                     }
                 }
                 items(state.collections, key = { it.id }) { collection ->
+                    val selected = state.activeCollectionId == collection.id
                     FilterChip(
-                        selected = state.activeCollectionId == collection.id,
+                        selected = selected,
+                        leadingIcon = if (selected) {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                        } else null,
                         onClick = {
                             onCollectionSelected(
                                 if (state.activeCollectionId == collection.id) null else collection.id
@@ -387,7 +391,7 @@ internal fun VaultBrowserContent(
                                     },
                                     onLongClick = { onToggleSelection(item.id) },
                                     onDelete = { onDeleteItem(item) },
-                                    modifier = Modifier.animateItemPlacement()
+                                    modifier = if (reducedMotion) Modifier else Modifier.animateItem()
                                 )
                             }
                         }
@@ -408,7 +412,7 @@ internal fun VaultBrowserContent(
                                 },
                                 onLongClick = { onToggleSelection(item.id) },
                                 onDelete = { onDeleteItem(item) },
-                                modifier = Modifier.animateItemPlacement()
+                                modifier = if (reducedMotion) Modifier else Modifier.animateItem()
                             )
                         }
                     }
@@ -430,11 +434,18 @@ internal fun VaultBrowserContent(
                     )
                 )
             },
+            icon = { Icon(Icons.Default.Delete, contentDescription = null) },
             confirmButton = {
-                Button(onClick = {
-                    showDeleteConfirmation = false
-                    onDeleteSelected()
-                }) { Text(stringResource(R.string.browser_delete)) }
+                Button(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        onDeleteSelected()
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) { Text(stringResource(R.string.browser_delete)) }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmation = false }) {
@@ -494,6 +505,18 @@ private fun SwipeableSelectableVaultItem(
             }
         }
     ) {
+        val deleteLabel = stringResource(R.string.browser_delete)
+        val selectLabel = stringResource(
+            if (isSelected) R.string.card_action_deselect else R.string.card_action_select
+        )
+        val actions = remember(isSelectionMode, isSelected, deleteLabel, selectLabel, onDelete, onLongClick) {
+            buildList {
+                add(androidx.compose.ui.semantics.CustomAccessibilityAction(selectLabel) { onLongClick(); true })
+                if (!isSelectionMode) {
+                    add(androidx.compose.ui.semantics.CustomAccessibilityAction(deleteLabel) { onDelete(); true })
+                }
+            }
+        }
         Box(
             modifier = modifier
                 .fillMaxWidth()
@@ -503,7 +526,8 @@ private fun SwipeableSelectableVaultItem(
             VaultItemCard(
                 item = item,
                 onClick = onClick,
-                onLongClick = onLongClick
+                onLongClick = onLongClick,
+                accessibilityActions = actions
             )
 
             if (isSelectionMode) {
@@ -517,14 +541,13 @@ private fun SwipeableSelectableVaultItem(
                         .padding(8.dp),
                     contentAlignment = Alignment.TopEnd
                 ) {
-                    if (isSelected) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+                    // Show an empty ring on unselected cards so it is obvious they are selectable.
+                    Icon(
+                        imageVector = if (isSelected) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                        contentDescription = null,
+                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }

@@ -551,24 +551,33 @@ private fun IbanValidatorCard() {
     val normalizedIban = iban.filterNot(Char::isWhitespace).uppercase()
     val isValid = isValidIban(normalizedIban)
 
+    // Validity is conveyed by icon shape + text + error state, never by color alone.
     OutlinedTextField(
         value = iban,
         onValueChange = { iban = it.uppercase().take(34) },
-        label = { Text("Validate IBAN") },
+        label = { Text(stringResource(R.string.money_iban_field_label)) },
         modifier = Modifier.fillMaxWidth(),
+        singleLine = true,
+        isError = iban.isNotEmpty() && !isValid,
+        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+            capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Characters,
+            autoCorrectEnabled = false
+        ),
         trailingIcon = {
             if (iban.isNotEmpty()) {
                 Icon(
-                    imageVector = if (isValid) Icons.Default.Add else Icons.Default.Receipt,
+                    imageVector = if (isValid) Icons.Default.CheckCircle else Icons.Default.Error,
                     contentDescription = null,
-                    tint = if (isValid) Color.Green else MaterialTheme.colorScheme.error
+                    tint = if (isValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                 )
             }
         },
         supportingText = {
             if (iban.isNotEmpty()) {
-                if (isValid) Text("Valid IBAN format (${iban.take(2)} Country Code)")
-                else Text("Invalid IBAN format")
+                if (isValid) Text(stringResource(R.string.money_iban_valid, normalizedIban.take(2)))
+                else Text(stringResource(R.string.money_iban_invalid))
+            } else {
+                Text(stringResource(R.string.money_iban_hint))
             }
         }
     )
@@ -642,10 +651,10 @@ private fun MoneyItemCard(item: VaultItem, onClick: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     item.customFields["category"]?.takeIf(String::isNotBlank)?.let {
-                        Text("Category: $it", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.money_item_category, it), style = MaterialTheme.typography.labelMedium)
                     }
                     (item.customFields["tax"] ?: item.parsedMetadata["tax"])?.takeIf(String::isNotBlank)?.let {
-                        Text("Tax: $it", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.money_item_tax, it), style = MaterialTheme.typography.labelMedium)
                     }
                     Spacer(modifier = Modifier.weight(1f))
                     if (isRecurring) {

@@ -47,4 +47,10 @@
     <string name="money_crypto_badge">مباشر عبر COINGECKO</string>
     <string name="money_crypto_price_usd">$%1$.2f</string>
     <string name="money_crypto_price_aed">%1$.0f درهم</string>
+    <string name="money_iban_field_label">رقم الآيبان (IBAN)</string>
+    <string name="money_iban_valid">صيغة IBAN صحيحة · رمز الدولة %1$s</string>
+    <string name="money_iban_invalid">تحقق من رقم IBAN: الصيغة أو رقم التحقق غير مطابق</string>
+    <string name="money_iban_hint">اكتب أو الصق رقم IBAN للتحقق منه. يتم التحقق على جهازك فقط.</string>
+    <string name="money_item_category">الفئة: %1$s</string>
+    <string name="money_item_tax">الضريبة: %1$s</string>
 </resources>

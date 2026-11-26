@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -33,6 +34,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -75,6 +77,7 @@ fun VaultItemCard(
     modifier: Modifier = Modifier,
     onArchive: (() -> Unit)? = null,
     onLongClick: (() -> Unit)? = null,
+    accessibilityActions: List<androidx.compose.ui.semantics.CustomAccessibilityAction> = emptyList(),
     extraContent: @Composable (ColumnScope.() -> Unit)? = null
 ) {
     val presentation = VaultItemPresenter.present(item)
@@ -97,6 +100,19 @@ fun VaultItemCard(
         formatDate(presentation.dateMillis)
     )
     val haptic = LocalHapticFeedback.current
+    val reducedMotion = com.vaultbrain.core.common.ui.LocalReducedMotion.current
+    val archiveLabel = stringResource(R.string.detail_archive)
+    val selectLabel = stringResource(R.string.card_action_select)
+    // Swipe gestures are invisible to TalkBack/Switch Access; expose the same operations
+    // as named custom actions so every gesture has an accessible equivalent.
+    val semanticActions = remember(onArchive, accessibilityActions, archiveLabel) {
+        buildList {
+            onArchive?.let { archive ->
+                add(androidx.compose.ui.semantics.CustomAccessibilityAction(archiveLabel) { archive(); true })
+            }
+            addAll(accessibilityActions)
+        }
+    }
     val dismissState = rememberSwipeToDismissBoxState(
         confirmValueChange = {
             if (it == SwipeToDismissBoxValue.EndToStart) {
@@ -114,7 +130,7 @@ fun VaultItemCard(
     val isPressed by interactionSource.collectIsPressedAsState()
     val isHovered by interactionSource.collectIsHoveredAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.98f else 1f,
+        targetValue = if (isPressed && !reducedMotion) 0.98f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
         label = "card_scale"
     )
@@ -166,8 +182,15 @@ fun VaultItemCard(
                         dateText,
                         statusText
                     ).joinToString(". ")
+                    if (semanticActions.isNotEmpty()) customActions = semanticActions
                 }
-                .combinedClickable(interactionSource = interactionSource, indication = androidx.compose.material3.ripple(), onClick = onClick, onLongClick = onLongClick),
+                .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = androidx.compose.material3.ripple(),
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                    onLongClickLabel = if (onLongClick != null) selectLabel else null
+                ),
             shape = MaterialTheme.shapes.medium,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
@@ -313,12 +336,14 @@ fun EmptyState(
     actionLabel: String? = null,
     onAction: (() -> Unit)? = null
 ) {
-    var isVisible by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    val reducedMotion = com.vaultbrain.core.common.ui.LocalReducedMotion.current
+    var isVisible by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(reducedMotion) }
     androidx.compose.runtime.LaunchedEffect(Unit) { isVisible = true }
 
     androidx.compose.animation.AnimatedVisibility(
         visible = isVisible,
-        enter = androidx.compose.animation.fadeIn(tween(400)) + androidx.compose.animation.slideInVertically(tween(400)) { it / 8 }
+        enter = if (reducedMotion) androidx.compose.animation.EnterTransition.None
+        else androidx.compose.animation.fadeIn(tween(400)) + androidx.compose.animation.slideInVertically(tween(400)) { it / 8 }
     ) {
         Column(
             modifier = modifier
@@ -367,8 +392,10 @@ fun SkeletonItem(modifier: Modifier = Modifier) {
         MaterialTheme.colorScheme.surfaceVariant
     )
     
+    val reducedMotion = com.vaultbrain.core.common.ui.LocalReducedMotion.current
+    val placeholder = MaterialTheme.colorScheme.onSurfaceVariant
     val transition = rememberInfiniteTransition(label = "shimmer")
-    val translateAnim by transition.animateFloat(
+    val animatedTranslate by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1000f,
         animationSpec = infiniteRepeatable(
@@ -377,6 +404,8 @@ fun SkeletonItem(modifier: Modifier = Modifier) {
         ),
         label = "shimmerTranslate"
     )
+    // Static gradient when the user turned animations off.
+    val translateAnim = if (reducedMotion) 500f else animatedTranslate
     
     val brush = Brush.linearGradient(
         colors = shimmerColors,
@@ -400,13 +429,13 @@ fun SkeletonItem(modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .size(64.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color.Gray.copy(alpha = 0.2f))
+                    .background(placeholder.copy(alpha = 0.2f))
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(modifier = Modifier.width(160.dp).height(16.dp).background(Color.Gray.copy(alpha = 0.2f)))
-                Box(modifier = Modifier.width(240.dp).height(12.dp).background(Color.Gray.copy(alpha = 0.1f)))
-                Box(modifier = Modifier.width(100.dp).height(10.dp).background(Color.Gray.copy(alpha = 0.1f)))
+                Box(modifier = Modifier.width(160.dp).height(16.dp).background(placeholder.copy(alpha = 0.2f)))
+                Box(modifier = Modifier.width(240.dp).height(12.dp).background(placeholder.copy(alpha = 0.12f)))
+                Box(modifier = Modifier.width(100.dp).height(10.dp).background(placeholder.copy(alpha = 0.12f)))
             }
         }
     }
@@ -414,14 +443,11 @@ fun SkeletonItem(modifier: Modifier = Modifier) {
 
 @Composable
 private fun LensChip(lensId: String) {
-    SuggestionChip(
-        onClick = {},
-        label = { Text("${lensEmoji(lensId)} ${lensTitle(lensId)}") },
-        colors = SuggestionChipDefaults.suggestionChipColors(
-            containerColor = lensContainerColor(lensId).copy(alpha = 0.6f),
-            labelColor = MaterialTheme.colorScheme.onSurface
-        ),
-        border = null
+    com.vaultbrain.core.common.ui.InfoPill(
+        text = lensDisplayName(lensId),
+        leadingText = lensEmoji(lensId),
+        containerColor = lensContainerColor(lensId).copy(alpha = 0.6f),
+        contentColor = MaterialTheme.colorScheme.onSurface
     )
 }
 
@@ -433,33 +459,20 @@ private fun UrgencyChip(dateMillis: Long, dateKind: VaultCardDateKind) {
         VaultCardDateKind.EVENT -> stringResource(R.string.card_chip_event_soon)
         else -> stringResource(R.string.card_chip_soon)
     }
-    SuggestionChip(
-        onClick = {},
-        label = { Text("$label ${formatDate(dateMillis)}") },
-        colors = SuggestionChipDefaults.suggestionChipColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-            labelColor = MaterialTheme.colorScheme.onErrorContainer
-        ),
-        border = null
+    // Icon + wording carry urgency so meaning never depends on the red color alone.
+    com.vaultbrain.core.common.ui.InfoPill(
+        text = "$label ${formatDate(dateMillis)}",
+        leadingIcon = Icons.Default.Schedule,
+        containerColor = MaterialTheme.colorScheme.errorContainer,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer
     )
 }
 
 @Composable
 private fun MetadataChip(label: String, value: String) {
-    SuggestionChip(
-        onClick = {},
-        label = {
-            Text(
-                "$label: ${value.take(20)}",
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        },
-        colors = SuggestionChipDefaults.suggestionChipColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ),
-        border = null
+    com.vaultbrain.core.common.ui.InfoPill(
+        text = "$label: ${value.take(20)}",
+        modifier = Modifier.widthIn(max = 220.dp)
     )
 }
 
@@ -472,6 +485,22 @@ fun lensEmoji(lensId: String): String = when (lensId) {
     else -> "📁"
 }
 
+/** Localized display-name resource for a lens; prefer [lensDisplayName] in UI. */
+@androidx.annotation.StringRes
+fun lensTitleRes(lensId: String): Int? = when (lensId) {
+    LensId.MONEY -> R.string.lens_name_money
+    LensId.HEALTH -> R.string.lens_name_health
+    LensId.TRAVEL -> R.string.lens_name_travel
+    LensId.BUREAUCRACY -> R.string.lens_name_bureaucracy
+    LensId.MEDIA -> R.string.lens_name_media
+    else -> null
+}
+
+@Composable
+fun lensDisplayName(lensId: String): String =
+    lensTitleRes(lensId)?.let { stringResource(it) } ?: lensTitle(lensId)
+
+/** English fallback name, used only outside composition (e.g. ViewModel defaults). */
 fun lensTitle(lensId: String): String = when (lensId) {
     LensId.MONEY -> "Money"
     LensId.HEALTH -> "Health"
@@ -496,7 +525,9 @@ private fun formatDate(timestamp: Long): String {
         Instant.ofEpochMilli(timestamp),
         ZoneId.systemDefault()
     )
-    return DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.getDefault()).format(dateTime)
+    return DateTimeFormatter.ofLocalizedDate(java.time.format.FormatStyle.MEDIUM)
+        .withLocale(Locale.getDefault())
+        .format(dateTime)
 }
 
 @Preview(showBackground = true)

@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.compose.ui.semantics.clearAndSetSemantics
 
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -74,10 +75,14 @@ fun SpeedDialFab(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
+    val reducedMotion = com.vaultbrain.core.common.ui.LocalReducedMotion.current
+    // System back closes the open menu before navigating anywhere.
+    androidx.activity.compose.BackHandler(enabled = expanded) { expanded = false }
+    val closeMenuLabel = stringResource(R.string.fab_collapse)
 
     val rotation by animateFloatAsState(
         targetValue = if (expanded) 45f else 0f,
-        animationSpec = tween(300),
+        animationSpec = if (reducedMotion) androidx.compose.animation.core.snap() else tween(300),
         label = "fab_rotation"
     )
 
@@ -90,7 +95,8 @@ fun SpeedDialFab(
                     .background(Color.Black.copy(alpha = 0.4f))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
-                        indication = null
+                        indication = null,
+                        onClickLabel = closeMenuLabel
                     ) {
                         expanded = false
                     }
@@ -109,14 +115,14 @@ fun SpeedDialFab(
             // Mini FABs
             AnimatedVisibility(
                 visible = expanded,
-                enter = fadeIn() + slideInVertically(
+                enter = if (reducedMotion) androidx.compose.animation.EnterTransition.None else fadeIn() + slideInVertically(
                     initialOffsetY = { 50 },
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessLow
                     )
                 ) + scaleIn(),
-                exit = fadeOut() + slideOutVertically(
+                exit = if (reducedMotion) androidx.compose.animation.ExitTransition.None else fadeOut() + slideOutVertically(
                     targetOffsetY = { 50 },
                     animationSpec = tween(200)
                 ) + scaleOut()
@@ -217,7 +223,10 @@ private fun MiniFabItem(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                // The button below already announces this label; avoid reading it twice.
+                modifier = Modifier
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .clearAndSetSemantics { }
             )
         }
         SmallFloatingActionButton(

@@ -101,11 +101,22 @@ answer limitations, and the Gmail/tasks authorization and sync work still needed
 - `core/security` — app lock/decoy mode.
 - `sync/drive`, `sync/gmail` — optional sync integrations.
 
+## UI conventions
+
+Shared tokens and primitives live in `core/common/ui/DesignTokens.kt`: `VaultSpacing`,
+`InfoPill` (non-interactive labels; never use chips with empty `onClick`),
+`SectionHeading` (heading semantics), and `LocalReducedMotion` (provided by
+`VaultBrainTheme`; gate decorative animation on it). Every swipe gesture needs an
+accessibility custom action (see `VaultItemCard.accessibilityActions`). Destructive
+confirmations use error colors. Lens names come from `lensTitleRes`/`lensDisplayName`
+(bilingual), not the English `lensTitle` fallback.
+
 ## Navigation
 
 Single-activity Compose nav (`VaultBrainNavGraph`). Three bottom tabs: Today (`home`),
 Vault (`search`), Brain (`brain`, optional `?query=` prefill from the Today composer —
-prefill only, never auto-sends). Capture is a modal route (`capture?imageUris&text&lens&source`,
+prefill only, never auto-sends). Top-level tabs have no Up arrow. Lens add buttons open
+`capture?lens=<lensId>`. Capture is a modal route (`capture?imageUris&text&lens&source`,
 slides up). Other routes: `auth_gate`, `onboarding`, `settings`, `review`,
 `detail/{itemId}`, `collections`, `collection/{collectionId}`, `lens/{lensId}`.
 

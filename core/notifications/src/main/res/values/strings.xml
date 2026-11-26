@@ -22,4 +22,13 @@
     <string name="alert_action_dismiss">Dismiss</string>
     <string name="alert_private_title">Nemory reminder</string>
     <string name="alert_private_body">Open Nemory to review your reminders.</string>
+    <string name="notif_digest_title">Good morning</string>
+    <string name="notif_quick_capture_title">Nemory quick capture</string>
+    <string name="notif_quick_capture_body">Tap to save something to your vault</string>
+    <string name="notif_quick_capture_voice">Voice</string>
+    <string name="notif_quick_capture_text">Text</string>
+    <plurals name="notif_digest_body">
+        <item quantity="one">You have %d item that needs your attention today.</item>
+        <item quantity="other">You have %d items that need your attention today.</item>
+    </plurals>
 </resources>

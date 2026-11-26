@@ -60,19 +60,19 @@ class PersistentCaptureNotificationManager @Inject constructor(
 
             val notification = NotificationCompat.Builder(context, channelId)
                 .setSmallIcon(android.R.drawable.ic_menu_camera)
-                .setContentTitle("VaultBrain Quick Dump")
-                .setContentText("Tap to capture directly to your vault")
+                .setContentTitle(context.getString(R.string.notif_quick_capture_title))
+                .setContentText(context.getString(R.string.notif_quick_capture_body))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
                 .setContentIntent(createPendingIntent(null))
                 .addAction(
                     android.R.drawable.ic_btn_speak_now,
-                    "Voice",
+                    context.getString(R.string.notif_quick_capture_voice),
                     createPendingIntent("voice")
                 )
                 .addAction(
                     android.R.drawable.ic_menu_edit,
-                    "Text",
+                    context.getString(R.string.notif_quick_capture_text),
                     createPendingIntent("text")
                 )
                 .build()

@@ -100,7 +100,8 @@ private val VaultBrainLightScheme = lightColorScheme(
     inverseOnSurface = VaultOnDarkPrimary,
     inversePrimary = Color(0xFF79D5CE),
     outline = Color(0xFF707B83),
-    outlineVariant = VaultLightSurfaceVariant
+    // Distinct from surfaceVariant so dividers and card outlines stay visible in light mode.
+    outlineVariant = VaultLightOutline
 )
 
 /**
@@ -135,14 +136,19 @@ fun VaultBrainTheme(
             extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(28.dp)
         ),
         content = {
-            // Apply subtle gradient background for premium aesthetic
-            androidx.compose.foundation.layout.Box(
-                modifier = Modifier.background(
-                    brush = if (darkTheme) VaultBrainGradients.darkBackgroundGradient
-                    else VaultBrainGradients.lightBackgroundGradient
-                )
+            val reducedMotion = com.vaultbrain.core.common.ui.rememberSystemReducedMotion()
+            androidx.compose.runtime.CompositionLocalProvider(
+                com.vaultbrain.core.common.ui.LocalReducedMotion provides reducedMotion
             ) {
-                content()
+                // Apply subtle gradient background for premium aesthetic
+                androidx.compose.foundation.layout.Box(
+                    modifier = Modifier.background(
+                        brush = if (darkTheme) VaultBrainGradients.darkBackgroundGradient
+                        else VaultBrainGradients.lightBackgroundGradient
+                    )
+                ) {
+                    content()
+                }
             }
         }
     )

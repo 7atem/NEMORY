@@ -117,4 +117,5 @@
     <string name="feature_capture_camera_perm_req_body">يرجى منح إذن الكاميرا في الإعدادات لالتقاط الصور، أو اختيار صورة من المعرض.</string>
     <string name="feature_capture_open_settings">فتح الإعدادات</string>
     <string name="feature_capture_pick_from_gallery">اختيار من المعرض</string>
+    <string name="feature_capture_experience_something_else">شيء آخر؟</string>
 </resources>

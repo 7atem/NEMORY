@@ -19,6 +19,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.FactCheck
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.ui.text.input.ImeAction
@@ -84,6 +87,8 @@ fun HomeScreen(
     var showReminderDialog by rememberSaveable { mutableStateOf(false) }
     val archivedMessage = stringResource(R.string.home_item_archived)
     val undoLabel = stringResource(R.string.home_undo)
+    val reminderCompletedMessage = stringResource(R.string.home_reminder_completed)
+    val reminderSnoozedMessage = stringResource(R.string.home_reminder_snoozed)
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments()
@@ -187,8 +192,14 @@ fun HomeScreen(
             reminderToEdit = it
             showReminderDialog = true
         },
-        onSnoozeReminder = { viewModel.snoozeReminder(it.id) },
-        onCompleteReminder = { viewModel.completeReminder(it.id) }
+        onSnoozeReminder = {
+            viewModel.snoozeReminder(it.id)
+            scope.launch { snackbarHostState.showSnackbar(reminderSnoozedMessage) }
+        },
+        onCompleteReminder = {
+            viewModel.completeReminder(it.id)
+            scope.launch { snackbarHostState.showSnackbar(reminderCompletedMessage) }
+        }
     )
 
     if (showPasteDialog) {
@@ -378,70 +389,6 @@ internal fun HomeContent(
                     }
                 }
 
-                if (state.attentionItems.isNotEmpty()) {
-                    item {
-                        AttentionSection(
-                            items = state.attentionItems.take(3),
-                            needsReviewCount = state.needsReviewCount,
-                            onClick = onAttentionClick
-                        )
-                    }
-                }
-
-                if (dailyInsights.isNotEmpty()) {
-                    item {
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text(stringResource(R.string.home_proactive_insights_title), style = MaterialTheme.typography.titleMedium)
-                            dailyInsights.forEach { insight ->
-                                Card(
-                                    modifier = Modifier.fillMaxWidth().clickable {
-                                        if (state.activeItems.any { it.id == insight.itemId }) onItemClick(insight.itemId)
-                                        else onAskBrain(insight.title)
-                                    },
-                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                                ) {
-                                    Column(modifier = Modifier.padding(16.dp)) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                imageVector = Icons.Default.AutoAwesome,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                text = insight.title,
-                                                style = MaterialTheme.typography.titleSmall,
-                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                            IconButton(onClick = { onDismissInsight(insight) }) {
-                                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.home_dismiss_insight))
-                                            }
-                                        }
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = insight.evidence,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSecondaryContainer
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (gemmaBanner != null) {
-                    item {
-                        GemmaDownloadBanner(
-                            banner = gemmaBanner,
-                            onDownloadClick = onGemmaDownloadClick,
-                            onDismiss = onGemmaBannerDismiss
-                        )
-                    }
-                }
-
                 item {
                     DockedSearchBar(
                         inputField = {
@@ -534,6 +481,82 @@ internal fun HomeContent(
                     )
                 }
 
+                if (state.attentionItems.isNotEmpty()) {
+                    item {
+                        AttentionSection(
+                            items = state.attentionItems.take(3),
+                            needsReviewCount = state.needsReviewCount,
+                            onClick = onAttentionClick
+                        )
+                    }
+                }
+
+                item {
+                    TemporalContextCard(
+                        state = state,
+                        onOpenEvent = onOpenEvent,
+                        onAddCalendarEvent = onAddCalendarEvent,
+                        onAddReminder = onAddReminder,
+                        onEditReminder = onEditReminder,
+                        onSnoozeReminder = onSnoozeReminder,
+                        onCompleteReminder = onCompleteReminder
+                    )
+                }
+
+                if (dailyInsights.isNotEmpty()) {
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            SectionTitle(stringResource(R.string.home_proactive_insights_title))
+                            dailyInsights.forEach { insight ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().clickable {
+                                        if (state.activeItems.any { it.id == insight.itemId }) onItemClick(insight.itemId)
+                                        else onAskBrain(insight.title)
+                                    },
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.AutoAwesome,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = insight.title,
+                                                style = MaterialTheme.typography.titleSmall,
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            IconButton(onClick = { onDismissInsight(insight) }) {
+                                                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.home_dismiss_insight))
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = insight.evidence,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (gemmaBanner != null) {
+                    item {
+                        GemmaDownloadBanner(
+                            banner = gemmaBanner,
+                            onDownloadClick = onGemmaDownloadClick,
+                            onDismiss = onGemmaBannerDismiss
+                        )
+                    }
+                }
+
                 if (state.quickCaptureSuggestion != null) {
                     item {
                         Card(
@@ -566,18 +589,6 @@ internal fun HomeContent(
                             }
                         }
                     }
-                }
-
-                item {
-                    briefingCard()
-                }
-
-                item {
-                    DeliveriesTrackerCard()
-                }
-
-                item {
-                    VaultHealthAuditCard()
                 }
 
                 item {
@@ -634,15 +645,15 @@ internal fun HomeContent(
                 }
 
                 item {
-                    TemporalContextCard(
-                        state = state,
-                        onOpenEvent = onOpenEvent,
-                        onAddCalendarEvent = onAddCalendarEvent,
-                        onAddReminder = onAddReminder,
-                        onEditReminder = onEditReminder,
-                        onSnoozeReminder = onSnoozeReminder,
-                        onCompleteReminder = onCompleteReminder
-                    )
+                    briefingCard()
+                }
+
+                item {
+                    DeliveriesTrackerCard()
+                }
+
+                item {
+                    VaultHealthAuditCard()
                 }
             }
             
@@ -695,7 +706,9 @@ private fun OverviewStat(
     modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = modifier.clickable(onClick = onClick).padding(vertical = 14.dp),
+        modifier = modifier
+            .clickable(onClick = onClick, role = androidx.compose.ui.semantics.Role.Button)
+            .padding(vertical = 14.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
@@ -778,7 +791,7 @@ private fun BackupNudgeCard(onAction: () -> Unit, onDismiss: () -> Unit) {
             }
             Icon(
                 Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = stringResource(R.string.home_backup_nudge_setup),
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.onTertiaryContainer,
                 modifier = Modifier.size(18.dp)
             )
@@ -830,10 +843,7 @@ fun PasteTextDialog(onDismiss: () -> Unit, onContinue: (String) -> Unit) {
 
 @Composable
 private fun SectionTitle(title: String) {
-    Text(
-        text = title,
-        style = MaterialTheme.typography.titleMedium
-    )
+    com.vaultbrain.core.common.ui.SectionHeading(title)
 }
 
 /** Dismissible Today-tab banner offering the on-device model download. */
@@ -859,7 +869,7 @@ private fun GemmaDownloadBanner(
                     modifier = Modifier.weight(1f)
                 )
                 if (banner.progress == null && !banner.queued) {
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                    IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = stringResource(R.string.gemma_banner_dismiss),
@@ -929,7 +939,11 @@ private fun TemporalContextCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Today, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.home_today), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.home_today),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() }
+                )
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onAddReminder) {
                     Icon(Icons.Default.AlarmAdd, contentDescription = stringResource(R.string.home_add_reminder))
@@ -1094,7 +1108,7 @@ private fun AttentionSection(
     onClick: (AttentionItem) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.home_attention_title), style = MaterialTheme.typography.titleMedium)
+        SectionTitle(stringResource(R.string.home_attention_title))
         Card(shape = MaterialTheme.shapes.extraLarge) {
             Column {
                 items.forEach { item ->
@@ -1134,6 +1148,7 @@ private fun AttentionSection(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AskComposerCard(
     onAsk: (String) -> Unit,
@@ -1142,39 +1157,61 @@ private fun AskComposerCard(
     onVoiceClick: () -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
+    val submit = {
+        if (query.isNotBlank()) {
+            onAsk(query.trim())
+            query = ""
+        }
+    }
     Card(
         shape = MaterialTheme.shapes.extraLarge,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f))
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
                 placeholder = { Text(stringResource(R.string.home_ask_placeholder)) },
-                modifier = Modifier.weight(1f),
-                maxLines = 2,
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 3,
                 shape = MaterialTheme.shapes.extraLarge,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                keyboardActions = KeyboardActions(
-                    onSend = {
-                        if (query.isNotBlank()) {
-                            onAsk(query.trim())
-                            query = ""
-                        }
+                keyboardActions = KeyboardActions(onSend = { submit() }),
+                trailingIcon = {
+                    // Visible send action: the IME key alone is not discoverable.
+                    IconButton(onClick = submit, enabled = query.isNotBlank()) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Send,
+                            contentDescription = stringResource(R.string.home_ask_send),
+                            tint = if (query.isNotBlank()) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                )
+                }
             )
-            IconButton(onClick = onScanClick) {
-                Icon(Icons.Default.DocumentScanner, contentDescription = stringResource(R.string.home_action_scan))
-            }
-            IconButton(onClick = onVoiceClick) {
-                Icon(Icons.Default.Mic, contentDescription = stringResource(R.string.home_action_voice))
-            }
-            IconButton(onClick = onImportClick) {
-                Icon(Icons.Default.PhotoLibrary, contentDescription = stringResource(R.string.home_action_import))
+            // Labeled shortcuts instead of three unlabeled icons squeezing the text field.
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                AssistChip(
+                    onClick = onScanClick,
+                    label = { Text(stringResource(R.string.fab_scan)) },
+                    leadingIcon = { Icon(Icons.Default.DocumentScanner, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                )
+                AssistChip(
+                    onClick = onVoiceClick,
+                    label = { Text(stringResource(R.string.fab_voice)) },
+                    leadingIcon = { Icon(Icons.Default.Mic, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                )
+                AssistChip(
+                    onClick = onImportClick,
+                    label = { Text(stringResource(R.string.fab_import)) },
+                    leadingIcon = { Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                )
             }
         }
     }

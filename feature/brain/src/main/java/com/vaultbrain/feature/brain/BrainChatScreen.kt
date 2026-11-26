@@ -218,14 +218,7 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
                         )
                     }
                 },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.brain_chat_back)
-                        )
-                    }
-                },
+                // Brain is a top-level tab: no Up arrow (system back still works).
                 actions = {
                     androidx.compose.material3.FilterChip(
                         selected = isDeepResearch,
@@ -366,10 +359,15 @@ fun BrainChatScreen(onSourceClick: (String) -> Unit = {},
             title = { Text(stringResource(R.string.brain_chat_clear_title)) },
             text = { Text(stringResource(R.string.brain_chat_clear_body)) },
             confirmButton = {
-                TextButton(onClick = {
-                    viewModel.clearConversation()
-                    showClearDialog = false
-                }) { Text(stringResource(R.string.brain_chat_clear)) }
+                TextButton(
+                    onClick = {
+                        viewModel.clearConversation()
+                        showClearDialog = false
+                    },
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) { Text(stringResource(R.string.brain_chat_clear)) }
             },
             dismissButton = {
                 TextButton(onClick = { showClearDialog = false }) {

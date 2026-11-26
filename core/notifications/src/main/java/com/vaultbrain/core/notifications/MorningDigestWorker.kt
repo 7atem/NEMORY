@@ -69,8 +69,8 @@ class MorningDigestWorker @AssistedInject constructor(
 
         val notification = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("Good morning")
-            .setContentText("You have $count item${if (count > 1) "s" else ""} needing your attention today.")
+            .setContentTitle(context.getString(R.string.notif_digest_title))
+            .setContentText(context.resources.getQuantityString(R.plurals.notif_digest_body, count, count))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)

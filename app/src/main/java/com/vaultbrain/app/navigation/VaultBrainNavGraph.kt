@@ -71,6 +71,7 @@ fun VaultBrainNavGraph(
             }
         }
     }
+    val reducedMotion = com.vaultbrain.core.common.ui.LocalReducedMotion.current
     SharedTransitionLayout {
         NavHost(
             navController = navController,
@@ -274,7 +275,11 @@ fun VaultBrainNavGraph(
                     lensId = lensId,
                     onBack = { navController.popBackStack() },
                     onItemClick = { id -> navController.navigate("detail/${android.net.Uri.encode(id)}") },
-                    onAdd = { navController.navigate(Screen.Capture.route) }
+                    onAdd = { lens ->
+                        navController.navigate(
+                            "${Screen.Capture.route}?lens=${android.net.Uri.encode(lens)}"
+                        ) { launchSingleTop = true }
+                    }
                 )
             }
             composable(
@@ -302,10 +307,10 @@ fun VaultBrainNavGraph(
                 }
             ),
             enterTransition = {
-                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(400))
+                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, tween(if (reducedMotion) 0 else 400))
             },
             exitTransition = {
-                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(400))
+                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, tween(if (reducedMotion) 0 else 400))
             }
         ) { backStackEntry ->
             val imageUris = backStackEntry.arguments?.getString("imageUris")
@@ -525,16 +530,36 @@ private fun LensRouterScreen(
     onAdd: (String) -> Unit,
     viewModel: com.vaultbrain.feature.vault.LensDetailViewModel = androidx.hilt.navigation.compose.hiltViewModel()
 ) {
+    val specializedLenses = setOf(
+        com.vaultbrain.shared.domain.LensId.MONEY,
+        com.vaultbrain.shared.domain.LensId.HEALTH,
+        com.vaultbrain.shared.domain.LensId.TRAVEL,
+        com.vaultbrain.shared.domain.LensId.BUREAUCRACY,
+        com.vaultbrain.shared.domain.LensId.MEDIA
+    )
+    if (lensId !in specializedLenses) {
+        // The generic lens screen owns its own Scaffold/top bar; wrapping it here
+        // stacked two app bars.
+        com.vaultbrain.feature.vault.LensDetailScreen(
+            lensId = lensId,
+            onBack = onBack,
+            onItemClick = onItemClick
+        )
+        return
+    }
     androidx.compose.runtime.LaunchedEffect(lensId) {
         viewModel.loadLens(lensId)
     }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val context = androidx.compose.ui.platform.LocalContext.current
+    val lensName = com.vaultbrain.feature.vault.components.lensTitleRes(lensId)
+        ?.let { stringResource(it) }
+        ?: state.title.ifBlank { lensId }
 
     Scaffold(
         topBar = {
             androidx.compose.material3.TopAppBar(
-                title = { Text(state.title.ifBlank { lensId }) },
+                title = { Text(lensName) },
                 navigationIcon = {
                     androidx.compose.material3.IconButton(onClick = onBack) {
                         Icon(
@@ -549,7 +574,7 @@ private fun LensRouterScreen(
             FloatingActionButton(onClick = { onAdd(lensId) }) {
                 Icon(
                     androidx.compose.material.icons.Icons.Default.Add,
-                    contentDescription = stringResource(R.string.lens_add_item, state.title.ifBlank { lensId })
+                    contentDescription = stringResource(R.string.lens_add_item, lensName)
                 )
             }
         }
@@ -596,11 +621,7 @@ private fun LensRouterScreen(
                 onMarkCompleted = { viewModel.completeMediaItem(it) },
                 modifier = modifier
             )
-            else -> com.vaultbrain.feature.vault.LensDetailScreen(
-                lensId = lensId,
-                onBack = onBack,
-                onItemClick = onItemClick
-            )
+            else -> Unit
         }
     }
 }
