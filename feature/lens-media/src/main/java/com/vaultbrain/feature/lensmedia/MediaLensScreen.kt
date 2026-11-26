@@ -47,7 +47,8 @@ fun MediaLensScreen(
     val books = items.count { it.mediaType() == "book" }
     val waiting = items.count { !it.isMediaCompleted() }
 
-    Column(modifier = modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+    com.vaultbrain.core.common.ui.ResponsiveContainer(modifier = modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Text(
             text = stringResource(R.string.media_lens_title),
             style = MaterialTheme.typography.headlineSmall
@@ -128,6 +129,7 @@ fun MediaLensScreen(
                 }
             }
         }
+    }
     }
 }
 

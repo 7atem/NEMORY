@@ -127,11 +127,17 @@ object DefaultDeliveriesProvider {
 
 @Composable
 fun DeliveriesTrackerCard(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showSampleDeliveries: Boolean = false
 ) {
     val context = LocalContext.current
-    var deliveries by remember { mutableStateOf(DefaultDeliveriesProvider.getActiveDeliveries()) }
-    var selectedDeliveryId by remember { mutableStateOf(deliveries.firstOrNull()?.id) }
+    var deliveries by remember(showSampleDeliveries) {
+        mutableStateOf(
+            if (showSampleDeliveries) DefaultDeliveriesProvider.getActiveDeliveries()
+            else emptyList()
+        )
+    }
+    var selectedDeliveryId by remember(showSampleDeliveries) { mutableStateOf(deliveries.firstOrNull()?.id) }
     var showScanDialog by remember { mutableStateOf(false) }
 
     val activeItem = deliveries.find { it.id == selectedDeliveryId } ?: deliveries.firstOrNull()
@@ -236,6 +242,13 @@ fun DeliveriesTrackerCard(
                 }
             }
 
+            if (deliveries.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.deliveries_empty_prompt),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
             // Package Selection Chips
             LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -337,6 +350,7 @@ fun DeliveriesTrackerCard(
                         }
                     }
                 }
+            }
             }
         }
     }

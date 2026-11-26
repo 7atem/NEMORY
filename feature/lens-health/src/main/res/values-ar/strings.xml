@@ -47,4 +47,9 @@
     <string name="health_fda_verified_clean">تم التحقق من سلامة %1$d وصفات طبية</string>
     <string name="health_fda_batch_clean_subtitle">لا توجد أي سحوبات أو تحذيرات من FDA على الأدوية المحفوظة</string>
     <string name="health_fda_privacy_note">واجهة OpenFDA الرسمية • فحص محلي على الجهاز • دون إرسال بيانات شخصية</string>
+    <string name="health_vitals_demo_badge">تجريبي</string>
+    <string name="health_vitals_step_goal">/ %1$,d هدف</string>
+    <string name="health_vitals_resting_avg">متوسط الراحة</string>
+    <string name="health_vitals_active_move">حركة نشطة</string>
+    <string name="health_vitals_optimal_rest">راحة مثالية</string>
 </resources>

@@ -372,4 +372,7 @@
         <item quantity="one">%d active shipment</item>
         <item quantity="other">%d active shipments</item>
     </plurals>
+    <string name="deliveries_empty_prompt">No tracked shipments yet. Paste an order email to track a delivery locally.</string>
+    <string name="vault_health_all_covered">Your core life-admin categories are covered in your vault.</string>
+    <string name="vault_health_empty_prompt">Start capturing receipts, IDs, or policies to track your vault coverage.</string>
 </resources>

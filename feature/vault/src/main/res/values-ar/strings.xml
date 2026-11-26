@@ -385,4 +385,7 @@
         <item quantity="many">%d شحنة نشطة</item>
         <item quantity="other">%d شحنة نشطة</item>
     </plurals>
+    <string name="deliveries_empty_prompt">لا توجد شحنات متتبعة بعد. الصق رسالة طلب لتتبع الشحنة محليًا.</string>
+    <string name="vault_health_all_covered">جميع فئاتك الأساسية مغطاة في خزنتك.</string>
+    <string name="vault_health_empty_prompt">ابدأ بالتقاط الإيصالات أو الهويات أو الوثائق لتتبع تغطية خزنتك.</string>
 </resources>

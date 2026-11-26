@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -51,6 +52,8 @@ fun TravelLensScreen(
             it.parsedMetadata["type"].equals("hotel", ignoreCase = true)
     }
 
+    val context = LocalContext.current
+    val isDemoMode = remember(context) { com.vaultbrain.core.common.OnboardingState.isDemoModeEnabled(context) }
     val sampleTrip = remember { DefaultTripProvider.getSampleTrip() }
     var weather by remember { mutableStateOf<DestinationWeather?>(null) }
     var holidays by remember { mutableStateOf<List<PublicHoliday>>(emptyList()) }
@@ -70,10 +73,11 @@ fun TravelLensScreen(
         )
     }
 
+    com.vaultbrain.core.common.ui.ResponsiveContainer(modifier = modifier.fillMaxSize()) {
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = com.vaultbrain.core.common.ui.VaultSpacing.fabClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         item {
             Text(
@@ -93,14 +97,16 @@ fun TravelLensScreen(
             )
         }
 
-        // Active Trip Binder Hero Card
-        item {
-            TripHeroCard(
-                trip = sampleTrip,
-                onShowGatePass = {
-                    selectedGatePassDoc = sampleTrip.flightItems.firstOrNull()
-                }
-            )
+        // Sample Active Trip Binder (Demo Mode only)
+        if (isDemoMode) {
+            item {
+                TripHeroCard(
+                    trip = sampleTrip,
+                    onShowGatePass = {
+                        selectedGatePassDoc = sampleTrip.flightItems.firstOrNull()
+                    }
+                )
+            }
         }
 
         weather?.let { w ->
@@ -115,13 +121,15 @@ fun TravelLensScreen(
             }
         }
 
-        item {
-            SkyscannerFlightDealsCard()
-        }
+        if (isDemoMode) {
+            item {
+                SkyscannerFlightDealsCard()
+            }
 
-        // Destination Places & Google Maps
-        item {
-            PlacesAndMapsSection(places = sampleTrip.places)
+            // Destination Places & Google Maps
+            item {
+                PlacesAndMapsSection(places = sampleTrip.places)
+            }
         }
 
         // Offline Departure Checklist
@@ -238,6 +246,7 @@ fun TravelLensScreen(
                 }
             }
         }
+    }
     }
 }
 
@@ -999,7 +1008,7 @@ private fun SkyscannerFlightDealsCard() {
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488))
             ) {
-                Icon(Icons.Default.TrendingDown, contentDescription = null, modifier = Modifier.size(16.dp))
+                Icon(Icons.AutoMirrored.Filled.TrendingDown, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = stringResource(R.string.travel_skyscanner_compare),

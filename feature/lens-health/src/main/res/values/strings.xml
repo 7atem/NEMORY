@@ -43,4 +43,9 @@
     <string name="health_fda_verified_clean">%1$d Prescriptions Verified Safe</string>
     <string name="health_fda_batch_clean_subtitle">Zero active FDA recalls on saved medications</string>
     <string name="health_fda_privacy_note">OpenFDA Enforcement API • On-device query only • No PII sent</string>
+    <string name="health_vitals_demo_badge">DEMO</string>
+    <string name="health_vitals_step_goal">/ %1$,d goal</string>
+    <string name="health_vitals_resting_avg">Resting avg</string>
+    <string name="health_vitals_active_move">Active move</string>
+    <string name="health_vitals_optimal_rest">Optimal rest</string>
 </resources>

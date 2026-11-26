@@ -73,10 +73,11 @@ fun MoneyLensScreen(
     val recentItems = items.filter { (now - it.createdAt) <= 7 * 24 * 60 * 60 * 1000L }
     val olderItems = items.filter { (now - it.createdAt) > 7 * 24 * 60 * 60 * 1000L }
 
+    com.vaultbrain.core.common.ui.ResponsiveContainer(modifier = modifier.fillMaxSize()) {
     LazyColumn(
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = com.vaultbrain.core.common.ui.VaultSpacing.fabClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         item {
             Text(
@@ -215,6 +216,7 @@ fun MoneyLensScreen(
                 }
             }
         }
+    }
     }
 }
 

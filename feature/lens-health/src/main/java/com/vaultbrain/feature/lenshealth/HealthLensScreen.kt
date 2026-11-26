@@ -56,6 +56,8 @@ fun HealthLensScreen(
 
     val labResults = items.filter { it.effectiveClassification?.name.equals("LAB_RESULT", ignoreCase = true) }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isDemoMode = remember(context) { com.vaultbrain.core.common.OnboardingState.isDemoModeEnabled(context) }
     val vitals = remember { HealthHubDataProvider.getVitals() }
     var medications by remember { mutableStateOf(HealthHubDataProvider.getMedications()) }
     val medicalProfile = remember { HealthHubDataProvider.getMedicalProfile() }
@@ -71,10 +73,11 @@ fun HealthLensScreen(
     val recentItems = items.filter { (now - it.createdAt) <= 7 * 24 * 60 * 60 * 1000L }
     val olderItems = items.filter { (now - it.createdAt) > 7 * 24 * 60 * 60 * 1000L }
 
+    com.vaultbrain.core.common.ui.ResponsiveContainer(modifier = modifier.fillMaxSize()) {
     LazyColumn(
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = com.vaultbrain.core.common.ui.VaultSpacing.fabClearance),
         verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         item {
             Text(
@@ -84,9 +87,11 @@ fun HealthLensScreen(
             )
         }
 
-        // On-Device Vitals Snapshot Cards
-        item {
-            HealthVitalsSection(vitals = vitals)
+        // On-Device Vitals Snapshot Cards (Demo Mode only)
+        if (isDemoMode) {
+            item {
+                HealthVitalsSection(vitals = vitals)
+            }
         }
 
         // Live Air Quality & UV Radar (Open-Meteo)
@@ -94,21 +99,22 @@ fun HealthLensScreen(
             LiveAirQualityCard(airQuality = airQuality)
         }
 
-        // Emergency Medical Profile Card
-        item {
-            EmergencyMedicalProfileSection(profile = medicalProfile)
-        }
+        // Emergency Medical Profile & Sample Medications (Demo Mode only)
+        if (isDemoMode) {
+            item {
+                EmergencyMedicalProfileSection(profile = medicalProfile)
+            }
 
-        // Prescription Refill & Dosage Tracker
-        item {
-            PrescriptionsTrackerSection(
-                medications = medications,
-                onToggleDose = { medId ->
-                    medications = medications.map {
-                        if (it.id == medId) it.copy(didTakeDoseToday = !it.didTakeDoseToday) else it
+            item {
+                PrescriptionsTrackerSection(
+                    medications = medications,
+                    onToggleDose = { medId ->
+                        medications = medications.map {
+                            if (it.id == medId) it.copy(didTakeDoseToday = !it.didTakeDoseToday) else it
+                        }
                     }
-                }
-            )
+                )
+            }
         }
 
         // Live FDA Medication Safety & Recall Verification
@@ -203,6 +209,7 @@ fun HealthLensScreen(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -243,7 +250,7 @@ private fun HealthVitalsSection(vitals: HealthVitalsSnapshot) {
                     color = MaterialTheme.colorScheme.primaryContainer
                 ) {
                     Text(
-                        text = "ON-DEVICE",
+                        text = stringResource(R.string.health_vitals_demo_badge),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Black,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -259,7 +266,7 @@ private fun HealthVitalsSection(vitals: HealthVitalsSnapshot) {
                 VitalMetricCard(
                     title = stringResource(R.string.health_vitals_steps),
                     value = "%,d".format(vitals.steps),
-                    subtitle = "/ %,d goal".format(vitals.stepGoal),
+                    subtitle = stringResource(R.string.health_vitals_step_goal, vitals.stepGoal),
                     icon = Icons.Default.DirectionsWalk,
                     iconTint = Color(0xFF2563EB),
                     modifier = Modifier.weight(1f)
@@ -267,7 +274,7 @@ private fun HealthVitalsSection(vitals: HealthVitalsSnapshot) {
                 VitalMetricCard(
                     title = stringResource(R.string.health_vitals_heart_rate),
                     value = "${vitals.heartRate} BPM",
-                    subtitle = "Resting avg",
+                    subtitle = stringResource(R.string.health_vitals_resting_avg),
                     icon = Icons.Default.MonitorHeart,
                     iconTint = Color(0xFFE11D48),
                     modifier = Modifier.weight(1f)
@@ -281,7 +288,7 @@ private fun HealthVitalsSection(vitals: HealthVitalsSnapshot) {
                 VitalMetricCard(
                     title = stringResource(R.string.health_vitals_calories),
                     value = "${vitals.activeCalories} kcal",
-                    subtitle = "Active move",
+                    subtitle = stringResource(R.string.health_vitals_active_move),
                     icon = Icons.Default.LocalFireDepartment,
                     iconTint = Color(0xFFEA580C),
                     modifier = Modifier.weight(1f)
@@ -289,7 +296,7 @@ private fun HealthVitalsSection(vitals: HealthVitalsSnapshot) {
                 VitalMetricCard(
                     title = stringResource(R.string.health_vitals_sleep),
                     value = vitals.sleepDurationFormatted,
-                    subtitle = "Optimal rest",
+                    subtitle = stringResource(R.string.health_vitals_optimal_rest),
                     icon = Icons.Default.Bedtime,
                     iconTint = Color(0xFF9333EA),
                     modifier = Modifier.weight(1f)

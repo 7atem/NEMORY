@@ -649,11 +649,11 @@ internal fun HomeContent(
                 }
 
                 item {
-                    DeliveriesTrackerCard()
+                    DeliveriesTrackerCard(showSampleDeliveries = state.demoItemIds.isNotEmpty())
                 }
 
                 item {
-                    VaultHealthAuditCard()
+                    VaultHealthAuditCard(items = state.activeItems)
                 }
             }
             
